@@ -1,0 +1,19 @@
+SRCDIR := $(CURDIR)/..
+INCLUDE = $(SRCDIR)/include
+
+CC = gcc
+CFLAGS = -I$(INCLUDE) -g3 -O0 -D_REENTRANT -Wall -static
+RANLIB = ranlib
+
+# Following is the main library, built from all the object files
+# in the lib/ directories.
+LIBTARGET = $(SRCDIR)/libsimp.a
+
+LIB_OBJS = bd_xjson.o error.o
+
+all:	${LIB_OBJS}
+		ar rv ${LIBTARGET} $?
+		${RANLIB} ${LIBTARGET}
+
+clean:
+		rm -rf ${LIB_OBJS}
