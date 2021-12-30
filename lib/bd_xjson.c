@@ -17,24 +17,6 @@
 #define THROW_XFREE_EXCEPTION \
     THROW_EXCEPTION("free uninitialized memory or duplicated free already done")
 
-#define TERMINATED(fun, msg)  \
-do                            \
-{                             \
-    if(fun)                   \
-    {                         \
-        THROW_EXCEPTION(msg); \
-    }                         \
-} while (0)
-#define CATCH(fun, msg)     \
-do                          \
-{                           \
-    if(fun)                 \
-    {                       \
-        THROW_WARNING(msg); \
-        return -1;          \
-    }                       \
-} while (0)
-
 void* xmalloc(int s)
 {
     void* p;
@@ -67,17 +49,6 @@ void xfree(void* p)
     return ;
 }
 
-// static const unsigned type_map[] =
-// {
-//     [BD_XJSON_OBJECT] = sizeof(bd_xjson_object),
-//     [BD_XJSON_STRING] = sizeof(bd_xjson_string),
-//     [BD_XJSON_NUMBER] = sizeof(bd_xjson_number),
-//     [BD_XJSON_ARRAY] = sizeof(bd_xjson_array),
-//     [BD_XJSON_TRUE] = sizeof(bd_xjson_true),
-//     [BD_XJSON_FALSE] = sizeof(bd_xjson_false),
-//     [BD_XJSON_NULL] = sizeof(bd_xjson_null),
-// };
-
 int node_init(bd_xjson_node** node)
 {
     if(*node)
@@ -87,8 +58,9 @@ int node_init(bd_xjson_node** node)
     }
     bd_xjson_node* n;
     n = xmalloc(sizeof *n);
-    n->value = n->next = n->prev = NULL;
-    n->type = -1;
+    n->next = n->prev = NULL;
+    n->data.data = NULL;
+    n->data.type = -1;
 
     *node = n;
     return 0;
@@ -107,27 +79,30 @@ int node_copy(bd_xjson_node* dest, bd_xjson_node* src)
         THROW_WARNING("uninitialized node try to be copied body");
         return -1;
     }
+    bd_xjson* dd, * sd;
+    dd = &(dest->data);
+    sd = &(src->data);
     /* only copy type and value */
-    dest->type = src->type;
-    switch(src->type)
+    dd->type = sd->type;
+    switch(sd->type)
     {
         case BD_XJSON_OBJECT:
             break;
         case BD_XJSON_STRING:
-            dest->value = xmalloc(strlen(src->value) + 1);
-            strcat(dest->value, src->value);
+            dd->data = xmalloc(strlen(sd->data) + 1);
+            strcat(dd->data, sd->data);
             break;
         case BD_XJSON_NUMBER:
-            dest->value = xmalloc(sizeof (int));
-            *(int*)(dest->value) = *(int*)(src->value);
+            dd->data = xmalloc(sizeof (int));
+            *(int*)(dd->data) = *(int*)(sd->data);
             break;
         case BD_XJSON_ARRAY:
-            if(list_init((bd_xjson_list**)&dest->value))
+            if(list_init((bd_xjson_list**)&dd->data))
             {
                 THROW_WARNING("list initializaition failed");
                 return -1;
             }
-            if(list_copy(dest->value, src->value))
+            if(list_copy(dd->data, sd->data))
             {
                 THROW_WARNING("list copy failed");
                 return -1;
@@ -146,16 +121,17 @@ int node_copy(bd_xjson_node* dest, bd_xjson_node* src)
 
 int node_free(bd_xjson_node* node)
 {
-    switch(node->type)
+    bd_xjson* nd = &(node->data);
+    switch(nd->type)
     {
         case BD_XJSON_OBJECT:
             break;
         case BD_XJSON_STRING:
         case BD_XJSON_NUMBER:
-            xfree(node->value);
+            xfree(nd->data);
             break;
         case BD_XJSON_ARRAY:
-            if(list_clear((bd_xjson_list**)&(node->value)))
+            if(list_clear((bd_xjson_list**)&(nd->data)))
             {
                 THROW_WARNING("list clear failed");
                 return -1;
@@ -169,6 +145,7 @@ int node_free(bd_xjson_node* node)
             THROW_WARNING("illegal type from the freed");
             return -1;
     }
+    xfree(nd);
     xfree(node);
     return 0;
 }
@@ -240,11 +217,12 @@ int list_copy(bd_xjson_list* dest, bd_xjson_list* src)
 }
 
 /*
+ * insert a bd_xjson from bd_xjson_node
  * val: deep copy
  * i = -1/size, insert in tail
  * i =  0, insert in head
  */
-int list_insert(bd_xjson_list* list, bd_xjson_type type, int pos, void* val)
+int list_insert(bd_xjson_list* list, int pos, bd_xjson* val)
 {
     if(NULL == list)
     {
@@ -259,26 +237,27 @@ int list_insert(bd_xjson_list* list, bd_xjson_type type, int pos, void* val)
 
     bd_xjson_node* node = NULL;
     node_init(&(node));
-    node->type = type;
-    switch(type)
+    bd_xjson* nd = &(node->data);
+    nd->type = val->type;
+    switch(val->type)
     {
         case BD_XJSON_OBJECT:
             break;
         case BD_XJSON_STRING:
-            node->value = xmalloc(strlen(((bd_xjson_string*)val)->data) + 1);
-            strcat(node->value, ((bd_xjson_string*)val)->data);
+            nd->data = xmalloc(strlen(val->data) + 1);
+            strcat(nd->data, val->data);
             break;
         case BD_XJSON_NUMBER:
-            node->value = xmalloc(sizeof (int));
-            *(int*)(node->value) = *(((bd_xjson_number*)val)->data);
+            nd->data = xmalloc(sizeof (int));
+            *(int*)(nd->data) = *(int*)(val->data);
             break;
         case BD_XJSON_ARRAY:
-            if(list_init((bd_xjson_list**)&(node->value)))
+            if(list_init((bd_xjson_list**)&(nd->data)))
             {
                 THROW_WARNING("list initializaition failed");
                 return -1;
             }
-            if(list_copy(node->value, ((bd_xjson_array*)val)->data))
+            if(list_copy(nd->data, val->data))
             {
                 THROW_WARNING("list copy failed");
                 return -1;
@@ -462,7 +441,7 @@ int list_clear(bd_xjson_list** list)
 
 /* val: deep copy */
 /* you must initialize 'val->data' in your code */
-int list_find(bd_xjson_list* list, bd_xjson_type type, int pos, void* val)
+int list_find(bd_xjson_list* list, int pos, bd_xjson* val)
 {
     if( NULL == list)
     {
@@ -501,55 +480,44 @@ int list_find(bd_xjson_list* list, bd_xjson_type type, int pos, void* val)
             node = node->prev;
         }
     }
-    if(node->type != type)
-    {
-        THROW_WARNING("unmatched type");
-        return -1;
-    }
-    switch(type)
+    bd_xjson* nd = &(node->data);
+    val->type = nd->type;
+    switch(nd->type)
     {
         case BD_XJSON_OBJECT:
             break;
         case BD_XJSON_STRING:
-            ;char** str_data = &((bd_xjson_string*)val)->data;
-            if(*str_data)
+            if(val->data)
             {
-                xfree(*str_data);
+                xfree(val->data);
             }
-            *str_data = xmalloc(strlen(node->value) + 1);
-            strcat(*str_data, node->value);
+            unsigned s = strlen(nd->data) + 1;
+            val->data = xmalloc(s);
+            strcat(nd->data, val->data);
             break;
         case BD_XJSON_NUMBER:
-            ;int** num_data = &((bd_xjson_number*)val)->data;
-            if(num_data)
+            if(val->data)
             {
-                xfree(*num_data);
+                xfree(val->data);
             }
-            *num_data = xmalloc(sizeof(int));
-            **num_data = *(int*)node->value;
+            val->data = xmalloc(sizeof(int));
+            *(int*)val->data = *(int*)nd->data;
             break;
         case BD_XJSON_ARRAY:
-            if( ((bd_xjson_array*)val)->data->size ||
-                ((bd_xjson_array*)val)->data->head ||
-                ((bd_xjson_array*)val)->data->tail
-            )
+            if(val->data)
             {
-                if(list_clear(&(((bd_xjson_array*)val)->data)))
+                if(list_clear((bd_xjson_list**)&val->data))
                 {
                     THROW_WARNING("list clear failed");
                     return -1;
                 }
-                if(list_init(&(((bd_xjson_array*)val)->data)))
+                if(list_init((bd_xjson_list**)&val->data))
                 {
                     THROW_WARNING("list initializaition failed");
                     return -1;
                 }
             }
-            if(
-                list_copy(
-                ((bd_xjson_array*)val)->data,
-                (bd_xjson_list*)(node->value))
-            )
+            if(list_copy(val->data, nd->data))
             {
                 THROW_WARNING("list copy failed");
                 return -1;
@@ -566,7 +534,7 @@ int list_find(bd_xjson_list* list, bd_xjson_type type, int pos, void* val)
     return 0;
 }
 
-int list_update(bd_xjson_list* list, bd_xjson_type type, int pos, void* val)
+int list_update(bd_xjson_list* list, int pos, bd_xjson* val)
 {
     if(NULL == list)
     {
@@ -600,16 +568,17 @@ int list_update(bd_xjson_list* list, bd_xjson_type type, int pos, void* val)
             node = node->prev;
         }
     }
-    switch(node->type)
+    bd_xjson* nd = &(node->data);
+    switch(nd->type)
     {
         case BD_XJSON_OBJECT:
             break;
         case BD_XJSON_STRING:
         case BD_XJSON_NUMBER:
-            xfree(node->value);
+            xfree(nd->data);
             break;
         case BD_XJSON_ARRAY:
-            if(list_clear((bd_xjson_list**)&(node->value)))
+            if(list_clear((bd_xjson_list**)&(nd->data)))
             {
                 THROW_WARNING("list clear failed");
                 return -1;
@@ -624,30 +593,27 @@ int list_update(bd_xjson_list* list, bd_xjson_type type, int pos, void* val)
             return -1;
     }
     /* update type and value */
-    node->type = type;
-    switch(type)
+    nd->type = val->type;
+    switch(val->type)
     {
         case BD_XJSON_OBJECT:
             break;
         case BD_XJSON_STRING:
-            node->value = xmalloc(strlen(((bd_xjson_string*)val)->data) + 1);
-            strcat(node->value, ((bd_xjson_string*)val)->data);
+            ;unsigned s = strlen(val->data) + 1;
+            nd->data = xmalloc(s);
+            strcat(nd->data, val->data);
             break;
         case BD_XJSON_NUMBER:
-            node->value = xmalloc(sizeof (int));
-            *(int*)(node->value) = *(((bd_xjson_number*)val)->data);
+            nd->data = xmalloc(sizeof(int));
+            *(int*)(nd->data) = *(int*)val->data;
             break;
         case BD_XJSON_ARRAY:
-            if(list_init((bd_xjson_list**)&(node->value)))
+            if(list_init((bd_xjson_list**)&(nd->data)))
             {
                 THROW_WARNING("list initialization failed");
                 return -1;
             }
-            if(
-                list_copy(
-                (bd_xjson_list*)(node->value),
-                ((bd_xjson_array*)val)->data)
-            )
+            if(list_copy(nd->data, val->data))
             {
                 THROW_WARNING("list copy failed");
                 return -1;
@@ -684,7 +650,7 @@ void arr_default_cstr(bd_xjson_array* this)
     {
         THROW_EXCEPTION("uninitialized array class try to construct");
     }
-    if(list_init(&(this->data)))
+    if(list_init((bd_xjson_list**)&(this->data.data)))
     {
         THROW_EXCEPTION("constructor error");
     }
@@ -702,12 +668,12 @@ void arr_copy_cstr(bd_xjson_array* this, bd_xjson_array* arr)
         THROW_EXCEPTION("uninitialized array class try to be copied body");
     }
     /* init */
-    if(list_init(&(this->data)))
+    if(list_init((bd_xjson_list**)&(this->data.data)))
     {
         THROW_EXCEPTION("constructor initialization error");
     }
     /* copy */
-    if(list_copy(this->data, arr->data))
+    if(list_copy(this->data.data, arr->data.data))
     {
         THROW_EXCEPTION("copy constructor error");
     }
@@ -720,11 +686,11 @@ void arr_default_dstr(bd_xjson_array* this)
     {
         THROW_EXCEPTION("uninitialized array class try to desctruct");
     }
-    if(NULL == this->data)
+    if(NULL == this->data.data)
     {
         THROW_EXCEPTION("uninitialized data of array class try to clear");
     }
-    if(list_clear(&(this->data)))
+    if(list_clear((bd_xjson_list**)&(this->data.data)))
     {
         THROW_EXCEPTION("destructor error");
     }
@@ -736,11 +702,11 @@ void arr_add(bd_xjson_array* arr, int pos, void* val)
     {
         THROW_EXCEPTION("uninitialized array try to add");
     }
-    if(NULL == arr->data)
+    if(NULL == arr->data.data)
     {
         THROW_EXCEPTION("uninitialized data of array class try to insert");
     }
-    if(list_insert(arr->data, *(bd_xjson_type*)val, pos, val))
+    if(list_insert(arr->data.data, pos, val)) /* cast to parent class */
     {
         THROW_EXCEPTION("add error");
     }
@@ -752,11 +718,11 @@ void arr_delete(bd_xjson_array* arr, int pos)
     {
         THROW_EXCEPTION("uninitialized array class try to add");
     }
-    if(NULL == arr->data)
+    if(NULL == arr->data.data)
     {
         THROW_EXCEPTION("uninitialized data of array class try to insert");
     }
-    if(list_remove(arr->data, pos))
+    if(list_remove(arr->data.data, pos))
     {
         THROW_EXCEPTION("delete error");
     }
@@ -767,11 +733,11 @@ void arr_search(bd_xjson_array* arr, int pos, void* val)
     {
         THROW_EXCEPTION("uninitialized array class try to search");
     }
-    if(NULL == arr->data)
+    if(NULL == arr->data.data)
     {
         THROW_EXCEPTION("uninitialized data of array class try to find");
     }
-    if(list_find(arr->data, *(bd_xjson_type*)val, pos, val))
+    if(list_find(arr->data.data, pos, val))
     {
         THROW_EXCEPTION("search error");
     }
@@ -782,11 +748,11 @@ void arr_update(bd_xjson_array* arr, int pos, void* val)
     {
         THROW_EXCEPTION("uninitialized array class try to update");
     }
-    if(NULL == arr->data)
+    if(NULL == arr->data.data)
     {
         THROW_EXCEPTION("uninitialized data of array class try to update");
     }
-    if(list_update(arr->data, *(bd_xjson_type*)val, pos, val))
+    if(list_update(arr->data.data, pos, val))
     {
         THROW_EXCEPTION("update error");
     }
@@ -798,7 +764,7 @@ void str_default_cstr(bd_xjson_string* this)
     {
         THROW_EXCEPTION("uninitialized string class try to construct");
     }
-    this->data = xmalloc(1);
+    this->data.data = xmalloc(1);
 }
 void str_copy_cstr(bd_xjson_string* this, bd_xjson_string* str)
 {
@@ -810,13 +776,13 @@ void str_copy_cstr(bd_xjson_string* this, bd_xjson_string* str)
     {
         THROW_EXCEPTION("uninitialized string class try to be copied body");
     }
-    if(NULL == str->data)
+    if(NULL == str->data.data)
     {
         THROW_EXCEPTION("uninitialized data of string class try to be copied body");
     }
-    unsigned size = strlen(str->data) + 1;
-    this->data = xmalloc(size);
-    strcat(this->data, str->data);
+    unsigned s = strlen(str->data.data) + 1;
+    this->data.data = xmalloc(s);
+    strcat(this->data.data, str->data.data);
 }
 void str_assign_cstr(bd_xjson_string* this, const char* chars)
 {
@@ -828,9 +794,9 @@ void str_assign_cstr(bd_xjson_string* this, const char* chars)
     {
         THROW_EXCEPTION("uninitialized characters try to be assigned body");
     }
-    unsigned size = strlen(chars) + 1;
-    this->data = xmalloc(size);
-    strcat(this->data, chars);
+    unsigned s = strlen(chars) + 1;
+    this->data.data = xmalloc(s);
+    strcat(this->data.data, chars);
 }
 void str_default_dstr(bd_xjson_string* this)
 {
@@ -838,11 +804,11 @@ void str_default_dstr(bd_xjson_string* this)
     {
         THROW_EXCEPTION("uninitialized string class try to desctruct");
     }
-    if(NULL == this->data)
+    if(NULL == this->data.data)
     {
         THROW_EXCEPTION("uninitialized data of string class try to desctruct");
     }
-    xfree(this->data);
+    xfree(this->data.data);
 }
 
 void num_default_cstr(bd_xjson_number* this)
@@ -851,21 +817,21 @@ void num_default_cstr(bd_xjson_number* this)
     {
         THROW_EXCEPTION("uninitialized number class try to construct");
     }
-    this->data = xmalloc(sizeof (int));
-    *(this->data) = 0;
+    this->data.data = xmalloc(sizeof(int));
+    *(int*)(this->data.data) = 0;
 }
-void num_copy_cstr(bd_xjson_number* this, bd_xjson_number* str)
+void num_copy_cstr(bd_xjson_number* this, bd_xjson_number* num)
 {
     if(NULL == this)
     {
         THROW_EXCEPTION("uninitialized number class try to construct");
     }
-    if(NULL == str)
+    if(NULL == num)
     {
         THROW_EXCEPTION("uninitialized number class try to be copied body");
     }
-    this->data = xmalloc(sizeof (int));
-    *(this->data) = *(str->data);
+    this->data.data = xmalloc(sizeof (int));
+    *(int*)this->data.data = *(int*)num->data.data;
 }
 void num_assign_cstr(bd_xjson_number* this, int val)
 {
@@ -873,8 +839,8 @@ void num_assign_cstr(bd_xjson_number* this, int val)
     {
         THROW_EXCEPTION("uninitialized number class try to construct");
     }
-    this->data = xmalloc(sizeof (int));
-    *(this->data) = val;
+    this->data.data = xmalloc(sizeof (int));
+    *(int*)this->data.data = val;
 }
 void num_default_dstr(bd_xjson_number* this)
 {
@@ -882,9 +848,9 @@ void num_default_dstr(bd_xjson_number* this)
     {
         THROW_EXCEPTION("uninitialized number class try to desctruct");
     }
-    if(NULL == this->data)
+    if(NULL == this->data.data)
     {
         THROW_EXCEPTION("uninitialized data of number class try to desctruct");
     }
-    xfree(this->data);
+    xfree(this->data.data);
 }
