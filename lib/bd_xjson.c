@@ -145,7 +145,6 @@ int node_free(bd_xjson_node* node)
             THROW_WARNING("illegal type from the freed");
             return -1;
     }
-    xfree(nd);
     xfree(node);
     return 0;
 }
