@@ -33,74 +33,25 @@ int node_copy(bd_xjson_node* dest, bd_xjson_node* src)
     }
     if(NULL == src)
     {
-        THROW_WARNING("uninitialized node try to be copied body");
+        THROW_WARNING("uninitialized node try to be the copied");
         return -1;
     }
-    bd_xjson* dd, * sd;
-    dd = &(dest->data);
-    sd = &(src->data);
-    /* only copy type and value */
-    dd->type = sd->type;
-    switch(sd->type)
+    /* only copy data */
+    if(bd_xjson_copy(&(dest->data), &(src->data)))
     {
-        case BD_XJSON_OBJECT:
-            break;
-        case BD_XJSON_STRING:
-            dd->data = xzmalloc(strlen(sd->data) + 1);
-            strcat(dd->data, sd->data);
-            break;
-        case BD_XJSON_NUMBER:
-            dd->data = xzmalloc(sizeof (int));
-            *(int*)(dd->data) = *(int*)(sd->data);
-            break;
-        case BD_XJSON_ARRAY:
-            if(list_init((bd_xjson_list**)&dd->data))
-            {
-                THROW_WARNING("list initializaition failed");
-                return -1;
-            }
-            if(list_copy(dd->data, sd->data))
-            {
-                THROW_WARNING("list copy failed");
-                return -1;
-            }
-            break;
-        case BD_XJSON_TRUE:
-        case BD_XJSON_FALSE:
-        case BD_XJSON_NULL:
-            break;
-        default:
-            THROW_WARNING("illegal type from the copied");
-            return -1;
+        THROW_WARNING("bd_xjson copy failed");
+        return -1;
     }
+
     return 0;
 }
 
 int node_free(bd_xjson_node* node)
 {
-    bd_xjson* nd = &(node->data);
-    switch(nd->type)
+    if(bd_xjson_free(&(node->data)))
     {
-        case BD_XJSON_OBJECT:
-            break;
-        case BD_XJSON_STRING:
-        case BD_XJSON_NUMBER:
-            xfree(nd->data);
-            break;
-        case BD_XJSON_ARRAY:
-            if(list_clear((bd_xjson_list**)&(nd->data)))
-            {
-                THROW_WARNING("list clear failed");
-                return -1;
-            }
-            break;
-        case BD_XJSON_TRUE:
-        case BD_XJSON_FALSE:
-        case BD_XJSON_NULL:
-            break;
-        default:
-            THROW_WARNING("illegal type from the freed");
-            return -1;
+        THROW_WARNING("bd_xjson free failed");
+        return -1;
     }
     xfree(node);
     return 0;
@@ -132,7 +83,7 @@ int list_copy(bd_xjson_list* dest, bd_xjson_list* src)
     }
     if(NULL == src)
     {
-        THROW_WARNING("uninitialized list try to be copied body");
+        THROW_WARNING("uninitialized list try to be the copied");
         return -1;
     }
     bd_xjson_node* list_node = NULL;
@@ -185,6 +136,11 @@ int list_insert(bd_xjson_list* list, int pos, bd_xjson* val)
         THROW_WARNING("uninitialized list try to insert");
         return -1;
     }
+    if(NULL == val)
+    {
+        THROW_WARNING("list try to insert unitialized class");
+        return -1;
+    }
     if(pos > list->size || pos < -list->size-1)
     {
         THROW_WARNING("try to insert in illegal position");
@@ -192,40 +148,15 @@ int list_insert(bd_xjson_list* list, int pos, bd_xjson* val)
     }
 
     bd_xjson_node* node = NULL;
-    node_init(&(node));
-    bd_xjson* nd = &(node->data);
-    nd->type = val->type;
-    switch(val->type)
+    if(node_init(&(node)))
     {
-        case BD_XJSON_OBJECT:
-            break;
-        case BD_XJSON_STRING:
-            nd->data = xzmalloc(strlen(val->data) + 1);
-            strcat(nd->data, val->data);
-            break;
-        case BD_XJSON_NUMBER:
-            nd->data = xzmalloc(sizeof (int));
-            *(int*)(nd->data) = *(int*)(val->data);
-            break;
-        case BD_XJSON_ARRAY:
-            if(list_init((bd_xjson_list**)&(nd->data)))
-            {
-                THROW_WARNING("list initializaition failed");
-                return -1;
-            }
-            if(list_copy(nd->data, val->data))
-            {
-                THROW_WARNING("list copy failed");
-                return -1;
-            }
-            break;
-        case BD_XJSON_TRUE:
-        case BD_XJSON_FALSE:
-        case BD_XJSON_NULL:
-            break;
-        default:
-            THROW_WARNING("illegal type from the inserted");
-            return -1;
+        THROW_WARNING("node initializaition failed");
+        return -1;
+    }
+    if(bd_xjson_copy(&(node->data), val))
+    {
+        THROW_WARNING("bd_xjson copy failed");
+        return -1;
     }
 
     /* insert into head if list have no any nodes */
@@ -436,56 +367,19 @@ int list_find(bd_xjson_list* list, int pos, bd_xjson* val)
             node = node->prev;
         }
     }
-    bd_xjson* nd = &(node->data);
-    val->type = nd->type;
-    switch(nd->type)
+    /* free exist data */
+    if(val->data)
     {
-        case BD_XJSON_OBJECT:
-            break;
-        case BD_XJSON_STRING:
-            if(val->data)
-            {
-                xfree(val->data);
-            }
-            unsigned s = strlen(nd->data) + 1;
-            val->data = xzmalloc(s);
-            strcat(nd->data, val->data);
-            break;
-        case BD_XJSON_NUMBER:
-            if(val->data)
-            {
-                xfree(val->data);
-            }
-            val->data = xzmalloc(sizeof(int));
-            *(int*)val->data = *(int*)nd->data;
-            break;
-        case BD_XJSON_ARRAY:
-            if(val->data)
-            {
-                if(list_clear((bd_xjson_list**)&val->data))
-                {
-                    THROW_WARNING("list clear failed");
-                    return -1;
-                }
-                if(list_init((bd_xjson_list**)&val->data))
-                {
-                    THROW_WARNING("list initializaition failed");
-                    return -1;
-                }
-            }
-            if(list_copy(val->data, nd->data))
-            {
-                THROW_WARNING("list copy failed");
-                return -1;
-            }
-            break;
-        case BD_XJSON_TRUE:
-        case BD_XJSON_FALSE:
-        case BD_XJSON_NULL:
-            break;
-        default:
-            THROW_WARNING("illegal type from the found");
+        if(bd_xjson_free(val))
+        {
+            THROW_WARNING("bd_xjson free failed");
             return -1;
+        }
+    }
+    if(bd_xjson_copy(val, &(node->data)))
+    {
+        THROW_WARNING("bd_xjson copy failed");
+        return -1;
     }
     return 0;
 }
@@ -495,6 +389,11 @@ int list_update(bd_xjson_list* list, int pos, bd_xjson* val)
     if(NULL == list)
     {
         THROW_WARNING("uninitialized list try to update");
+        return -1;
+    }
+    if(NULL == val)
+    {
+        THROW_WARNING("list try to update unitialized class");
         return -1;
     }
     if( 0 == list->size)
@@ -524,64 +423,17 @@ int list_update(bd_xjson_list* list, int pos, bd_xjson* val)
             node = node->prev;
         }
     }
-    bd_xjson* nd = &(node->data);
-    switch(nd->type)
+    /* free old node data */
+    if(bd_xjson_free(&(node->data)))
     {
-        case BD_XJSON_OBJECT:
-            break;
-        case BD_XJSON_STRING:
-        case BD_XJSON_NUMBER:
-            xfree(nd->data);
-            break;
-        case BD_XJSON_ARRAY:
-            if(list_clear((bd_xjson_list**)&(nd->data)))
-            {
-                THROW_WARNING("list clear failed");
-                return -1;
-            }
-            break;
-        case BD_XJSON_TRUE:
-        case BD_XJSON_FALSE:
-        case BD_XJSON_NULL:
-            break;
-        default:
-            THROW_WARNING("illegal type from the updated");
-            return -1;
+        THROW_WARNING("bd_xjson free failed");
+        return -1;
     }
     /* update type and value */
-    nd->type = val->type;
-    switch(val->type)
+    if(bd_xjson_copy(&(node->data), val))
     {
-        case BD_XJSON_OBJECT:
-            break;
-        case BD_XJSON_STRING:
-            ;unsigned s = strlen(val->data) + 1;
-            nd->data = xzmalloc(s);
-            strcat(nd->data, val->data);
-            break;
-        case BD_XJSON_NUMBER:
-            nd->data = xzmalloc(sizeof(int));
-            *(int*)(nd->data) = *(int*)val->data;
-            break;
-        case BD_XJSON_ARRAY:
-            if(list_init((bd_xjson_list**)&(nd->data)))
-            {
-                THROW_WARNING("list initialization failed");
-                return -1;
-            }
-            if(list_copy(nd->data, val->data))
-            {
-                THROW_WARNING("list copy failed");
-                return -1;
-            }
-            break;
-        case BD_XJSON_TRUE:
-        case BD_XJSON_FALSE:
-        case BD_XJSON_NULL:
-            break;
-        default:
-            THROW_WARNING("try to update to be illegal type");
-            return -1;
+        THROW_WARNING("bd_xjson copy failed");
+        return -1;
     }
     return 0;
 }

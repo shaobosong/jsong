@@ -4,6 +4,7 @@
 
 #include "lib/bd_xjson.h"
 #include "lib/bd_xjson_list.h"
+#include "lib/bd_xjson_htab.h"
 #include "lib/alloc.h"
 #include "lib/error.h"
 

@@ -19,5 +19,7 @@ struct bd_xjson
     void* data;
     bd_xjson_type type;
 };
+int bd_xjson_copy(bd_xjson* dest, bd_xjson* src);
+int bd_xjson_free(bd_xjson* json);
 
 #endif
