@@ -1,7 +1,11 @@
-#include "lib/bd_xjson.h"
+#include <mcheck.h>
+#include <stdlib.h>
+#include "lib/bd_xjson_api.h"
 
 int main(int argc, char* argv[])
 {
+    setenv("MALLOC_TRACE", "./log", 1);
+    mtrace();
     BD_XJSON_STRING_ASSIGN(str, "this is a test");
     BD_XJSON_NUMBER_ASSIGN(num, 2021);
     BD_XJSON_FALSE(false);
@@ -36,6 +40,7 @@ int main(int argc, char* argv[])
     FREE_BD_XJSON(false);
     FREE_BD_XJSON(num);
     FREE_BD_XJSON(str);
+    muntrace();
 
     return 0;
 }

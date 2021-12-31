@@ -1,4 +1,6 @@
 # bd_xjson
-a simple json library for c language
-# branch
-1. this is a branch test
+A simple json library for c language
+# to do
+1. Linked-list iterator
+2. BD_XJSON_OBJECT
+3. Serialization and deserialization
