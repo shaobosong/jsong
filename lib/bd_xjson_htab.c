@@ -23,6 +23,11 @@ static uint64_t hash_key(const char* key)
 
 static int entry_free(bd_xjson_entry* entry)
 {
+    if(NULL == entry)
+    {
+        THROW_WARNING("entry may uninitialized or have been freed");
+        return -1;
+    }
     xfree(entry->key);
     if(bd_xjson_free(&entry->value))
     {
@@ -57,13 +62,27 @@ static int entry_copy(bd_xjson_entry* dest, bd_xjson_entry* src)
     return 0;
 }
 
-static int entries_clear(bd_xjson_entry** entryies)
+static int entries_clear(bd_xjson_entry** entries, size_t capacity)
 {
+    bd_xjson_entry* e = *entries;
+    for(int i = 0; i< capacity; i++)
+    {
+        if(NULL == e[i].key)
+        {
+            continue;
+        }
+        if(entry_free(&e[i]))
+        {
+            THROW_WARNING("entry free failed");
+            return -1;
+        }
+    }
+    xfree(e);
     return 0;
 }
 
 /* unsafe if length of src is greater than length of dest */
-static int entries_copy(bd_xjson_entry* dest, bd_xjson_entry* src, size_t capacity)
+static int entries_deep_copy(bd_xjson_entry* dest, bd_xjson_entry* src, size_t capacity)
 {
     if(NULL == dest)
     {
@@ -90,6 +109,29 @@ static int entries_copy(bd_xjson_entry* dest, bd_xjson_entry* src, size_t capaci
     return 0;
 }
 
+static int entries_copy(bd_xjson_entry* dest, bd_xjson_entry* src, size_t capacity)
+{
+    if(NULL == dest)
+    {
+        THROW_WARNING("uninitialized entries try to copy");
+        return -1;
+    }
+    if(NULL == src)
+    {
+        THROW_WARNING("uninitialized entries try to be the copied");
+        return -1;
+    }
+    for(int i = 0; i < capacity; i++)
+    {
+        if(NULL == src[i].key)
+        {
+            continue;
+        }
+        dest[i] = src[i];
+    }
+    return 0;
+}
+
 int htab_init(bd_xjson_htab** htab, size_t capacity)
 {
     if(*htab)
@@ -99,7 +141,7 @@ int htab_init(bd_xjson_htab** htab, size_t capacity)
     }
     if(0 == capacity)
     {
-        THROW_WARNING("try to initialize zero as capacity");
+        THROW_WARNING("try to initialize hash table by zero as capacity");
         return -1;
     }
     bd_xjson_htab* h;
@@ -112,11 +154,24 @@ int htab_init(bd_xjson_htab** htab, size_t capacity)
     return 0;
 }
 
-int htab_grow(bd_xjson_htab* htab)
+int htab_clear(bd_xjson_htab** htab)
+{
+    if(NULL == *htab)
+    {
+        THROW_WARNING("uninitialized hash table try to clear");
+        return -1;
+    }
+    bd_xjson_htab* h = *htab;
+    entries_clear(&(h->entries), h->capacity);
+    xfree(h);
+    return 0;
+}
+
+static int htab_grow(bd_xjson_htab* htab)
 {
     if(NULL == htab)
     {
-        THROW_WARNING("unitialized htash table try to grow");
+        THROW_WARNING("unitialized hash table try to grow");
         return -1;
     }
     if(0 == htab->capacity)
@@ -134,6 +189,7 @@ int htab_grow(bd_xjson_htab* htab)
     }
     bd_xjson_entry* old_entries = htab->entries;
     bd_xjson_entry* new_entries = xzmalloc(new_capacity*sizeof(bd_xjson_entry));
+    /* apply copy but not deep copy to improve performance */
     if(entries_copy(new_entries, old_entries, old_capacity))
     {
         THROW_WARNING("entries copy failed");
@@ -152,7 +208,7 @@ int htab_copy(bd_xjson_htab* dest, bd_xjson_htab* src)
 {
     if(NULL == dest)
     {
-        THROW_WARNING("unitialized htash table try to accept the copied");
+        THROW_WARNING("unitialized hash table try to accept the copied");
         return -1;
     }
     if(NULL == src)
@@ -165,9 +221,9 @@ int htab_copy(bd_xjson_htab* dest, bd_xjson_htab* src)
         THROW_WARNING("the capaticy of the two hash tables is inconsistent");
         return -1;
     }
-    if(entries_copy(dest->entries, src->entries, src->capacity))
+    if(entries_deep_copy(dest->entries, src->entries, src->capacity))
     {
-        THROW_WARNING("entries copy failed");
+        THROW_WARNING("entries deep copy failed");
         return -1;
     }
     dest->capacity = src->capacity;
@@ -180,7 +236,7 @@ int htab_insert(bd_xjson_htab* htab, const char* key, bd_xjson* val)
 {
     if(NULL == htab)
     {
-        THROW_WARNING("unitialized htash table try to insert");
+        THROW_WARNING("unitialized hash table try to insert");
         return -1;
     }
     if(NULL == key)
@@ -196,7 +252,11 @@ int htab_insert(bd_xjson_htab* htab, const char* key, bd_xjson* val)
     /* if size of hash table will exceed half of capacity, grow it */
     if(htab->size > (htab->capacity >> 1))
     {
-        htab_grow(htab);
+        if(htab_grow(htab))
+        {
+            THROW_WARNING("hash table grow failed");
+            return -1;
+        }
     }
     uint64_t hash = hash_key(key);
     uint64_t id = (uint64_t)(hash & (htab->capacity - 1));
@@ -221,7 +281,7 @@ int htab_insert(bd_xjson_htab* htab, const char* key, bd_xjson* val)
         }
         if(0 == strcmp(htab->entries[i].key, key))
         {
-            THROW_WARNING("hash table try to insert exist <key>-<value>");
+            THROW_WARNING("hash table try to insert existed <key>-<value>");
             return -1;
         }
         i = (i + 1) & htab->capacity;
@@ -229,11 +289,11 @@ int htab_insert(bd_xjson_htab* htab, const char* key, bd_xjson* val)
     return 0;
 }
 
-int htab_delete(bd_xjson_htab* htab, const char* key)
+int htab_erase(bd_xjson_htab* htab, const char* key)
 {
     if(NULL == htab)
     {
-        THROW_WARNING("unitialized htash table try to delete");
+        THROW_WARNING("unitialized hash table try to delete");
         return -1;
     }
     if(NULL == key)
@@ -247,16 +307,20 @@ int htab_delete(bd_xjson_htab* htab, const char* key)
     uint64_t ct = 0;
     for(uint64_t i = id ;;)
     {
-        if(NULL == htab->entries[i].key || htab->size > ct)
+        if(NULL == htab->entries[i].key || htab->size <= ct)
         {
-            THROW_WARNING("hash table try to delete value by unitialized key");
+            THROW_WARNING("hash table try to erase value by unitialized key");
             return -1;
         }
         if(0 == strcmp(htab->entries[i].key, key))
         {
-            entry_free(&htab->entries[i]);
+            if(entry_free(&htab->entries[i]))
+            {
+                THROW_WARNING("entry free failed");
+                return -1;
+            }
             /* must not ignore next statement */
-            htab->entries[i] = *(bd_xjson_entry*)0;
+            memset(&htab->entries[i], 0, sizeof(bd_xjson_entry));
             break;
         }
         i = (i + 1) & htab->capacity;
@@ -265,7 +329,104 @@ int htab_delete(bd_xjson_htab* htab, const char* key)
     return 0;
 }
 
-int htab_search(bd_xjson_htab* htab, const char* key, bd_xjson* val)
+int htab_find(bd_xjson_htab* htab, const char* key, bd_xjson* val)
 {
+    if(NULL == htab)
+    {
+        THROW_WARNING("unitialized hash table try to find");
+        return -1;
+    }
+    if(NULL == key)
+    {
+        THROW_WARNING("hash table try to find by unitialized key");
+        return -1;
+    }
+    if(NULL == val)
+    {
+        THROW_WARNING("uninitialized class try to accept");
+        return -1;
+    }
+    /* free exist data */
+    if(val->data)
+    {
+        if(bd_xjson_free(val))
+        {
+            THROW_WARNING("bd_xjson free failed");
+            return -1;
+        }
+    }
+
+    uint64_t hash = hash_key(key);
+    uint64_t id = (uint64_t)(hash & (htab->capacity - 1));
+    uint64_t ct = 0;
+    for(uint64_t i = id ;;)
+    {
+        if(NULL == htab->entries[i].key || htab->size <= ct)
+        {
+            THROW_WARNING("hash table try to find value by unitialized key");
+            return -1;
+        }
+        if(0 == strcmp(htab->entries[i].key, key))
+        {
+            if(bd_xjson_copy(val, &(htab->entries[i].value)))
+            {
+                THROW_WARNING("bd_xjson copy failed");
+                return -1;
+            }
+            break;
+        }
+        i = (i + 1) & htab->capacity;
+        ct++;
+    }
+    return 0;
+}
+
+int htab_update(bd_xjson_htab* htab, const char* key, bd_xjson* val)
+{
+    if(NULL == htab)
+    {
+        THROW_WARNING("unitialized hash table");
+        return -1;
+    }
+    if(NULL == key)
+    {
+        THROW_WARNING("unitialized key");
+        return -1;
+    }
+    if(NULL == val)
+    {
+        THROW_WARNING("uninitialized bd_xjson");
+        return -1;
+    }
+
+    uint64_t hash = hash_key(key);
+    uint64_t id = (uint64_t)(hash & (htab->capacity - 1));
+    uint64_t ct = 0;
+    for(uint64_t i = id ;;)
+    {
+        if(NULL == htab->entries[i].key || htab->size <= ct)
+        {
+            THROW_WARNING("hash table try to find value by unitialized key");
+            return -1;
+        }
+        if(0 == strcmp(htab->entries[i].key, key))
+        {
+            /* free old entry data */
+            if(bd_xjson_free(&(htab->entries[i].value)))
+            {
+                THROW_WARNING("bd_xjson free failed");
+                return -1;
+            }
+            /* update type and value */
+            if(bd_xjson_copy(&(htab->entries[i].value), val))
+            {
+                THROW_WARNING("bd_xjson copy failed");
+                return -1;
+            }
+            break;
+        }
+        i = (i + 1) & htab->capacity;
+        ct++;
+    }
     return 0;
 }

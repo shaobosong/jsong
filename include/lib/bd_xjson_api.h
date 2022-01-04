@@ -3,133 +3,98 @@
 
 #include "lib/bd_xjson.h"
 
-/* private */
-#define BD_XJSON(type, p)                          \
-    type* p = xzmalloc(sizeof *p)
-/* public */
-#define FREE_BD_XJSON(p)                           \
-    switch(p->data.type)                           \
-    {                                              \
-        case BD_XJSON_OBJECT:                      \
-        /* to do */                                \
-            break;                                 \
-        case BD_XJSON_STRING:                      \
-            str_default_dstr((bd_xjson_string*)p); \
-            break;                                 \
-        case BD_XJSON_NUMBER:                      \
-            num_default_dstr((bd_xjson_number*)p); \
-            break;                                 \
-        case BD_XJSON_ARRAY:                       \
-            arr_default_dstr((bd_xjson_array*)p);  \
-            break;                                 \
-        default:;                                  \
-    }                                              \
-    xfree(p)
+#define FREE_JSON(p)                                        \
+    switch(p->base.type)                                    \
+    {                                                       \
+        case BD_XJSON_OBJECT:                               \
+            obj_default_dstr((bd_xjson_object*)p);          \
+            break;                                          \
+        case BD_XJSON_STRING:                               \
+            str_default_dstr((bd_xjson_string*)p);          \
+            break;                                          \
+        case BD_XJSON_NUMBER:                               \
+            num_default_dstr((bd_xjson_number*)p);          \
+            break;                                          \
+        case BD_XJSON_ARRAY:                                \
+            arr_default_dstr((bd_xjson_array*)p);           \
+            break;                                          \
+        case BD_XJSON_TRUE:                                 \
+        case BD_XJSON_FALSE:                                \
+        case BD_XJSON_NULL:                                 \
+            break;                                          \
+        default:                                            \
+            THROW_EXCEPTION("illegal type from the freed"); \
+    } xfree(p)
 
 
 /*
- *  bd_xjson_object class
+ *  JSON_OBJECT
  */
-/* to do */
+#define JSON_OBJECT(p)          \
+    BD_XJSON_OBJECT_CLASS(p);   \
+    obj_default_cstr(p)
+#define JSON_OBJECT_COPY(p,c)   \
+    BD_XJSON_OBJECT_CLASS(p);   \
+    obj_copy_cstr(p,c)
 
 
 /*
- *  bd_xjson_string class
+ *  JSON_STRING
  */
-/* private */
-#define BD_XJSON_STRING_CLASS(p)    \
-    BD_XJSON(bd_xjson_string, p);   \
-    p->data.type = BD_XJSON_STRING; \
-    p->data.data = NULL
-/* public */
-#define BD_XJSON_STRING(p)          \
-    BD_XJSON_STRING_CLASS(p);       \
+#define JSON_STRING(p)          \
+    BD_XJSON_STRING_CLASS(p);   \
     str_default_cstr(p)
-#define BD_XJSON_STRING_COPY(p,c)   \
-    BD_XJSON_STRING_CLASS(p);       \
+#define JSON_STRING_COPY(p,c)   \
+    BD_XJSON_STRING_CLASS(p);   \
     str_copy_cstr(p,c)
-#define BD_XJSON_STRING_ASSIGN(p,c) \
-    BD_XJSON_STRING_CLASS(p);       \
+#define JSON_STRING_ASSIGN(p,c) \
+    BD_XJSON_STRING_CLASS(p);   \
     str_assign_cstr(p,c)
 
 
 /*
- *  bd_xjson_number class
+ *  JSON_NUMBER
  */
-/* private */
-#define BD_XJSON_NUMBER_CLASS(p)    \
-    BD_XJSON(bd_xjson_number, p);   \
-    p->data.type = BD_XJSON_NUMBER; \
-    p->data.data = NULL
-/* public */
-#define BD_XJSON_NUMBER(p)          \
-    BD_XJSON_NUMBER_CLASS(p);       \
+#define JSON_NUMBER(p)          \
+    BD_XJSON_NUMBER_CLASS(p);   \
     num_default_cstr(p)
-#define BD_XJSON_NUMBER_COPY(p,c)   \
-    BD_XJSON_NUMBER_CLASS(p);       \
+#define JSON_NUMBER_COPY(p,c)   \
+    BD_XJSON_NUMBER_CLASS(p);   \
     num_copy_cstr(p,c)
-#define BD_XJSON_NUMBER_ASSIGN(p,c) \
-    BD_XJSON_NUMBER_CLASS(p);       \
+#define JSON_NUMBER_ASSIGN(p,c) \
+    BD_XJSON_NUMBER_CLASS(p);   \
     num_assign_cstr(p,c)
 
 
 /*
- *  bd_xjson_array class
+ *  JSON_ARRAY
  */
-/* private */
-#define BD_XJSON_ARRAY_CLASS(p)    \
-    BD_XJSON(bd_xjson_array, p);   \
-    p->data.type = BD_XJSON_ARRAY; \
-    p->data.data = NULL;           \
-    p->add = arr_add;              \
-    p->delete = arr_delete;        \
-    p->search = arr_search;        \
-    p->update = arr_update
-/* public */
-#define BD_XJSON_ARRAY(p)          \
-    BD_XJSON_ARRAY_CLASS(p);       \
+#define JSON_ARRAY(p)          \
+    BD_XJSON_ARRAY_CLASS(p);   \
     arr_default_cstr(p)
-#define BD_XJSON_ARRAY_COPY(p,c)   \
-    BD_XJSON_ARRAY_CLASS(p);       \
+#define JSON_ARRAY_COPY(p,c)   \
+    BD_XJSON_ARRAY_CLASS(p);   \
     arr_copy_cstr(p,c)
 
 
 /*
- *  bd_xjson_true class
+ *  JSON_TRUE
  */
-/* private */
-#define BD_XJSON_TRUE_CLASS(p)     \
-    BD_XJSON(bd_xjson_true, p);    \
-    P->data.type = BD_XJSON_TRUE;  \
-    p->data.data = NULL
-/* public */
-#define BD_XJSON_TRUE(p)           \
+#define JSON_TRUE(p)           \
     BD_XJSON_TRUE_CLASS(p)
 
 
 /*
- *  bd_xjson_false class
+ *  JSON_FALSE
  */
-/* private */
-#define BD_XJSON_FALSE_CLASS(p)    \
-    BD_XJSON(bd_xjson_false, p);   \
-    p->data.type = BD_XJSON_FALSE; \
-    p->data.data = NULL
-/* public */
-#define BD_XJSON_FALSE(p)          \
+#define JSON_FALSE(p)          \
     BD_XJSON_FALSE_CLASS(p)
 
 
 /*
- *  bd_xjson_null class
+ *  JSON_NULL
  */
-/* private */
-#define BD_XJSON_NULL_CLASS(p)     \
-    BD_XJSON(bd_xjson_null, p);    \
-    P->data.type = BD_XJSON_NULL;  \
-    p->data.data = NULL
-/* public */
-#define BD_XJSON_NULL(p)           \
+#define JSON_NULL(p)           \
     BD_XJSON_NULL_CLASS(p)
 
 #endif

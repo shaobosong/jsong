@@ -17,7 +17,7 @@ int node_init(bd_xjson_node** node)
     n = xzmalloc(sizeof *n);
     n->next = n->prev = NULL;
     n->data.data = NULL;
-    n->data.type = -1;
+    n->data.type = 0;
 
     *node = n;
     return 0;
@@ -48,6 +48,11 @@ int node_copy(bd_xjson_node* dest, bd_xjson_node* src)
 
 int node_free(bd_xjson_node* node)
 {
+    if(NULL == node)
+    {
+        THROW_WARNING("node may uninitialized or have been freed");
+        return -1;
+    }
     if(bd_xjson_free(&(node->data)))
     {
         THROW_WARNING("bd_xjson free failed");

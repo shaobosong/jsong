@@ -1,7 +1,6 @@
 #include <string.h>
 #include <stddef.h>
 #include "lib/bd_xjson_base.h"
-#include "lib/bd_xjson.h"
 #include "lib/bd_xjson_list.h"
 #include "lib/bd_xjson_htab.h"
 #include "lib/error.h"
@@ -72,6 +71,11 @@ int bd_xjson_free(bd_xjson* json)
     switch(json->type)
     {
         case BD_XJSON_OBJECT:
+            if(htab_clear((bd_xjson_htab**)&(json->data)))
+            {
+                THROW_WARNING("hash table clear failed");
+                return -1;
+            }
             break;
         case BD_XJSON_STRING:
         case BD_XJSON_NUMBER:
