@@ -6,11 +6,11 @@
 #include "lib/error.h"
 #include "lib/alloc.h"
 
-int node_init(bd_xjson_node** node)
+int node_create(bd_xjson_node** node)
 {
     if(*node)
     {
-        THROW_WARNING("duplicated initialization already done");
+        THROW_WARNING("NODE was initialized");
         return -1;
     }
     bd_xjson_node* n;
@@ -28,18 +28,18 @@ int node_copy(bd_xjson_node* dest, bd_xjson_node* src)
     /* don't responsible for initializing node */
     if(NULL == dest)
     {
-        THROW_WARNING("uninitialized node try to copy");
+        THROW_WARNING("DEST is not initialized");
         return -1;
     }
     if(NULL == src)
     {
-        THROW_WARNING("uninitialized node try to be the copied");
+        THROW_WARNING("SRC is not initialized");
         return -1;
     }
     /* only copy data */
     if(bd_xjson_copy(&(dest->data), &(src->data)))
     {
-        THROW_WARNING("bd_xjson copy failed");
+        THROW_WARNING("copy data of SRC to data field of DEST failed");
         return -1;
     }
 
@@ -50,23 +50,23 @@ int node_free(bd_xjson_node* node)
 {
     if(NULL == node)
     {
-        THROW_WARNING("node may uninitialized or have been freed");
+        THROW_WARNING("NODE is not initialized");
         return -1;
     }
     if(bd_xjson_free(&(node->data)))
     {
-        THROW_WARNING("bd_xjson free failed");
+        THROW_WARNING("data of NODE free failed");
         return -1;
     }
     xfree(node);
     return 0;
 }
 
-int list_init(bd_xjson_list** list)
+int list_create(bd_xjson_list** list)
 {
     if(*list)
     {
-        THROW_WARNING("duplicated initialization already done");
+        THROW_WARNING("LIST was initialized");
         return -1;
     }
     bd_xjson_list* l;
@@ -83,12 +83,12 @@ int list_copy(bd_xjson_list* dest, bd_xjson_list* src)
     /* don't responsible for initializing list */
     if(NULL == dest)
     {
-        THROW_WARNING("uninitialized list try to copy");
+        THROW_WARNING("DEST is not initialized");
         return -1;
     }
     if(NULL == src)
     {
-        THROW_WARNING("uninitialized list try to be the copied");
+        THROW_WARNING("SRC is not initialized");
         return -1;
     }
     bd_xjson_node* list_node = NULL;
@@ -96,14 +96,14 @@ int list_copy(bd_xjson_list* dest, bd_xjson_list* src)
     bd_xjson_node* list_node_prev = NULL;
     for(; copy_node; list_node = list_node->next, copy_node = copy_node->next)
     {
-        if(node_init(&(list_node)))
+        if(node_create(&(list_node)))
         {
             THROW_WARNING("node initializaition failed");
             return -1;
         }
         if(node_copy(list_node, copy_node))
         {
-            THROW_WARNING("node copy failed");
+            THROW_WARNING("copy node of SRC to area of DEST failed");
             return -1;
         }
         /* prev of node*/
@@ -128,39 +128,33 @@ int list_copy(bd_xjson_list* dest, bd_xjson_list* src)
     return 0;
 }
 
-/*
- * insert a bd_xjson from bd_xjson_node
- * val: deep copy
- * i = -1/size, insert in tail
- * i =  0, insert in head
- */
 int list_insert(bd_xjson_list* list, int pos, bd_xjson* val)
 {
     if(NULL == list)
     {
-        THROW_WARNING("uninitialized list try to insert");
+        THROW_WARNING("LIST is not initialized");
         return -1;
     }
     if(NULL == val)
     {
-        THROW_WARNING("list try to insert unitialized class");
+        THROW_WARNING("VAL is not initialized");
         return -1;
     }
     if(pos > list->size || pos < -list->size-1)
     {
-        THROW_WARNING("try to insert in illegal position");
+        THROW_WARNING("try to insert in illegal POS");
         return -1;
     }
 
     bd_xjson_node* node = NULL;
-    if(node_init(&(node)))
+    if(node_create(&(node)))
     {
         THROW_WARNING("node initializaition failed");
         return -1;
     }
     if(bd_xjson_copy(&(node->data), val))
     {
-        THROW_WARNING("bd_xjson copy failed");
+        THROW_WARNING("copy VAL to data field of node failed");
         return -1;
     }
 
@@ -229,21 +223,21 @@ int list_insert(bd_xjson_list* list, int pos, bd_xjson* val)
     return -1;
 }
 
-int list_remove(bd_xjson_list* list, int pos)
+int list_erase(bd_xjson_list* list, int pos)
 {
     if(NULL == list)
     {
-        THROW_WARNING("uninitialized list try to remove");
+        THROW_WARNING("LIST is not initialized");
         return -1;
     }
     if( 0 == list->size)
     {
-        THROW_WARNING("emptry list try to remove");
+        THROW_WARNING("emptry LIST try to erase");
         return -1;
     }
     if(pos >= (int)list->size || pos < -list->size)
     {
-        THROW_WARNING("try to remove in illegal position");
+        THROW_WARNING("try to erase in illegal POS");
         return -1;
     }
     /* remove head */
@@ -313,18 +307,18 @@ int list_remove(bd_xjson_list* list, int pos)
     return -1;
 }
 
-int list_clear(bd_xjson_list** list)
+int list_free(bd_xjson_list** list)
 {
     if(NULL == *list)
     {
-        THROW_WARNING("uninitialized list try to clear");
+        THROW_WARNING("LIST is not initialized");
         return -1;
     }
     bd_xjson_list *l = *list;
     unsigned size = l->size;
     for(int i = 0; i < size; i++)
     {
-        list_remove(l, 0);
+        list_erase(l, 0);
     }
     xfree(l);
     *list = NULL; /* initialize again */
@@ -337,17 +331,17 @@ int list_find(bd_xjson_list* list, int pos, bd_xjson* val)
 {
     if( NULL == list)
     {
-        THROW_WARNING("uninitialized list try to find");
+        THROW_WARNING("LIST is not initialized");
         return -1;
     }
     if( NULL == val)
     {
-        THROW_WARNING("uninitialized class try to accept");
+        THROW_WARNING("VAL is not initialized");
         return -1;
     }
     if( 0 == list->size)
     {
-        THROW_WARNING("emptry list try to find");
+        THROW_WARNING("empty list try to find");
         return -1;
     }
     if( pos >= (int)list->size || pos < -list->size)
@@ -372,18 +366,23 @@ int list_find(bd_xjson_list* list, int pos, bd_xjson* val)
             node = node->prev;
         }
     }
+    if(val->type != node->data.type)
+    {
+        THROW_WARNING("type of VAL can't match type of found element");
+        return -1;
+    }
     /* free exist data */
     if(val->data)
     {
         if(bd_xjson_free(val))
         {
-            THROW_WARNING("bd_xjson free failed");
+            THROW_WARNING("VAL free failed");
             return -1;
         }
     }
     if(bd_xjson_copy(val, &(node->data)))
     {
-        THROW_WARNING("bd_xjson copy failed");
+        THROW_WARNING("copy data of node to VAL failed");
         return -1;
     }
     return 0;
@@ -393,17 +392,17 @@ int list_update(bd_xjson_list* list, int pos, bd_xjson* val)
 {
     if(NULL == list)
     {
-        THROW_WARNING("uninitialized list try to update");
+        THROW_WARNING("LIST is not initialized");
         return -1;
     }
     if(NULL == val)
     {
-        THROW_WARNING("list try to update unitialized class");
+        THROW_WARNING("VAL is not initialized");
         return -1;
     }
     if( 0 == list->size)
     {
-        THROW_WARNING("emptry list try to update");
+        THROW_WARNING("empty list try to update");
         return -1;
     }
     if( pos >= (int)list->size || pos < -list->size)
@@ -428,16 +427,21 @@ int list_update(bd_xjson_list* list, int pos, bd_xjson* val)
             node = node->prev;
         }
     }
+    if(val->type != node->data.type)
+    {
+        THROW_WARNING("type of VAL can't match type of found element");
+        return -1;
+    }
     /* free old node data */
     if(bd_xjson_free(&(node->data)))
     {
-        THROW_WARNING("bd_xjson free failed");
+        THROW_WARNING("data of node free failed");
         return -1;
     }
     /* update type and value */
     if(bd_xjson_copy(&(node->data), val))
     {
-        THROW_WARNING("bd_xjson copy failed");
+        THROW_WARNING("copy VAL to data field of node failed");
         return -1;
     }
     return 0;

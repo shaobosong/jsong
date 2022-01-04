@@ -25,13 +25,13 @@ static int entry_free(bd_xjson_entry* entry)
 {
     if(NULL == entry)
     {
-        THROW_WARNING("entry may uninitialized or have been freed");
+        THROW_WARNING("ENTRY was initialized");
         return -1;
     }
     xfree(entry->key);
     if(bd_xjson_free(&entry->value))
     {
-        THROW_WARNING("bd_xjson free failed");
+        THROW_WARNING("VALUE of ENTRY free failed");
         return -1;
     }
     return 0;
@@ -41,12 +41,12 @@ static int entry_copy(bd_xjson_entry* dest, bd_xjson_entry* src)
 {
     if(NULL == dest)
     {
-        THROW_WARNING("uninitialized entries try to copy");
+        THROW_WARNING("DEST is not initialized");
         return -1;
     }
     if(NULL == src)
     {
-        THROW_WARNING("uninitialized entries try to be the copied");
+        THROW_WARNING("SRC is not initialized");
         return -1;
     }
     /* copy key */
@@ -56,7 +56,7 @@ static int entry_copy(bd_xjson_entry* dest, bd_xjson_entry* src)
     /* copy value */
     if(bd_xjson_copy(&(dest->value), &(src->value)))
     {
-        THROW_WARNING("bd_xjson copy failed");
+        THROW_WARNING("copy value of SRC to value field of DEST failed");
         return -1;
     }
     return 0;
@@ -73,7 +73,7 @@ static int entries_clear(bd_xjson_entry** entries, size_t capacity)
         }
         if(entry_free(&e[i]))
         {
-            THROW_WARNING("entry free failed");
+            THROW_WARNING("one of ENTRIES free failed");
             return -1;
         }
     }
@@ -86,12 +86,12 @@ static int entries_deep_copy(bd_xjson_entry* dest, bd_xjson_entry* src, size_t c
 {
     if(NULL == dest)
     {
-        THROW_WARNING("uninitialized entries try to copy");
+        THROW_WARNING("DEST is not initialized");
         return -1;
     }
     if(NULL == src)
     {
-        THROW_WARNING("uninitialized entries try to be the copied");
+        THROW_WARNING("SRC is not initialized");
         return -1;
     }
     for(int i = 0; i < capacity; i++)
@@ -102,23 +102,23 @@ static int entries_deep_copy(bd_xjson_entry* dest, bd_xjson_entry* src, size_t c
         }
         if(entry_copy(&dest[i], &src[i]))
         {
-            THROW_WARNING("entry copy failed");
+            THROW_WARNING("copy data of SRC to data field of DEST failed");
             return -1;
         }
     }
     return 0;
 }
 
-static int entries_copy(bd_xjson_entry* dest, bd_xjson_entry* src, size_t capacity)
+static int entries_shallow_copy(bd_xjson_entry* dest, bd_xjson_entry* src, size_t capacity)
 {
     if(NULL == dest)
     {
-        THROW_WARNING("uninitialized entries try to copy");
+        THROW_WARNING("DEST is not initialized");
         return -1;
     }
     if(NULL == src)
     {
-        THROW_WARNING("uninitialized entries try to be the copied");
+        THROW_WARNING("SRC is not initialized");
         return -1;
     }
     for(int i = 0; i < capacity; i++)
@@ -132,16 +132,16 @@ static int entries_copy(bd_xjson_entry* dest, bd_xjson_entry* src, size_t capaci
     return 0;
 }
 
-int htab_init(bd_xjson_htab** htab, size_t capacity)
+int htab_create(bd_xjson_htab** htab, size_t capacity)
 {
     if(*htab)
     {
-        THROW_WARNING("duplicated initialization already done");
+        THROW_WARNING("HTAB was initialized");
         return -1;
     }
     if(0 == capacity)
     {
-        THROW_WARNING("try to initialize hash table by zero as capacity");
+        THROW_WARNING("try to initialize CAPACITY of HTAB by zero");
         return -1;
     }
     bd_xjson_htab* h;
@@ -154,11 +154,11 @@ int htab_init(bd_xjson_htab** htab, size_t capacity)
     return 0;
 }
 
-int htab_clear(bd_xjson_htab** htab)
+int htab_free(bd_xjson_htab** htab)
 {
     if(NULL == *htab)
     {
-        THROW_WARNING("uninitialized hash table try to clear");
+        THROW_WARNING("HTAB is not initialized");
         return -1;
     }
     bd_xjson_htab* h = *htab;
@@ -171,12 +171,12 @@ static int htab_grow(bd_xjson_htab* htab)
 {
     if(NULL == htab)
     {
-        THROW_WARNING("unitialized hash table try to grow");
+        THROW_WARNING("HTAB is not initialized");
         return -1;
     }
     if(0 == htab->capacity)
     {
-        THROW_WARNING("illegal capacity of hash table try to grow");
+        THROW_WARNING("illegal CAPACITY of HTAB try to grow");
         return -1;
     }
     /* calculate new capacity */
@@ -184,15 +184,15 @@ static int htab_grow(bd_xjson_htab* htab)
     size_t new_capacity = htab->capacity << 1;
     if(new_capacity < old_capacity)
     {
-        THROW_WARNING("new capacity of hash table is overflow");
+        THROW_WARNING("new CAPACITY of HTAB is overflow");
         return -1;
     }
     bd_xjson_entry* old_entries = htab->entries;
     bd_xjson_entry* new_entries = xzmalloc(new_capacity*sizeof(bd_xjson_entry));
-    /* apply copy but not deep copy to improve performance */
-    if(entries_copy(new_entries, old_entries, old_capacity))
+    /* apply shallow copy but not deep copy to improve performance */
+    if(entries_shallow_copy(new_entries, old_entries, old_capacity))
     {
-        THROW_WARNING("entries copy failed");
+        THROW_WARNING("shallow copy old entries to the new failed");
         return -1;
     }
     /* free old entries */
@@ -208,22 +208,22 @@ int htab_copy(bd_xjson_htab* dest, bd_xjson_htab* src)
 {
     if(NULL == dest)
     {
-        THROW_WARNING("unitialized hash table try to accept the copied");
+        THROW_WARNING("DEST is not initialized");
         return -1;
     }
     if(NULL == src)
     {
-        THROW_WARNING("uninitialized hash table try to be the copied");
+        THROW_WARNING("SRC is not initialized");
         return -1;
     }
     if(dest->capacity != src->capacity)
     {
-        THROW_WARNING("the capaticy of the two hash tables is inconsistent");
+        THROW_WARNING("the CAPACITY of both DEST and SRC is inconsistent");
         return -1;
     }
     if(entries_deep_copy(dest->entries, src->entries, src->capacity))
     {
-        THROW_WARNING("entries deep copy failed");
+        THROW_WARNING("deep copy entries of SRC to entries field of DEST failed");
         return -1;
     }
     dest->capacity = src->capacity;
@@ -236,17 +236,17 @@ int htab_insert(bd_xjson_htab* htab, const char* key, bd_xjson* val)
 {
     if(NULL == htab)
     {
-        THROW_WARNING("unitialized hash table try to insert");
+        THROW_WARNING("HTAB is not initialized");
         return -1;
     }
     if(NULL == key)
     {
-        THROW_WARNING("hash table try to insert unitialized key");
+        THROW_WARNING("KEY is not initialized");
         return -1;
     }
     if(NULL == val)
     {
-        THROW_WARNING("hash table try to insert uninitialized value");
+        THROW_WARNING("VAL is not initialized");
         return -1;
     }
     /* if size of hash table will exceed half of capacity, grow it */
@@ -259,9 +259,9 @@ int htab_insert(bd_xjson_htab* htab, const char* key, bd_xjson* val)
         }
     }
     uint64_t hash = hash_key(key);
-    uint64_t id = (uint64_t)(hash & (htab->capacity - 1));
+    uint64_t i = (uint64_t)(hash & (htab->capacity - 1));
 
-    for(uint64_t i = id ;;)
+    for(;;)
     {
         if(NULL == htab->entries[i].key)
         {
@@ -272,7 +272,7 @@ int htab_insert(bd_xjson_htab* htab, const char* key, bd_xjson* val)
             /* insert a value */
             if(bd_xjson_copy(&(htab->entries[i].value), val))
             {
-                THROW_WARNING("bd_xjson copy failed");
+                THROW_WARNING("copy VAL to entries field of HTAB failed");
                 return -1;
             }
             /* plus 1 in size */
@@ -293,23 +293,23 @@ int htab_erase(bd_xjson_htab* htab, const char* key)
 {
     if(NULL == htab)
     {
-        THROW_WARNING("unitialized hash table try to delete");
+        THROW_WARNING("HTAB is not initialized");
         return -1;
     }
     if(NULL == key)
     {
-        THROW_WARNING("hash table try to delete unitialized key");
+        THROW_WARNING("KEY is not initialized");
         return -1;
     }
 
     uint64_t hash = hash_key(key);
-    uint64_t id = (uint64_t)(hash & (htab->capacity - 1));
+    uint64_t i = (uint64_t)(hash & (htab->capacity - 1));
     uint64_t ct = 0;
-    for(uint64_t i = id ;;)
+    for(;;)
     {
         if(NULL == htab->entries[i].key || htab->size <= ct)
         {
-            THROW_WARNING("hash table try to erase value by unitialized key");
+            THROW_WARNING("hash table try to erase value by non-existent key");
             return -1;
         }
         if(0 == strcmp(htab->entries[i].key, key))
@@ -329,48 +329,54 @@ int htab_erase(bd_xjson_htab* htab, const char* key)
     return 0;
 }
 
+/* check if type of val matches type of found element */
 int htab_find(bd_xjson_htab* htab, const char* key, bd_xjson* val)
 {
     if(NULL == htab)
     {
-        THROW_WARNING("unitialized hash table try to find");
+        THROW_WARNING("HTAB is not initialized");
         return -1;
     }
     if(NULL == key)
     {
-        THROW_WARNING("hash table try to find by unitialized key");
+        THROW_WARNING("KEY is not initialized");
         return -1;
     }
     if(NULL == val)
     {
-        THROW_WARNING("uninitialized class try to accept");
+        THROW_WARNING("VAL is not initialized");
         return -1;
-    }
-    /* free exist data */
-    if(val->data)
-    {
-        if(bd_xjson_free(val))
-        {
-            THROW_WARNING("bd_xjson free failed");
-            return -1;
-        }
     }
 
     uint64_t hash = hash_key(key);
-    uint64_t id = (uint64_t)(hash & (htab->capacity - 1));
+    uint64_t i = (uint64_t)(hash & (htab->capacity - 1));
     uint64_t ct = 0;
-    for(uint64_t i = id ;;)
+    for(;;)
     {
         if(NULL == htab->entries[i].key || htab->size <= ct)
         {
-            THROW_WARNING("hash table try to find value by unitialized key");
+            THROW_WARNING("hash table try to find value by non-existent key");
             return -1;
         }
         if(0 == strcmp(htab->entries[i].key, key))
         {
+            if(val->type != htab->entries[i].value.type)
+            {
+                THROW_WARNING("type of VAL can't match type of found element");
+                return -1;
+            }
+            /* free exist data */
+            if(val->data)
+            {
+                if(bd_xjson_free(val))
+                {
+                    THROW_WARNING("VAL free failed");
+                    return -1;
+                }
+            }
             if(bd_xjson_copy(val, &(htab->entries[i].value)))
             {
-                THROW_WARNING("bd_xjson copy failed");
+                THROW_WARNING("copy failed");
                 return -1;
             }
             break;
@@ -385,42 +391,47 @@ int htab_update(bd_xjson_htab* htab, const char* key, bd_xjson* val)
 {
     if(NULL == htab)
     {
-        THROW_WARNING("unitialized hash table");
+        THROW_WARNING("HTAB is not initialized");
         return -1;
     }
     if(NULL == key)
     {
-        THROW_WARNING("unitialized key");
+        THROW_WARNING("KEY is not initialized");
         return -1;
     }
     if(NULL == val)
     {
-        THROW_WARNING("uninitialized bd_xjson");
+        THROW_WARNING("VAL is not initialized");
         return -1;
     }
 
     uint64_t hash = hash_key(key);
-    uint64_t id = (uint64_t)(hash & (htab->capacity - 1));
+    uint64_t i = (uint64_t)(hash & (htab->capacity - 1));
     uint64_t ct = 0;
-    for(uint64_t i = id ;;)
+    for(;;)
     {
         if(NULL == htab->entries[i].key || htab->size <= ct)
         {
-            THROW_WARNING("hash table try to find value by unitialized key");
+            THROW_WARNING("hash table try to find value by non-existent key");
             return -1;
         }
         if(0 == strcmp(htab->entries[i].key, key))
         {
+            if(val->type != htab->entries[i].value.type)
+            {
+                THROW_WARNING("type of VAL can't match type of found element");
+                return -1;
+            }
             /* free old entry data */
             if(bd_xjson_free(&(htab->entries[i].value)))
             {
-                THROW_WARNING("bd_xjson free failed");
+                THROW_WARNING("value of entry free failed");
                 return -1;
             }
             /* update type and value */
             if(bd_xjson_copy(&(htab->entries[i].value), val))
             {
-                THROW_WARNING("bd_xjson copy failed");
+                THROW_WARNING("copy VAL to value field of entry failed");
                 return -1;
             }
             break;

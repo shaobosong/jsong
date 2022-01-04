@@ -20,12 +20,19 @@ struct bd_xjson_htab
     int capacity;
     size_t size;
 };
-int htab_init(bd_xjson_htab** htab, size_t capacity);
+int htab_create(bd_xjson_htab** htab, size_t capacity);
 int htab_copy(bd_xjson_htab* dest, bd_xjson_htab* src);
-int htab_clear(bd_xjson_htab** htab);
+int htab_free(bd_xjson_htab** htab);
 int htab_insert(bd_xjson_htab* htab, const char* key, bd_xjson* val);
 int htab_erase(bd_xjson_htab* htab, const char* key);
 int htab_find(bd_xjson_htab* htab, const char* key, bd_xjson* val);
 int htab_update(bd_xjson_htab* htab, const char* key, bd_xjson* val);
+
+struct bd_xjson_htab_iterator
+{
+    char* key;
+    bd_xjson value;
+
+};
 
 #endif

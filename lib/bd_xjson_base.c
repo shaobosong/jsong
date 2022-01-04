@@ -21,7 +21,7 @@ int bd_xjson_copy(bd_xjson* dest, bd_xjson* src)
     switch(src->type)
     {
         case BD_XJSON_OBJECT:
-            if(htab_init(
+            if(htab_create(
                 (bd_xjson_htab**)&(dest->data),
                 ((bd_xjson_htab*)src->data)->capacity
             ))
@@ -44,7 +44,7 @@ int bd_xjson_copy(bd_xjson* dest, bd_xjson* src)
             *(int*)(dest->data) = *(int*)(src->data);
             break;
         case BD_XJSON_ARRAY:
-            if(list_init((bd_xjson_list**)&dest->data))
+            if(list_create((bd_xjson_list**)&dest->data))
             {
                 THROW_WARNING("list initializaition failed");
                 return -1;
@@ -71,7 +71,7 @@ int bd_xjson_free(bd_xjson* json)
     switch(json->type)
     {
         case BD_XJSON_OBJECT:
-            if(htab_clear((bd_xjson_htab**)&(json->data)))
+            if(htab_free((bd_xjson_htab**)&(json->data)))
             {
                 THROW_WARNING("hash table clear failed");
                 return -1;
@@ -82,7 +82,7 @@ int bd_xjson_free(bd_xjson* json)
             xfree(json->data);
             break;
         case BD_XJSON_ARRAY:
-            if(list_clear((bd_xjson_list**)&(json->data)))
+            if(list_free((bd_xjson_list**)&(json->data)))
             {
                 THROW_WARNING("list clear failed");
                 return -1;

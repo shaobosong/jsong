@@ -41,8 +41,6 @@ struct bd_xjson_object
     bd_xjson base;
 /* public */
     /* member functions */
-    /* 1. parameter memory allocated is maintained by user himself */
-    /* 2. deep copy from parameter inside member functions, such as 'obj' etc. */
     void (*add)(bd_xjson_object* this, const char* key, void* val);
     void (*delete)(bd_xjson_object* this, const char* key);
     void (*search)(bd_xjson_object* this, const char* key, void* val);

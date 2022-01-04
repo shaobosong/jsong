@@ -14,7 +14,7 @@ void obj_default_cstr(bd_xjson_object* this)
     {
         THROW_EXCEPTION("uninitialized object class try to construct");
     }
-    if(htab_init((bd_xjson_htab**)&(this->base.data), DEFAULT_CAPACITY))
+    if(htab_create((bd_xjson_htab**)&(this->base.data), DEFAULT_CAPACITY))
     {
         THROW_EXCEPTION("constructor error");
     }
@@ -30,10 +30,10 @@ void obj_copy_cstr(bd_xjson_object* this, bd_xjson_object* obj)
     {
         THROW_EXCEPTION("uninitialized object class try to be the copied");
     }
-    /* init */
-    if(htab_init((bd_xjson_htab**)&(this->base.data), DEFAULT_CAPACITY))
+    /* create */
+    if(htab_create((bd_xjson_htab**)&(this->base.data), DEFAULT_CAPACITY))
     {
-        THROW_EXCEPTION("constructor initialization error");
+        THROW_EXCEPTION("create constructor error");
     }
     /* copy */
     if(htab_copy(this->base.data, obj->base.data))
@@ -52,7 +52,7 @@ void obj_default_dstr(bd_xjson_object* this)
     {
         THROW_EXCEPTION("uninitialized data of object class try to clear");
     }
-    if(htab_clear((bd_xjson_htab**)&(this->base.data)))
+    if(htab_free((bd_xjson_htab**)&(this->base.data)))
     {
         THROW_EXCEPTION("destructor error");
     }
@@ -126,7 +126,7 @@ void arr_default_cstr(bd_xjson_array* this)
     {
         THROW_EXCEPTION("uninitialized array class try to construct");
     }
-    if(list_init((bd_xjson_list**)&(this->base.data)))
+    if(list_create((bd_xjson_list**)&(this->base.data)))
     {
         THROW_EXCEPTION("constructor error");
     }
@@ -143,10 +143,10 @@ void arr_copy_cstr(bd_xjson_array* this, bd_xjson_array* arr)
     {
         THROW_EXCEPTION("uninitialized array class try to be the copied");
     }
-    /* init */
-    if(list_init((bd_xjson_list**)&(this->base.data)))
+    /* create */
+    if(list_create((bd_xjson_list**)&(this->base.data)))
     {
-        THROW_EXCEPTION("constructor initialization error");
+        THROW_EXCEPTION("create constructor error");
     }
     /* copy */
     if(list_copy(this->base.data, arr->base.data))
@@ -166,7 +166,7 @@ void arr_default_dstr(bd_xjson_array* this)
     {
         THROW_EXCEPTION("uninitialized data of array class try to clear");
     }
-    if(list_clear((bd_xjson_list**)&(this->base.data)))
+    if(list_free((bd_xjson_list**)&(this->base.data)))
     {
         THROW_EXCEPTION("destructor error");
     }
@@ -198,7 +198,7 @@ void arr_delete(bd_xjson_array* arr, int pos)
     {
         THROW_EXCEPTION("uninitialized data of array class try to remove");
     }
-    if(list_remove(arr->base.data, pos))
+    if(list_erase(arr->base.data, pos))
     {
         THROW_EXCEPTION("delete error");
     }
