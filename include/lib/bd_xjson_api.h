@@ -4,7 +4,7 @@
 #include "lib/bd_xjson.h"
 
 #define FREE_JSON(p)                                        \
-    switch(p->base.type)                                    \
+    switch(p->type)                                         \
     {                                                       \
         case BD_XJSON_OBJECT:                               \
             obj_default_dstr((bd_xjson_object*)p);          \

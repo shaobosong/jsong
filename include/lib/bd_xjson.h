@@ -38,7 +38,7 @@ void obj_update(bd_xjson_object* obj, const char* key, void* val);
 struct bd_xjson_object
 {
 /* parent class */
-    bd_xjson base;
+    bd_xjson_base;
 /* public */
     /* member functions */
     void (*add)(bd_xjson_object* this, const char* key, void* val);
@@ -48,8 +48,8 @@ struct bd_xjson_object
 };
 #define BD_XJSON_OBJECT_CLASS(p)    \
     BD_XJSON(bd_xjson_object, p);   \
-    p->base.type = BD_XJSON_OBJECT; \
-    p->base.data = NULL;            \
+    p->type = BD_XJSON_OBJECT;      \
+    p->data = NULL;                 \
     p->add = obj_add;               \
     p->delete = obj_delete;         \
     p->search = obj_search;         \
@@ -68,12 +68,12 @@ void str_default_dstr(bd_xjson_string* this);
 struct bd_xjson_string
 {
 /* parent class */
-    bd_xjson base;
+    bd_xjson_base;
 };
 #define BD_XJSON_STRING_CLASS(p)    \
     BD_XJSON(bd_xjson_string, p);   \
-    p->base.type = BD_XJSON_STRING; \
-    p->base.data = NULL
+    p->type = BD_XJSON_STRING;      \
+    p->data = NULL
 
 
 /*
@@ -88,12 +88,12 @@ void num_default_dstr(bd_xjson_number* this);
 struct bd_xjson_number
 {
 /* parent class */
-    bd_xjson base;
+    bd_xjson_base;
 };
 #define BD_XJSON_NUMBER_CLASS(p)    \
     BD_XJSON(bd_xjson_number, p);   \
-    p->base.type = BD_XJSON_NUMBER; \
-    p->base.data = NULL
+    p->type = BD_XJSON_NUMBER;      \
+    p->data = NULL
 
 
 /*
@@ -117,7 +117,7 @@ void arr_update(bd_xjson_array* arr, int pos, void* val);
 struct bd_xjson_array
 {
 /* parent class */
-    bd_xjson base; /* a linked list */
+    bd_xjson_base; /* a linked list */
 /* public */
     /* member functions */
     void (*add)(bd_xjson_array* this, int pos, void* val);
@@ -127,8 +127,8 @@ struct bd_xjson_array
 };
 #define BD_XJSON_ARRAY_CLASS(p)    \
     BD_XJSON(bd_xjson_array, p);   \
-    p->base.type = BD_XJSON_ARRAY; \
-    p->base.data = NULL;           \
+    p->type = BD_XJSON_ARRAY;      \
+    p->data = NULL;                \
     p->add = arr_add;              \
     p->delete = arr_delete;        \
     p->search = arr_search;        \
@@ -141,12 +141,12 @@ struct bd_xjson_array
 struct bd_xjson_true
 {
 /* parent class */
-    bd_xjson base;
+    bd_xjson_base;
 };
 #define BD_XJSON_TRUE_CLASS(p)     \
     BD_XJSON(bd_xjson_true, p);    \
-    P->base.type = BD_XJSON_TRUE;  \
-    p->base.data = NULL
+    P->type = BD_XJSON_TRUE;       \
+    p->data = NULL
 
 
 /*
@@ -155,12 +155,12 @@ struct bd_xjson_true
 struct bd_xjson_false
 {
 /* parent class */
-    bd_xjson base;
+    bd_xjson_base;
 };
 #define BD_XJSON_FALSE_CLASS(p)    \
     BD_XJSON(bd_xjson_false, p);   \
-    p->base.type = BD_XJSON_FALSE; \
-    p->base.data = NULL
+    p->type = BD_XJSON_FALSE;      \
+    p->data = NULL
 
 
 /*
@@ -169,12 +169,12 @@ struct bd_xjson_false
 struct bd_xjson_null
 {
 /* parent class */
-    bd_xjson base;
+    bd_xjson_base;
 };
 #define BD_XJSON_NULL_CLASS(p)     \
     BD_XJSON(bd_xjson_null, p);    \
-    P->base.type = BD_XJSON_NULL;  \
-    p->base.data = NULL
+    P->type = BD_XJSON_NULL;       \
+    p->data = NULL
 
 
 #endif

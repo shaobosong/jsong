@@ -3,7 +3,7 @@
 
 #include "lib/bd_xjson_type.h"
 
-typedef struct bd_xjson bd_xjson;
+// typedef struct bd_xjson bd_xjson;
 
 /*
  *  bd_xjson class
@@ -26,12 +26,14 @@ typedef struct bd_xjson bd_xjson;
  *      false:     BD_XJSON_FALSE
  *      null:      BD_XJSON_NULL
  */
-struct bd_xjson
-{
-/* protected */
-    void* data;
-    bd_xjson_type type;
-};
+#define bd_xjson_base  \
+struct                 \
+{                      \
+    void* data;        \
+    bd_xjson_type type;\
+}
+typedef bd_xjson_base bd_xjson;
+
 int bd_xjson_copy(bd_xjson* dest, bd_xjson* src);
 int bd_xjson_free(bd_xjson* json);
 

@@ -14,7 +14,7 @@ void obj_default_cstr(bd_xjson_object* this)
     {
         THROW_EXCEPTION("uninitialized object class try to construct");
     }
-    if(htab_create((bd_xjson_htab**)&(this->base.data), 4))
+    if(htab_create((bd_xjson_htab**)&(this->data), 4))
     {
         THROW_EXCEPTION("constructor error");
     }
@@ -31,12 +31,13 @@ void obj_copy_cstr(bd_xjson_object* this, bd_xjson_object* obj)
         THROW_EXCEPTION("uninitialized object class try to be the copied");
     }
     /* create */
-    if(htab_create((bd_xjson_htab**)&(this->base.data), 4))
+    if(htab_create((bd_xjson_htab**)&(this->data),
+        ((bd_xjson_htab*)(obj->data))->capacity))
     {
         THROW_EXCEPTION("create constructor error");
     }
     /* copy */
-    if(htab_copy(this->base.data, obj->base.data))
+    if(htab_copy(this->data, obj->data))
     {
         THROW_EXCEPTION("copy constructor error");
     }
@@ -48,11 +49,11 @@ void obj_default_dstr(bd_xjson_object* this)
     {
         THROW_EXCEPTION("uninitialized object class try to desctruct");
     }
-    if(NULL == this->base.data)
+    if(NULL == this->data)
     {
         THROW_EXCEPTION("uninitialized data of object class try to clear");
     }
-    if(htab_free((bd_xjson_htab**)&(this->base.data)))
+    if(htab_free((bd_xjson_htab**)&(this->data)))
     {
         THROW_EXCEPTION("destructor error");
     }
@@ -64,11 +65,11 @@ void obj_add(bd_xjson_object* obj, const char* key, void* val)
     {
         THROW_EXCEPTION("uninitialized object try to add");
     }
-    if(NULL == obj->base.data)
+    if(NULL == obj->data)
     {
         THROW_EXCEPTION("uninitialized data of object class try to insert");
     }
-    if(htab_insert(obj->base.data, key, val)) /* cast to parent class */
+    if(htab_insert(obj->data, key, val)) /* cast to parent class */
     {
         THROW_EXCEPTION("add error");
     }
@@ -79,11 +80,11 @@ void obj_delete(bd_xjson_object* obj, const char* key)
     {
         THROW_EXCEPTION("uninitialized object class try to delete");
     }
-    if(NULL == obj->base.data)
+    if(NULL == obj->data)
     {
         THROW_EXCEPTION("uninitialized data of object class try to erase");
     }
-    if(htab_erase(obj->base.data, key))
+    if(htab_erase(obj->data, key))
     {
         THROW_EXCEPTION("delete error");
     }
@@ -94,11 +95,11 @@ void obj_search(bd_xjson_object* obj, const char* key, void* val)
     {
         THROW_EXCEPTION("uninitialized object class try to search");
     }
-    if(NULL == obj->base.data)
+    if(NULL == obj->data)
     {
         THROW_EXCEPTION("uninitialized data of object class try to find");
     }
-    if(htab_find(obj->base.data, key, val))
+    if(htab_find(obj->data, key, val))
     {
         THROW_EXCEPTION("search error");
     }
@@ -109,11 +110,11 @@ void obj_update(bd_xjson_object* obj, const char* key, void* val)
     {
         THROW_EXCEPTION("uninitialized object class try to update");
     }
-    if(NULL == obj->base.data)
+    if(NULL == obj->data)
     {
         THROW_EXCEPTION("uninitialized data of object class try to update");
     }
-    if(htab_update(obj->base.data, key, val))
+    if(htab_update(obj->data, key, val))
     {
         THROW_EXCEPTION("update error");
     }
@@ -126,7 +127,7 @@ void arr_default_cstr(bd_xjson_array* this)
     {
         THROW_EXCEPTION("uninitialized array class try to construct");
     }
-    if(list_create((bd_xjson_list**)&(this->base.data)))
+    if(list_create((bd_xjson_list**)&(this->data)))
     {
         THROW_EXCEPTION("constructor error");
     }
@@ -144,12 +145,12 @@ void arr_copy_cstr(bd_xjson_array* this, bd_xjson_array* arr)
         THROW_EXCEPTION("uninitialized array class try to be the copied");
     }
     /* create */
-    if(list_create((bd_xjson_list**)&(this->base.data)))
+    if(list_create((bd_xjson_list**)&(this->data)))
     {
         THROW_EXCEPTION("create constructor error");
     }
     /* copy */
-    if(list_copy(this->base.data, arr->base.data))
+    if(list_copy(this->data, arr->data))
     {
         THROW_EXCEPTION("copy constructor error");
     }
@@ -162,11 +163,11 @@ void arr_default_dstr(bd_xjson_array* this)
     {
         THROW_EXCEPTION("uninitialized array class try to desctruct");
     }
-    if(NULL == this->base.data)
+    if(NULL == this->data)
     {
         THROW_EXCEPTION("uninitialized data of array class try to clear");
     }
-    if(list_free((bd_xjson_list**)&(this->base.data)))
+    if(list_free((bd_xjson_list**)&(this->data)))
     {
         THROW_EXCEPTION("destructor error");
     }
@@ -178,11 +179,11 @@ void arr_add(bd_xjson_array* arr, int pos, void* val)
     {
         THROW_EXCEPTION("uninitialized array try to add");
     }
-    if(NULL == arr->base.data)
+    if(NULL == arr->data)
     {
         THROW_EXCEPTION("uninitialized data of array class try to insert");
     }
-    if(list_insert(arr->base.data, pos, val)) /* cast to parent class */
+    if(list_insert(arr->data, pos, val)) /* cast to parent class */
     {
         THROW_EXCEPTION("add error");
     }
@@ -194,11 +195,11 @@ void arr_delete(bd_xjson_array* arr, int pos)
     {
         THROW_EXCEPTION("uninitialized array class try to delete");
     }
-    if(NULL == arr->base.data)
+    if(NULL == arr->data)
     {
         THROW_EXCEPTION("uninitialized data of array class try to remove");
     }
-    if(list_erase(arr->base.data, pos))
+    if(list_erase(arr->data, pos))
     {
         THROW_EXCEPTION("delete error");
     }
@@ -209,11 +210,11 @@ void arr_search(bd_xjson_array* arr, int pos, void* val)
     {
         THROW_EXCEPTION("uninitialized array class try to search");
     }
-    if(NULL == arr->base.data)
+    if(NULL == arr->data)
     {
         THROW_EXCEPTION("uninitialized data of array class try to find");
     }
-    if(list_find(arr->base.data, pos, val))
+    if(list_find(arr->data, pos, val))
     {
         THROW_EXCEPTION("search error");
     }
@@ -224,11 +225,11 @@ void arr_update(bd_xjson_array* arr, int pos, void* val)
     {
         THROW_EXCEPTION("uninitialized array class try to update");
     }
-    if(NULL == arr->base.data)
+    if(NULL == arr->data)
     {
         THROW_EXCEPTION("uninitialized data of array class try to update");
     }
-    if(list_update(arr->base.data, pos, val))
+    if(list_update(arr->data, pos, val))
     {
         THROW_EXCEPTION("update error");
     }
@@ -240,7 +241,7 @@ void str_default_cstr(bd_xjson_string* this)
     {
         THROW_EXCEPTION("uninitialized string class try to construct");
     }
-    this->base.data = xzmalloc(1);
+    this->data = xzmalloc(1);
 }
 void str_copy_cstr(bd_xjson_string* this, bd_xjson_string* str)
 {
@@ -252,13 +253,13 @@ void str_copy_cstr(bd_xjson_string* this, bd_xjson_string* str)
     {
         THROW_EXCEPTION("uninitialized string class try to be the copied");
     }
-    if(NULL == str->base.data)
+    if(NULL == str->data)
     {
         THROW_EXCEPTION("uninitialized data of string class try to be the copied");
     }
-    unsigned s = strlen(str->base.data) + 1;
-    this->base.data = xzmalloc(s);
-    strcat(this->base.data, str->base.data);
+    unsigned s = strlen(str->data) + 1;
+    this->data = xzmalloc(s);
+    strcat(this->data, str->data);
 }
 void str_assign_cstr(bd_xjson_string* this, const char* chars)
 {
@@ -271,8 +272,8 @@ void str_assign_cstr(bd_xjson_string* this, const char* chars)
         THROW_EXCEPTION("uninitialized characters try to be the assigned");
     }
     unsigned s = strlen(chars) + 1;
-    this->base.data = xzmalloc(s);
-    strcat(this->base.data, chars);
+    this->data = xzmalloc(s);
+    strcat(this->data, chars);
 }
 void str_default_dstr(bd_xjson_string* this)
 {
@@ -280,11 +281,11 @@ void str_default_dstr(bd_xjson_string* this)
     {
         THROW_EXCEPTION("uninitialized string class try to desctruct");
     }
-    if(NULL == this->base.data)
+    if(NULL == this->data)
     {
         THROW_EXCEPTION("uninitialized data of string class try to desctruct");
     }
-    xfree(this->base.data);
+    xfree(this->data);
 }
 
 void num_default_cstr(bd_xjson_number* this)
@@ -293,8 +294,8 @@ void num_default_cstr(bd_xjson_number* this)
     {
         THROW_EXCEPTION("uninitialized number class try to construct");
     }
-    this->base.data = xzmalloc(sizeof(int));
-    *(int*)(this->base.data) = 0;
+    this->data = xzmalloc(sizeof(int));
+    *(int*)(this->data) = 0;
 }
 void num_copy_cstr(bd_xjson_number* this, bd_xjson_number* num)
 {
@@ -306,8 +307,8 @@ void num_copy_cstr(bd_xjson_number* this, bd_xjson_number* num)
     {
         THROW_EXCEPTION("uninitialized number class try to be the copied");
     }
-    this->base.data = xzmalloc(sizeof (int));
-    *(int*)this->base.data = *(int*)num->base.data;
+    this->data = xzmalloc(sizeof (int));
+    *(int*)this->data = *(int*)num->data;
 }
 void num_assign_cstr(bd_xjson_number* this, int val)
 {
@@ -315,8 +316,8 @@ void num_assign_cstr(bd_xjson_number* this, int val)
     {
         THROW_EXCEPTION("uninitialized number class try to construct");
     }
-    this->base.data = xzmalloc(sizeof (int));
-    *(int*)this->base.data = val;
+    this->data = xzmalloc(sizeof (int));
+    *(int*)this->data = val;
 }
 void num_default_dstr(bd_xjson_number* this)
 {
@@ -324,9 +325,9 @@ void num_default_dstr(bd_xjson_number* this)
     {
         THROW_EXCEPTION("uninitialized number class try to desctruct");
     }
-    if(NULL == this->base.data)
+    if(NULL == this->data)
     {
         THROW_EXCEPTION("uninitialized data of number class try to desctruct");
     }
-    xfree(this->base.data);
+    xfree(this->data);
 }
