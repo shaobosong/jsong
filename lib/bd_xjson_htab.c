@@ -1,3 +1,7 @@
+/*
+ *  bug:
+ *      1. hash table grow copy handle in head and tail
+ */
 #include <stdint.h>
 #include <stddef.h>
 #include <string.h>
@@ -14,7 +18,8 @@
 static uint64_t hash_key(const char* key)
 {
     uint64_t hash = FNV_OFFSET_BASIS;
-    for (const char* p = key; *p; p++) {
+    for (const char* p = key; *p; p++)
+    {
         hash ^= (uint64_t)*(unsigned char*)p;
         hash *= FNV_PRIME;
     }
@@ -109,7 +114,7 @@ static int entries_deep_copy(bd_xjson_entry* dest, bd_xjson_entry* src, size_t c
     return 0;
 }
 
-static int entries_shallow_copy(bd_xjson_entry* dest, bd_xjson_entry* src, size_t capacity)
+static int entries_grow_copy(bd_xjson_entry* dest, bd_xjson_entry* src, size_t ncap, size_t ocap)
 {
     if(NULL == dest)
     {
@@ -121,13 +126,20 @@ static int entries_shallow_copy(bd_xjson_entry* dest, bd_xjson_entry* src, size_
         THROW_WARNING("SRC is not initialized");
         return -1;
     }
-    for(int i = 0; i < capacity; i++)
+    for(int i = 0; i < ocap; i++)
     {
         if(NULL == src[i].key)
         {
             continue;
         }
-        dest[i] = src[i];
+        uint64_t hash = hash_key(src[i].key);
+        uint64_t j = (uint64_t)(hash & (ncap - 1));
+        /* unsafe */
+        while(dest[j].key)
+        {
+            j = (j + 1) & (ncap - 1);
+        }
+        dest[j] = src[i];
     }
     return 0;
 }
@@ -190,7 +202,7 @@ static int htab_grow(bd_xjson_htab* htab)
     bd_xjson_entry* old_entries = htab->entries;
     bd_xjson_entry* new_entries = xzmalloc(new_capacity*sizeof(bd_xjson_entry));
     /* apply shallow copy but not deep copy to improve performance */
-    if(entries_shallow_copy(new_entries, old_entries, old_capacity))
+    if(entries_grow_copy(new_entries, old_entries, new_capacity, old_capacity))
     {
         THROW_WARNING("shallow copy old entries to the new failed");
         return -1;
@@ -284,12 +296,12 @@ int htab_insert(bd_xjson_htab* htab, const char* key, bd_xjson* val)
             THROW_WARNING("hash table try to insert existed <key>-<value>");
             return -1;
         }
-        i = (i + 1) & htab->capacity;
+        i = (i + 1) & (htab->capacity - 1);
     }
     return 0;
 }
 
-int htab_erase(bd_xjson_htab* htab, const char* key)
+static uint64_t htab_find_return_id(bd_xjson_htab* htab, const char* key)
 {
     if(NULL == htab)
     {
@@ -309,23 +321,48 @@ int htab_erase(bd_xjson_htab* htab, const char* key)
     {
         if(NULL == htab->entries[i].key || htab->size <= ct)
         {
-            THROW_WARNING("hash table try to erase value by non-existent key");
+            THROW_WARNING("hash table try to find value by non-existent key");
             return -1;
         }
         if(0 == strcmp(htab->entries[i].key, key))
         {
-            if(entry_free(&htab->entries[i]))
-            {
-                THROW_WARNING("entry free failed");
-                return -1;
-            }
-            /* must not ignore next statement */
-            memset(&htab->entries[i], 0, sizeof(bd_xjson_entry));
             break;
         }
-        i = (i + 1) & htab->capacity;
+        i = (i + 1) & (htab->capacity - 1);
         ct++;
     }
+    return i;
+}
+
+int htab_erase(bd_xjson_htab* htab, const char* key)
+{
+    if(NULL == htab)
+    {
+        THROW_WARNING("HTAB is not initialized");
+        return -1;
+    }
+    if(NULL == key)
+    {
+        THROW_WARNING("KEY is not initialized");
+        return -1;
+    }
+
+    uint64_t i = htab_find_return_id(htab, key);
+    if(i == -1)
+    {
+        THROW_WARNING("hash table try to find index by non-existent key");
+        return -1;
+    }
+
+    if(entry_free(&htab->entries[i]))
+    {
+        THROW_WARNING("entry free failed");
+        return -1;
+    }
+    /* must not ignore next statement */
+    memset(&htab->entries[i], 0, sizeof(bd_xjson_entry));
+    htab->size -= 1;
+
     return 0;
 }
 
@@ -381,7 +418,7 @@ int htab_find(bd_xjson_htab* htab, const char* key, bd_xjson* val)
             }
             break;
         }
-        i = (i + 1) & htab->capacity;
+        i = (i + 1) & (htab->capacity - 1);
         ct++;
     }
     return 0;
@@ -405,39 +442,30 @@ int htab_update(bd_xjson_htab* htab, const char* key, bd_xjson* val)
         return -1;
     }
 
-    uint64_t hash = hash_key(key);
-    uint64_t i = (uint64_t)(hash & (htab->capacity - 1));
-    uint64_t ct = 0;
-    for(;;)
+    uint64_t i = htab_find_return_id(htab, key);
+    if(i == -1)
     {
-        if(NULL == htab->entries[i].key || htab->size <= ct)
-        {
-            THROW_WARNING("hash table try to find value by non-existent key");
-            return -1;
-        }
-        if(0 == strcmp(htab->entries[i].key, key))
-        {
-            if(val->type != htab->entries[i].value.type)
-            {
-                THROW_WARNING("type of VAL can't match type of found element");
-                return -1;
-            }
-            /* free old entry data */
-            if(bd_xjson_free(&(htab->entries[i].value)))
-            {
-                THROW_WARNING("value of entry free failed");
-                return -1;
-            }
-            /* update type and value */
-            if(bd_xjson_copy(&(htab->entries[i].value), val))
-            {
-                THROW_WARNING("copy VAL to value field of entry failed");
-                return -1;
-            }
-            break;
-        }
-        i = (i + 1) & htab->capacity;
-        ct++;
+        THROW_WARNING("hash table try to find index by non-existent key");
+        return -1;
     }
+
+    if(val->type != htab->entries[i].value.type)
+    {
+        THROW_WARNING("type of VAL can't match type of found element");
+        return -1;
+    }
+    /* free old entry data */
+    if(bd_xjson_free(&(htab->entries[i].value)))
+    {
+        THROW_WARNING("value of entry free failed");
+        return -1;
+    }
+    /* update type and value */
+    if(bd_xjson_copy(&(htab->entries[i].value), val))
+    {
+        THROW_WARNING("copy VAL to value field of entry failed");
+        return -1;
+    }
+
     return 0;
 }

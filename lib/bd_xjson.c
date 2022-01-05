@@ -14,7 +14,7 @@ void obj_default_cstr(bd_xjson_object* this)
     {
         THROW_EXCEPTION("uninitialized object class try to construct");
     }
-    if(htab_create((bd_xjson_htab**)&(this->base.data), DEFAULT_CAPACITY))
+    if(htab_create((bd_xjson_htab**)&(this->base.data), 4))
     {
         THROW_EXCEPTION("constructor error");
     }
@@ -31,7 +31,7 @@ void obj_copy_cstr(bd_xjson_object* this, bd_xjson_object* obj)
         THROW_EXCEPTION("uninitialized object class try to be the copied");
     }
     /* create */
-    if(htab_create((bd_xjson_htab**)&(this->base.data), DEFAULT_CAPACITY))
+    if(htab_create((bd_xjson_htab**)&(this->base.data), 4))
     {
         THROW_EXCEPTION("create constructor error");
     }
