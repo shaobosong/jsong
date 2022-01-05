@@ -427,11 +427,7 @@ int list_update(bd_xjson_list* list, int pos, bd_xjson* val)
             node = node->prev;
         }
     }
-    if(val->type != node->data.type)
-    {
-        THROW_WARNING("type of VAL can't match type of found element");
-        return -1;
-    }
+
     /* free old node data */
     if(bd_xjson_free(&(node->data)))
     {

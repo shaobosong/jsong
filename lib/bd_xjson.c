@@ -14,7 +14,7 @@ void obj_default_cstr(bd_xjson_object* this)
     {
         THROW_EXCEPTION("uninitialized object class try to construct");
     }
-    if(htab_create((bd_xjson_htab**)&(this->data), 4))
+    if(htab_create((bd_xjson_htab**)&(this->data), DEFAULT_CAPACITY))
     {
         THROW_EXCEPTION("constructor error");
     }
