@@ -14,7 +14,7 @@ void obj_default_cstr(bd_xjson_object* this)
     {
         THROW_EXCEPTION("uninitialized object class try to construct");
     }
-    if(htab_create((bd_xjson_htab**)&(this->data), DEFAULT_CAPACITY))
+    if(htab_create((bd_xjson_htab**)&(this->data), 1))
     {
         THROW_EXCEPTION("constructor error");
     }
@@ -53,7 +53,7 @@ void obj_default_dstr(bd_xjson_object* this)
     {
         THROW_EXCEPTION("uninitialized data of object class try to clear");
     }
-    if(htab_free((bd_xjson_htab**)&(this->data)))
+    if(htab_free(this->data))
     {
         THROW_EXCEPTION("destructor error");
     }
@@ -167,7 +167,7 @@ void arr_default_dstr(bd_xjson_array* this)
     {
         THROW_EXCEPTION("uninitialized data of array class try to clear");
     }
-    if(list_free((bd_xjson_list**)&(this->data)))
+    if(list_free(this->data))
     {
         THROW_EXCEPTION("destructor error");
     }

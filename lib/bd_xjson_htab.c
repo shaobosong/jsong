@@ -22,7 +22,7 @@ static uint64_t hash_key(const char* key)
     return hash;
 }
 
-static int entry_free(bd_xjson_entry* entry)
+static int entry_clear(bd_xjson_entry* entry)
 {
     if(NULL == entry)
     {
@@ -35,6 +35,7 @@ static int entry_free(bd_xjson_entry* entry)
         THROW_WARNING("VALUE of ENTRY free failed");
         return -1;
     }
+    memset(entry, 0, sizeof(*entry));
     return 0;
 }
 
@@ -63,27 +64,35 @@ static int entry_copy(bd_xjson_entry* dest, bd_xjson_entry* src)
     return 0;
 }
 
-static int entries_clear(bd_xjson_entry** entries, size_t capacity)
+static int entries_free(bd_xjson_entry* entries, uint64_t capacity)
 {
-    bd_xjson_entry* e = *entries;
+    if(NULL == entries)
+    {
+        THROW_WARNING("ENTRIES is not initialized");
+        return -1;
+    }
+    if(0 == capacity)
+    {
+        return 0;
+    }
     for(int i = 0; i< capacity; i++)
     {
-        if(NULL == e[i].key)
+        if(NULL == entries[i].key)
         {
             continue;
         }
-        if(entry_free(&e[i]))
+        if(entry_clear(&entries[i]))
         {
             THROW_WARNING("one of ENTRIES free failed");
             return -1;
         }
     }
-    xfree(e);
+    xfree(entries);
     return 0;
 }
 
 /* unsafe if length of src is greater than length of dest */
-static int entries_deep_copy(bd_xjson_entry* dest, bd_xjson_entry* src, size_t capacity)
+static int entries_deep_copy(bd_xjson_entry* dest, bd_xjson_entry* src, uint64_t capacity)
 {
     if(NULL == dest)
     {
@@ -110,7 +119,7 @@ static int entries_deep_copy(bd_xjson_entry* dest, bd_xjson_entry* src, size_t c
     return 0;
 }
 
-static int entries_grow_copy(bd_xjson_entry* dest, bd_xjson_entry* src, size_t ncap, size_t ocap)
+static int entries_grow_copy(bd_xjson_entry* dest, bd_xjson_entry* src, uint64_t ncap, uint64_t ocap)
 {
     if(NULL == dest)
     {
@@ -140,7 +149,7 @@ static int entries_grow_copy(bd_xjson_entry* dest, bd_xjson_entry* src, size_t n
     return 0;
 }
 
-int htab_create(bd_xjson_htab** htab, size_t capacity)
+int htab_create(bd_xjson_htab** htab, uint64_t capacity)
 {
     if(*htab)
     {
@@ -162,20 +171,23 @@ int htab_create(bd_xjson_htab** htab, size_t capacity)
     return 0;
 }
 
-int htab_free(bd_xjson_htab** htab)
+int htab_free(bd_xjson_htab* htab)
 {
-    if(NULL == *htab)
+    if(NULL == htab)
     {
         THROW_WARNING("HTAB is not initialized");
         return -1;
     }
-    bd_xjson_htab* h = *htab;
-    entries_clear(&(h->entries), h->capacity);
-    xfree(h);
+    if(entries_free(htab->entries, htab->capacity))
+    {
+        THROW_WARNING("entries free failed");
+        return -1;
+    }
+    xfree(htab);
     return 0;
 }
 
-static int htab_grow(bd_xjson_htab* htab)
+static int htab_grow(bd_xjson_htab* htab, uint64_t new_capacity)
 {
     if(NULL == htab)
     {
@@ -188,8 +200,7 @@ static int htab_grow(bd_xjson_htab* htab)
         return -1;
     }
     /* calculate new capacity */
-    size_t old_capacity = htab->capacity;
-    size_t new_capacity = htab->capacity << 1;
+    uint64_t old_capacity = htab->capacity;
     if(new_capacity < old_capacity)
     {
         THROW_WARNING("new CAPACITY of HTAB is overflow");
@@ -244,12 +255,12 @@ static uint64_t htab_find_id(bd_xjson_htab* htab, const char* key)
 {
     uint64_t hash = hash_key(key);
     uint64_t i = (uint64_t)(hash & (htab->capacity - 1));
-    uint64_t ct = 0;
+    uint64_t c = 0;
     for(;;)
     {
-        if(ct >= htab->size) /* capacity is equal to 1 */
+        if(c >= htab->capacity) /* capacity is equal to 1 */
         {
-            return htab->size;
+            return htab->capacity;
         }
         if(NULL == htab->entries[i].key ||
             0 == strcmp(htab->entries[i].key, key))
@@ -257,7 +268,7 @@ static uint64_t htab_find_id(bd_xjson_htab* htab, const char* key)
             break;
         }
         i = (i + 1) & (htab->capacity - 1);
-        ct++;
+        c++;
     }
     return i;
 }
@@ -282,7 +293,7 @@ int htab_insert(bd_xjson_htab* htab, const char* key, bd_xjson* val)
     /* if size of hash table will exceed half of capacity, grow it */
     if(htab->size > (htab->capacity >> 1))
     {
-        if(htab_grow(htab))
+        if(htab_grow(htab, htab->capacity << 1))
         {
             THROW_WARNING("hash table grow failed");
             return -1;
@@ -325,20 +336,24 @@ int htab_erase(bd_xjson_htab* htab, const char* key)
     }
 
     uint64_t i = htab_find_id(htab, key);
-    if(i == htab->size || NULL == htab->entries[i].key)
+    if(i == htab->capacity || NULL == htab->entries[i].key)
     {
         THROW_WARNING("hash table try to find index by non-existent key");
         return -1;
     }
 
-    if(entry_free(&htab->entries[i]))
+    if(entry_clear(&htab->entries[i]))
     {
         THROW_WARNING("entry free failed");
         return -1;
     }
-    /* must not ignore next statement */
-    memset(&htab->entries[i], 0, sizeof(bd_xjson_entry));
     htab->size -= 1;
+
+    if(htab_grow(htab, htab->capacity))
+    {
+        THROW_WARNING("hash table grow failed");
+        return -1;
+    }
 
     return 0;
 }
@@ -363,7 +378,7 @@ int htab_find(bd_xjson_htab* htab, const char* key, bd_xjson* val)
     }
 
     uint64_t i = htab_find_id(htab, key);
-    if(i == htab->size || NULL == htab->entries[i].key)
+    if(i == htab->capacity || NULL == htab->entries[i].key)
     {
         THROW_WARNING("hash table try to find index by non-existent key");
         return -1;
@@ -411,7 +426,7 @@ int htab_update(bd_xjson_htab* htab, const char* key, bd_xjson* val)
     }
 
     uint64_t i = htab_find_id(htab, key);
-    if(i == htab->size || NULL == htab->entries[i].key)
+    if(i == htab->capacity || NULL == htab->entries[i].key)
     {
         THROW_WARNING("hash table try to find index by non-existent key");
         return -1;

@@ -2,6 +2,7 @@
 #define bd_xjson_htab_h
 
 #include <stddef.h>
+#include <stdint.h>
 #include "lib/bd_xjson_base.h"
 
 #define DEFAULT_CAPACITY 16
@@ -17,12 +18,12 @@ struct bd_xjson_entry
 struct bd_xjson_htab
 {
     bd_xjson_entry* entries;
-    int capacity;
-    size_t size;
+    uint64_t capacity;
+    uint64_t size;
 };
 int htab_create(bd_xjson_htab** htab, size_t capacity);
 int htab_copy(bd_xjson_htab* dest, bd_xjson_htab* src);
-int htab_free(bd_xjson_htab** htab);
+int htab_free(bd_xjson_htab* htab);
 int htab_insert(bd_xjson_htab* htab, const char* key, bd_xjson* val);
 int htab_erase(bd_xjson_htab* htab, const char* key);
 int htab_find(bd_xjson_htab* htab, const char* key, bd_xjson* val);

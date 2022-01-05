@@ -307,21 +307,19 @@ int list_erase(bd_xjson_list* list, int pos)
     return -1;
 }
 
-int list_free(bd_xjson_list** list)
+int list_free(bd_xjson_list* list)
 {
-    if(NULL == *list)
+    if(NULL == list)
     {
         THROW_WARNING("LIST is not initialized");
         return -1;
     }
-    bd_xjson_list *l = *list;
-    unsigned size = l->size;
+    unsigned size = list->size;
     for(int i = 0; i < size; i++)
     {
-        list_erase(l, 0);
+        list_erase(list, 0);
     }
-    xfree(l);
-    *list = NULL; /* initialize again */
+    xfree(list);
     return 0;
 }
 

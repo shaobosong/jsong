@@ -71,7 +71,7 @@ int bd_xjson_free(bd_xjson* json)
     switch(json->type)
     {
         case BD_XJSON_OBJECT:
-            if(htab_free((bd_xjson_htab**)&(json->data)))
+            if(htab_free(json->data))
             {
                 THROW_WARNING("hash table clear failed");
                 return -1;
@@ -82,7 +82,7 @@ int bd_xjson_free(bd_xjson* json)
             xfree(json->data);
             break;
         case BD_XJSON_ARRAY:
-            if(list_free((bd_xjson_list**)&(json->data)))
+            if(list_free(json->data))
             {
                 THROW_WARNING("list clear failed");
                 return -1;
