@@ -8,7 +8,7 @@ typedef struct bd_xjson_list bd_xjson_list;
 
 struct bd_xjson_node
 {
-    bd_xjson_base;
+    bd_xjson data;
     bd_xjson_node *next;
     bd_xjson_node *prev;
 };
@@ -29,8 +29,5 @@ int list_erase(bd_xjson_list* list, int pos);
 int list_free(bd_xjson_list* list);
 int list_find(bd_xjson_list* list, int pos, bd_xjson* val);
 int list_update(bd_xjson_list* list, int pos, bd_xjson* val);
-#define bd_xjson_list_foreach(l, e) \
-    bd_xjson_node* n;               \
-    for(n = l->head, e = n; n; n = n->next, e = n)
 
 #endif
