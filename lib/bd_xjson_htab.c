@@ -137,8 +137,7 @@ static int entries_grow_copy(bd_xjson_entry* dest, bd_xjson_entry* src, uint64_t
         {
             continue;
         }
-        uint64_t hash = hash_key(src[i].key);
-        uint64_t j = (uint64_t)(hash & (ncap - 1));
+        uint64_t j = (uint64_t)(hash_key(src[i].key) & (ncap - 1));
         /* unsafe */
         while(dest[j].key)
         {
@@ -253,8 +252,7 @@ int htab_copy(bd_xjson_htab* dest, bd_xjson_htab* src)
 
 static uint64_t htab_find_id(bd_xjson_htab* htab, const char* key)
 {
-    uint64_t hash = hash_key(key);
-    uint64_t i = (uint64_t)(hash & (htab->capacity - 1));
+    uint64_t i = hash_key(key) & (htab->capacity - 1);
     uint64_t c = 0;
     for(;;)
     {
@@ -322,6 +320,31 @@ int htab_insert(bd_xjson_htab* htab, const char* key, bd_xjson* val)
     return 0;
 }
 
+static void entries_reorder(bd_xjson_entry* entries, uint64_t capacity, uint64_t s, uint64_t m, uint64_t e)
+{
+    /* the last element had been moved 'forward' */
+    if(m == e)
+        return ;
+
+    for(uint64_t e2m = e; e2m != m; e2m = (e2m - 1) & (capacity - 1))
+    {
+        uint64_t e2m_id = hash_key(entries[e2m].key) & (capacity - 1);
+        for(uint64_t k = e2m_id; k != e2m;k = (k + 1) & (capacity - 1))
+        {
+            if(k == m)
+            {
+                entries[m] = entries[e2m];
+                memset(&entries[e2m], 0, sizeof(entries[e2m]));
+                entries_reorder(entries, capacity, s, e2m, e);
+                return ;
+            }
+        }
+    }
+
+    /* there are no more elements to move 'forward' */
+    return ;
+}
+
 int htab_erase(bd_xjson_htab* htab, const char* key)
 {
     if(NULL == htab)
@@ -335,25 +358,33 @@ int htab_erase(bd_xjson_htab* htab, const char* key)
         return -1;
     }
 
+    /* remove a element */
     uint64_t i = htab_find_id(htab, key);
     if(i == htab->capacity || NULL == htab->entries[i].key)
     {
         THROW_WARNING("hash table try to find index by non-existent key");
         return -1;
     }
-
     if(entry_clear(&htab->entries[i]))
     {
-        THROW_WARNING("entry free failed");
+        THROW_WARNING("one of ENTRIES free failed");
         return -1;
     }
     htab->size -= 1;
 
-    if(htab_grow(htab, htab->capacity))
+    /* reorder */
+    uint64_t s = hash_key(key) & (htab->capacity - 1);
+    uint64_t e = (i + 1) & (htab->capacity - 1);
+    for(;;)
     {
-        THROW_WARNING("hash table grow failed");
-        return -1;
+        if(NULL == htab->entries[e].key)
+        {
+            e = (e - 1) & (htab->capacity - 1);
+            break;
+        }
+        e = (e + 1) & (htab->capacity - 1);
     }
+    entries_reorder(htab->entries, htab->capacity, s, i, e);
 
     return 0;
 }
