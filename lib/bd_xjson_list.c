@@ -16,8 +16,8 @@ int node_create(bd_xjson_node** node)
     bd_xjson_node* n;
     n = xzmalloc(sizeof *n);
     n->next = n->prev = NULL;
-    n->data.data = NULL;
-    n->data.type = 0;
+    n->data = NULL;
+    n->type = 0;
 
     *node = n;
     return 0;
@@ -37,7 +37,7 @@ int node_copy(bd_xjson_node* dest, bd_xjson_node* src)
         return -1;
     }
     /* only copy data */
-    if(bd_xjson_copy(&(dest->data), &(src->data)))
+    if(bd_xjson_copy(dest, src))
     {
         THROW_WARNING("copy data of SRC to data field of DEST failed");
         return -1;
@@ -53,7 +53,7 @@ int node_free(bd_xjson_node* node)
         THROW_WARNING("NODE is not initialized");
         return -1;
     }
-    if(bd_xjson_free(&(node->data)))
+    if(bd_xjson_free(node))
     {
         THROW_WARNING("data of NODE free failed");
         return -1;
@@ -152,7 +152,7 @@ int list_insert(bd_xjson_list* list, int pos, bd_xjson* val)
         THROW_WARNING("node initializaition failed");
         return -1;
     }
-    if(bd_xjson_copy(&(node->data), val))
+    if(bd_xjson_copy(node, val))
     {
         THROW_WARNING("copy VAL to data field of node failed");
         return -1;
@@ -364,7 +364,7 @@ int list_find(bd_xjson_list* list, int pos, bd_xjson* val)
             node = node->prev;
         }
     }
-    if(val->type != node->data.type)
+    if(val->type != node->type)
     {
         THROW_WARNING("type of VAL can't match type of found element");
         return -1;
@@ -378,7 +378,7 @@ int list_find(bd_xjson_list* list, int pos, bd_xjson* val)
             return -1;
         }
     }
-    if(bd_xjson_copy(val, &(node->data)))
+    if(bd_xjson_copy(val, node))
     {
         THROW_WARNING("copy data of node to VAL failed");
         return -1;
@@ -427,13 +427,13 @@ int list_update(bd_xjson_list* list, int pos, bd_xjson* val)
     }
 
     /* free old node data */
-    if(bd_xjson_free(&(node->data)))
+    if(bd_xjson_free(node))
     {
         THROW_WARNING("data of node free failed");
         return -1;
     }
     /* update type and value */
-    if(bd_xjson_copy(&(node->data), val))
+    if(bd_xjson_copy(node, val))
     {
         THROW_WARNING("copy VAL to data field of node failed");
         return -1;
