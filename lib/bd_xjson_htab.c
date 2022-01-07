@@ -478,3 +478,24 @@ int htab_update(bd_xjson_htab* htab, const char* key, bd_xjson* val)
 
     return 0;
 }
+
+bd_xjson_htab_iter htab_iterate(bd_xjson_htab* htab, bd_xjson_htab_iter it)
+{
+    if(it.__count == htab->size)
+    {
+        it.key = NULL;
+        memset(&(it.value), 0, sizeof(it.value));
+        return it;
+    }
+    for(it.__index++; it.__index < htab->capacity; it.__index++)
+    {
+        if(htab->entries[it.__index].key)
+        {
+            it.key = htab->entries[it.__index].key;
+            it.value = htab->entries[it.__index].value;
+            it.__count += 1;
+            break;
+        }
+    }
+    return it;
+}
