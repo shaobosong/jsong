@@ -8,7 +8,7 @@ typedef struct bd_xjson_list bd_xjson_list;
 
 struct bd_xjson_node
 {
-    bd_xjson data;
+    bd_xjson value;
     bd_xjson_node *next;
     bd_xjson_node *prev;
 };

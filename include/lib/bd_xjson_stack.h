@@ -5,15 +5,15 @@
 struct \
 { \
     int64_t top; \
-    int64_t size; \
+    int64_t capacity; \
     type* data; \
 }
 
-#define bd_xjson_stack_init(__stk, __size) \
+#define bd_xjson_stack_init(__stk, __capacity) \
 do{ \
     __stk.top = -1; \
-    __stk.size = __size; \
-    __stk.data = xzmalloc((__size)*sizeof(*__stk.data)); \
+    __stk.capacity = __capacity; \
+    __stk.data = xzmalloc((__capacity)*sizeof(*__stk.data)); \
 } while(0)
 
 #define bd_xjson_stack_top(__stk) \
@@ -33,7 +33,7 @@ do{ \
 #define bd_xjson_stack_clear(__stk) \
 do{ \
     __stk.top = -1; \
-    __stk.size = 0; \
+    __stk.capacity = 0; \
     xfree(__stk.data); \
 } while(0)
 

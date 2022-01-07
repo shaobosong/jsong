@@ -273,21 +273,21 @@ void arr_to_str(bd_xjson_list* list, char** str, int* len)
     {
         int l;
         char* s = NULL;
-        switch(node->data.type)
+        switch(node->value.type)
         {
             case BD_XJSON_OBJECT:
-                obj_to_str((bd_xjson_htab*)node->data.data, &s, &l);
+                obj_to_str((bd_xjson_htab*)node->value.data, &s, &l);
                 break;
             case BD_XJSON_STRING:
-                chars_to_str(node->data.data, &s, &l);
+                chars_to_str(node->value.data, &s, &l);
                 bd_xjson_stack_push(tofree, s);
                 break;
             case BD_XJSON_NUMBER:
-                num_to_str(*(int*)node->data.data, &s, &l);
+                num_to_str(*(int*)node->value.data, &s, &l);
                 bd_xjson_stack_push(tofree, s);
                 break;
             case BD_XJSON_ARRAY:
-                arr_to_str((bd_xjson_list*)node->data.data, &s, &l);
+                arr_to_str((bd_xjson_list*)node->value.data, &s, &l);
                 bd_xjson_stack_push(tofree, s);
                 break;
             case BD_XJSON_TRUE:
@@ -339,10 +339,11 @@ void arr_to_str(bd_xjson_list* list, char** str, int* len)
     return ;
 }
 
-char* bd_xjson_stringify(bd_xjson* json)
+char* bd_xjson_stringify(void* __bd_xjson)
 {
     char* json_str = NULL;
     int len;
+    bd_xjson* json = (bd_xjson*)__bd_xjson;
     switch(json->type)
     {
         case BD_XJSON_OBJECT:
