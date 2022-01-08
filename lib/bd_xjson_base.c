@@ -5,6 +5,7 @@
 #include "lib/bd_xjson_list.h"
 #include "lib/bd_xjson_htab.h"
 #include "lib/bd_xjson_stack.h"
+#include "lib/bd_xjson_iter.h"
 #include "lib/error.h"
 #include "lib/alloc.h"
 int bd_xjson_copy(bd_xjson* dest, bd_xjson* src)
@@ -179,27 +180,26 @@ void obj_to_str(bd_xjson_htab* htab, char** str, int* len)
     bd_xjson_stack_init(tofree, htab->size);
 
     *len = 2;
-    bd_xjson_htab_iter it;
-    bd_xjson_htab_iter_init(it);
-    bd_xjson_htab_foreach(htab, it)
+    bd_xjson_htab_iter iter;
+    bd_xjson_htab_foreach(htab, iter)
     {
         int vl = 0;
         char* v = NULL;
-        switch(it.value.type)
+        switch(iter.data.value.type)
         {
             case BD_XJSON_OBJECT:
-                obj_to_str((bd_xjson_htab*)it.value.data, &v, &vl);
+                obj_to_str((bd_xjson_htab*)iter.data.value.data, &v, &vl);
                 break;
             case BD_XJSON_STRING:
-                chars_to_str(it.value.data, &v, &vl);
+                chars_to_str(iter.data.value.data, &v, &vl);
                 bd_xjson_stack_push(tofree, v);
                 break;
             case BD_XJSON_NUMBER:
-                num_to_str(*(int*)it.value.data, &v, &vl);
+                num_to_str(*(int*)iter.data.value.data, &v, &vl);
                 bd_xjson_stack_push(tofree, v);
                 break;
             case BD_XJSON_ARRAY:
-                arr_to_str((bd_xjson_list*)it.value.data, &v, &vl);
+                arr_to_str((bd_xjson_list*)iter.data.value.data, &v, &vl);
                 bd_xjson_stack_push(tofree, v);
                 break;
             case BD_XJSON_TRUE:
@@ -223,9 +223,9 @@ void obj_to_str(bd_xjson_htab* htab, char** str, int* len)
                 }
                 return ;
         }
-        bd_xjson_stack_push(kstk, it.key);
+        bd_xjson_stack_push(kstk, iter.data.key);
         bd_xjson_stack_push(vstk, v);
-        *len += (vl + strlen(it.key) + 3);
+        *len += (vl + strlen(iter.data.key) + 3);
     }
     if(htab->size == 0)
     {
@@ -354,6 +354,7 @@ char* bd_xjson_stringify(void* __bd_xjson)
             break;
         case BD_XJSON_NUMBER:
             num_to_str(*(int*)json->data, &json_str, &len);
+            break;
         case BD_XJSON_ARRAY:
             arr_to_str((bd_xjson_list*)json->data, &json_str, &len);
             break;

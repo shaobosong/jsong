@@ -119,31 +119,34 @@ static int entries_deep_copy(bd_xjson_entry* dest, bd_xjson_entry* src, uint64_t
     return 0;
 }
 
-static int entries_grow_copy(bd_xjson_entry* dest, bd_xjson_entry* src, uint64_t ncap, uint64_t ocap)
+static int entries_grow_copy(bd_xjson_htab* htab, bd_xjson_entry* old_entries, uint64_t old_capacity)
 {
-    if(NULL == dest)
+    bd_xjson_entry* new_entries = htab->entries;
+    uint64_t new_capacity = htab->capacity;
+    /* if hash table is empty, program cannot run so far */
+    htab->begin = new_capacity;
+    htab->end = 0;
+    for(int i = 0; i < old_capacity; i++)
     {
-        THROW_WARNING("DEST is not initialized");
-        return -1;
-    }
-    if(NULL == src)
-    {
-        THROW_WARNING("SRC is not initialized");
-        return -1;
-    }
-    for(int i = 0; i < ocap; i++)
-    {
-        if(NULL == src[i].key)
+        if(NULL == old_entries[i].key)
         {
             continue;
         }
-        uint64_t j = (uint64_t)(hash_key(src[i].key) & (ncap - 1));
+        uint64_t j = (uint64_t)(hash_key(old_entries[i].key) & (new_capacity - 1));
         /* unsafe */
-        while(dest[j].key)
+        while(new_entries[j].key)
         {
-            j = (j + 1) & (ncap - 1);
+            j = (j + 1) & (new_capacity - 1);
         }
-        dest[j] = src[i];
+        new_entries[j] = old_entries[i];
+        if(j < htab->begin)
+        {
+            htab->begin = j;
+        }
+        if(htab->end < j + 1)
+        {
+            htab->end = j + 1;
+        }
     }
     return 0;
 }
@@ -165,6 +168,8 @@ int htab_create(bd_xjson_htab** htab, uint64_t capacity)
     h->capacity = capacity;
     h->entries = xzmalloc(capacity*sizeof(bd_xjson_entry));
     h->size = 0;
+    h->begin = capacity;
+    h->end = 0;
 
     *htab = h;
     return 0;
@@ -198,26 +203,25 @@ static int htab_grow(bd_xjson_htab* htab, uint64_t new_capacity)
         THROW_WARNING("illegal CAPACITY of HTAB try to grow");
         return -1;
     }
-    /* calculate new capacity */
     uint64_t old_capacity = htab->capacity;
+    bd_xjson_entry* old_entries = htab->entries;
     if(new_capacity < old_capacity)
     {
         THROW_WARNING("new CAPACITY of HTAB is overflow");
         return -1;
     }
-    bd_xjson_entry* old_entries = htab->entries;
-    bd_xjson_entry* new_entries = xzmalloc(new_capacity*sizeof(bd_xjson_entry));
+    /* set new htab properities */
+    htab->entries = xzmalloc(new_capacity*sizeof(bd_xjson_entry));
+    htab->capacity = new_capacity;
     /* apply shallow copy but not deep copy to improve performance */
-    if(entries_grow_copy(new_entries, old_entries, new_capacity, old_capacity))
+    if(entries_grow_copy(htab, old_entries, old_capacity))
     {
         THROW_WARNING("shallow copy old entries to the new failed");
         return -1;
     }
     /* free old entries */
     xfree(old_entries);
-    /* get new htab */
-    htab->capacity = new_capacity;
-    htab->entries = new_entries;
+
 
     return 0;
 }
@@ -246,6 +250,8 @@ int htab_copy(bd_xjson_htab* dest, bd_xjson_htab* src)
     }
     dest->capacity = src->capacity;
     dest->size = src->size;
+    dest->begin = src->begin;
+    dest->end = src->end;
 
     return 0;
 }
@@ -316,6 +322,15 @@ int htab_insert(bd_xjson_htab* htab, const char* key, bd_xjson* val)
     }
     /* plus 1 in size */
     htab->size += 1;
+    /* alter index of begin and end iterator */
+    if(i < htab->begin)
+    {
+        htab->begin = i;
+    }
+    if(htab->end < i + 1)
+    {
+        htab->end = i + 1;
+    }
 
     return 0;
 }
@@ -385,6 +400,24 @@ int htab_erase(bd_xjson_htab* htab, const char* key)
         e = (e + 1) & (htab->capacity - 1);
     }
     entries_reorder(htab->entries, htab->capacity, s, i, e);
+
+    for(uint64_t i = htab->begin; i <= htab->capacity; i++)
+    {
+        if(i == htab->capacity || htab->entries[i].key)
+        {
+            htab->begin = i;
+            break;
+        }
+    }
+
+    for(uint64_t i = htab->end; i >=0 ; i--)
+    {
+        if(i == 0 || htab->entries[i-1].key)
+        {
+            htab->end = i;
+            break;
+        }
+    }
 
     return 0;
 }
@@ -479,23 +512,41 @@ int htab_update(bd_xjson_htab* htab, const char* key, bd_xjson* val)
     return 0;
 }
 
-bd_xjson_htab_iter htab_iterate(bd_xjson_htab* htab, bd_xjson_htab_iter it)
+bd_xjson_htab_iter htab_begin(bd_xjson_htab* htab)
 {
-    if(it.__count == htab->size)
+    bd_xjson_htab_iter iter = {0};
+    iter.index = htab->begin;
+    if(iter.index != htab->capacity)
     {
-        it.key = NULL;
-        memset(&(it.value), 0, sizeof(it.value));
-        return it;
+        iter.data = htab->entries[iter.index];
     }
-    for(it.__index++; it.__index < htab->capacity; it.__index++)
+    return iter;
+}
+
+bd_xjson_htab_iter
+htab_iterate(bd_xjson_htab* htab, bd_xjson_htab_iter iter)
+{
+    iter.index += 1;
+    /* htab is empty or iterator has been iterated to end */
+    if(iter.index > htab->end)
     {
-        if(htab->entries[it.__index].key)
+        iter.index -= 1;
+        return iter;
+    }
+    /* iterate to end */
+    if(iter.index == htab->end)
+    {
+        memset(&(iter.data), 0, sizeof(iter.data));
+        return iter;
+    }
+    /* continue */
+    for(; ; iter.index++)
+    {
+        if(htab->entries[iter.index].key)
         {
-            it.key = htab->entries[it.__index].key;
-            it.value = htab->entries[it.__index].value;
-            it.__count += 1;
+            iter.data = htab->entries[iter.index];
             break;
         }
     }
-    return it;
+    return iter;
 }
