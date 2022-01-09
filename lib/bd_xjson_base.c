@@ -180,7 +180,6 @@ void obj_to_str(bd_xjson_htab* htab, char** str, int* len)
     bd_xjson_stack_init(tofree, htab->size);
 
     *len = 2;
-    bd_xjson_htab_iter iter;
     bd_xjson_htab_foreach(htab, iter)
     {
         int vl = 0;
