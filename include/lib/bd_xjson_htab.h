@@ -34,14 +34,15 @@ int htab_erase(bd_xjson_htab* htab, const char* key);
 int htab_find(bd_xjson_htab* htab, const char* key, bd_xjson* val);
 int htab_update(bd_xjson_htab* htab, const char* key, bd_xjson* val);
 
-typedef bd_xjson_iter(bd_xjson_entry) bd_xjson_htab_iter;
+/* define struct of iterator by type and name of data */
+typedef bd_xjson_iter(bd_xjson_entry, entry) bd_xjson_htab_iter;
 bd_xjson_htab_iter htab_begin(bd_xjson_htab* htab);
 bd_xjson_htab_iter htab_end(bd_xjson_htab* htab);
 bd_xjson_htab_iter htab_iterate(bd_xjson_htab* htab, bd_xjson_htab_iter iter);
-
-#define bd_xjson_htab_foreach(h, i) \
-    for(bd_xjson_htab_iter i = htab_begin(h), e = htab_end(h); \
-        i.index != e.index; \
-        i = htab_iterate(h, i))
+#define bd_xjson_htab_foreach(__htab, __iter, __end) \
+    for(bd_xjson_htab_iter __iter = htab_begin(__htab), \
+        __end = htab_end(__htab); \
+        __iter.index != __end.index; \
+        __iter = htab_iterate(__htab, __iter))
 
 #endif

@@ -29,9 +29,9 @@ int list_erase(bd_xjson_list* list, int pos);
 int list_free(bd_xjson_list* list);
 int list_find(bd_xjson_list* list, int pos, bd_xjson* val);
 int list_update(bd_xjson_list* list, int pos, bd_xjson* val);
-#define bd_xjson_list_foreach(l, n) \
-    for(n = l->head; n; n = n->next)
-#define bd_xjson_list_foreach_reverse_order(l, n) \
-    for(n = l->tail; n; n = n->prev)
+#define bd_xjson_list_foreach(__list, __node) \
+    for(bd_xjson_node* __node = __list->head; __node; __node = __node->next)
+#define bd_xjson_list_foreach_in_reverse(__list, __node) \
+    for(bd_xjson_node* __node = __list->tail; __node; __node = __node->prev)
 
 #endif

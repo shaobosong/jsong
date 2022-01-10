@@ -180,25 +180,25 @@ void obj_to_str(bd_xjson_htab* htab, char** str, int* len)
     bd_xjson_stack_init(tofree, htab->size);
 
     *len = 2;
-    bd_xjson_htab_foreach(htab, iter)
+    bd_xjson_htab_foreach(htab, iter, end)
     {
         int vl = 0;
         char* v = NULL;
-        switch(iter.data.value.type)
+        switch(iter.entry.value.type)
         {
             case BD_XJSON_OBJECT:
-                obj_to_str((bd_xjson_htab*)iter.data.value.data, &v, &vl);
+                obj_to_str((bd_xjson_htab*)iter.entry.value.data, &v, &vl);
                 break;
             case BD_XJSON_STRING:
-                chars_to_str(iter.data.value.data, &v, &vl);
+                chars_to_str(iter.entry.value.data, &v, &vl);
                 bd_xjson_stack_push(tofree, v);
                 break;
             case BD_XJSON_NUMBER:
-                num_to_str(*(int*)iter.data.value.data, &v, &vl);
+                num_to_str(*(int*)iter.entry.value.data, &v, &vl);
                 bd_xjson_stack_push(tofree, v);
                 break;
             case BD_XJSON_ARRAY:
-                arr_to_str((bd_xjson_list*)iter.data.value.data, &v, &vl);
+                arr_to_str((bd_xjson_list*)iter.entry.value.data, &v, &vl);
                 bd_xjson_stack_push(tofree, v);
                 break;
             case BD_XJSON_TRUE:
@@ -222,9 +222,9 @@ void obj_to_str(bd_xjson_htab* htab, char** str, int* len)
                 }
                 return ;
         }
-        bd_xjson_stack_push(kstk, iter.data.key);
+        bd_xjson_stack_push(kstk, iter.entry.key);
         bd_xjson_stack_push(vstk, v);
-        *len += (vl + strlen(iter.data.key) + 3);
+        *len += (vl + strlen(iter.entry.key) + 3);
     }
     if(htab->size == 0)
     {
@@ -267,8 +267,7 @@ void arr_to_str(bd_xjson_list* list, char** str, int* len)
     bd_xjson_stack_init(tofree, list->size);
 
     *len = 2;
-    bd_xjson_node* node;
-    bd_xjson_list_foreach_reverse_order(list, node)
+    bd_xjson_list_foreach_in_reverse(list, node)
     {
         int l;
         char* s = NULL;

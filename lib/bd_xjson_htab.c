@@ -166,7 +166,7 @@ int htab_free(bd_xjson_htab* htab)
         return -1;
     }
     /* entries clear */
-    bd_xjson_htab_foreach(htab, iter)
+    bd_xjson_htab_foreach(htab, iter, end)
     {
         if(entry_clear(&htab->entries[iter.index]))
         {
@@ -205,15 +205,15 @@ static int htab_grow(bd_xjson_htab* htab, uint64_t new_capacity)
     htab->first = new_capacity;
     htab->last = new_capacity;
     /* apply shallow copy but not deep copy to improve performance */
-    bd_xjson_htab_foreach(&old_htab, iter)
+    bd_xjson_htab_foreach(&old_htab, iter, end)
     {
-        uint64_t index = (uint64_t)(hash_key(old_htab.entries[iter.index].key) & (new_capacity - 1));
+        uint64_t index = (uint64_t)(hash_key(iter.entry.key) & (new_capacity - 1));
         /* unsafe */
         while(htab->entries[index].key)
         {
             index = (index + 1) & (new_capacity - 1);
         }
-        htab->entries[index] = old_htab.entries[iter.index];
+        htab->entries[index] = iter.entry;
         entry_placed_in(htab, index);
     }
     /* free old entries */
@@ -240,7 +240,7 @@ int htab_copy(bd_xjson_htab* dest, bd_xjson_htab* src)
         return -1;
     }
     /* copy entries from src */
-    bd_xjson_htab_foreach(src, iter)
+    bd_xjson_htab_foreach(src, iter, end)
     {
         if(entry_copy(&dest->entries[iter.index], &src->entries[iter.index]))
         {
@@ -495,7 +495,7 @@ bd_xjson_htab_iter htab_begin(bd_xjson_htab* htab)
 {
     bd_xjson_htab_iter iter = {0};
     iter.index = htab->first;
-    iter.data = htab->entries[htab->first];
+    iter.entry = htab->entries[htab->first];
     return iter;
 }
 
@@ -509,7 +509,7 @@ bd_xjson_htab_iter htab_end(bd_xjson_htab* htab)
 bd_xjson_htab_iter
 htab_iterate(bd_xjson_htab* htab, bd_xjson_htab_iter iter)
 {
-    iter.index = iter.data.next;
-    iter.data = htab->entries[iter.data.next];
+    iter.index = iter.entry.next;
+    iter.entry = htab->entries[iter.entry.next];
     return iter;
 }
