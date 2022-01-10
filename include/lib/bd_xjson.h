@@ -173,7 +173,7 @@ struct bd_xjson_null
 };
 #define BD_XJSON_NULL_CLASS(p)     \
     BD_XJSON(bd_xjson_null, p);    \
-    P->type = BD_XJSON_NULL;       \
+    p->type = BD_XJSON_NULL;       \
     p->data = NULL
 
 
