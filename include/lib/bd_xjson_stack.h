@@ -24,6 +24,11 @@ do{ \
 #define bd_xjson_stack_push(__stk, __ele) \
 do{ \
     __stk.top = (__stk.top + 1) % (__stk.capacity + 1); \
+    if(__stk.top > __stk.capacity >> 1) \
+    { \
+        __stk.data = xrealloc(__stk.data, (__stk.capacity<<1)*sizeof(*(__stk.data))); \
+        __stk.capacity = __stk.capacity<<1; \
+    } \
     __stk.data[__stk.top] = __ele; \
     __stk.size += 1; \
 } while(0)
@@ -32,6 +37,13 @@ do{ \
 do{ \
     __stk.top = __stk.capacity - ((__stk.capacity - __stk.top + 1) % (__stk.capacity + 1)); \
     __stk.size -= 1; \
+} while(0)
+
+#define bd_xjson_stack_pop_all(__stk) \
+do{ \
+    memset(__stk.data, 0, (__stk.capacity)*sizeof(*(__stk.data))); \
+    __stk.top = __stk.capacity; \
+    __stk.size = 0; \
 } while(0)
 
 #define bd_xjson_stack_clear(__stk) \
