@@ -16,6 +16,31 @@ typedef struct bd_xjson_null bd_xjson_null;
 
 #define BD_XJSON(type, p) \
     type* p = xzmalloc(sizeof *p)
+#define FREE_JSON_DATA(p)                                   \
+do                                                          \
+{                                                           \
+    switch((p)->type)                                       \
+    {                                                       \
+        case BD_XJSON_OBJECT:                               \
+            obj_default_dstr((bd_xjson_object*)(p));        \
+            break;                                          \
+        case BD_XJSON_STRING:                               \
+            str_default_dstr((bd_xjson_string*)(p));        \
+            break;                                          \
+        case BD_XJSON_NUMBER:                               \
+            num_default_dstr((bd_xjson_number*)(p));        \
+            break;                                          \
+        case BD_XJSON_ARRAY:                                \
+            arr_default_dstr((bd_xjson_array*)(p));         \
+            break;                                          \
+        case BD_XJSON_TRUE:                                 \
+        case BD_XJSON_FALSE:                                \
+        case BD_XJSON_NULL:                                 \
+            break;                                          \
+        default:                                            \
+            THROW_EXCEPTION("illegal type from the freed"); \
+    }                                                       \
+} while (0)
 
 /*
  *  bd_xjson_object class
