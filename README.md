@@ -3,6 +3,7 @@ A simple json library for c language
 # compile
 ./compile.h
 # usage
+```
 #include "lib/bd_xjson_api.h"
 int main()
 {
@@ -40,3 +41,4 @@ int main()
     
     return 0;
 }
+```
