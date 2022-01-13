@@ -277,6 +277,53 @@ static uint64_t htab_find_id(bd_xjson_htab* htab, const char* key)
     return i;
 }
 
+int htab_insert_direct(bd_xjson_htab* htab, const char* key, bd_xjson* val)
+{
+    if(NULL == htab)
+    {
+        THROW_WARNING("HTAB is not initialized");
+        return -1;
+    }
+    if(NULL == key)
+    {
+        THROW_WARNING("KEY is not initialized");
+        return -1;
+    }
+    if(NULL == val)
+    {
+        THROW_WARNING("VAL is not initialized");
+        return -1;
+    }
+    /* if size of hash table will exceed half of capacity, grow it */
+    if(htab->size > (htab->capacity >> 1))
+    {
+        if(htab_grow(htab, htab->capacity << 1))
+        {
+            THROW_WARNING("hash table grow failed");
+            return -1;
+        }
+    }
+
+    uint64_t i = htab_find_id(htab, key);
+    if(htab->entries[i].key)
+    {
+        THROW_WARNING("hash table try to insert <value> by existed <key>");
+        return -1;
+    }
+    /* insert a key */
+    int s = strlen(key) + 1;
+    htab->entries[i].key = xzmalloc(s);
+    strcat(htab->entries[i].key, key);
+    /* insert a value */
+    htab->entries[i].value = *val;
+    /* plus 1 in size */
+    htab->size += 1;
+    /* alter index of begin and end iterator */
+    entry_placed_in(htab, i);
+
+    return 0;
+}
+
 int htab_insert(bd_xjson_htab* htab, const char* key, bd_xjson* val)
 {
     if(NULL == htab)

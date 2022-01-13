@@ -24,6 +24,7 @@ struct bd_xjson_list
 };
 int list_create(bd_xjson_list** list);
 int list_copy(bd_xjson_list* dest, bd_xjson_list* src);
+int list_insert_direct(bd_xjson_list* list, int pos, bd_xjson* val);
 int list_insert(bd_xjson_list* list, int pos, bd_xjson* val);
 int list_erase(bd_xjson_list* list, int pos);
 int list_free(bd_xjson_list* list);

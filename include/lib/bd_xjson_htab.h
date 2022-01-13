@@ -29,6 +29,7 @@ struct bd_xjson_htab
 int htab_create(bd_xjson_htab** htab, uint64_t capacity);
 int htab_copy(bd_xjson_htab* dest, bd_xjson_htab* src);
 int htab_free(bd_xjson_htab* htab);
+int htab_insert_direct(bd_xjson_htab* htab, const char* key, bd_xjson* val);
 int htab_insert(bd_xjson_htab* htab, const char* key, bd_xjson* val);
 int htab_erase(bd_xjson_htab* htab, const char* key);
 int htab_find(bd_xjson_htab* htab, const char* key, bd_xjson* val);

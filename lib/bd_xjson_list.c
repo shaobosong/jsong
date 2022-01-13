@@ -128,6 +128,97 @@ int list_copy(bd_xjson_list* dest, bd_xjson_list* src)
     return 0;
 }
 
+int list_insert_direct(bd_xjson_list* list, int pos, bd_xjson* val)
+{
+    if(NULL == list)
+    {
+        THROW_WARNING("LIST is not initialized");
+        return -1;
+    }
+    if(NULL == val)
+    {
+        THROW_WARNING("VAL is not initialized");
+        return -1;
+    }
+    if(pos > list->size || pos < -list->size-1)
+    {
+        THROW_WARNING("try to insert in illegal POS");
+        return -1;
+    }
+
+    bd_xjson_node* node = NULL;
+    if(node_create(&(node)))
+    {
+        THROW_WARNING("node initializaition failed");
+        return -1;
+    }
+    node->value = *val;
+
+    /* insert into head if list have no any nodes */
+    if( 0 == list->size)
+    {
+        node->next = NULL;
+        node->prev = NULL;
+        list->head = node;
+        list->tail = node;
+        list->size += 1;
+        return 0;
+    }
+    /* insert into head behind position */
+    if( 0 == pos || -list->size-1 == pos)
+    {
+        node->next = list->head;
+        node->prev = NULL;
+        list->head->prev = node;
+        list->head = node; /* new head node */
+        list->size += 1;
+        return 0;
+    }
+    /* insert into tail behind position */
+    if(-1 == pos || list->size == pos)
+    {
+        node->next = NULL;
+        node->prev = list->tail;
+        list->tail->next = node;
+        list->tail = node;
+        list->size += 1;
+        return 0;
+    }
+    /* insert from head behind position */
+    if(pos > 0)
+    {
+        bd_xjson_node* curr;
+        curr = list->head->next;
+        for(int i = 1; i < pos; i++)
+        {
+            curr = curr->next;
+        }
+        node->next = curr;
+        node->prev = curr->prev;
+        curr->prev->next = node;
+        curr->prev = node;
+        list->size += 1;
+        return 0;
+    }
+    /* insert from tail behind position */
+    else if(pos < -1)
+    {
+        bd_xjson_node* curr;
+        curr = list->tail->prev;
+        for(int i = -2; i > pos; i--)
+        {
+            curr = curr->prev;
+        }
+        node->next = curr->next;
+        node->prev = curr;
+        curr->next->prev = node;
+        curr->next = node;
+        list->size += 1;
+        return 0;
+    }
+    return -1;
+}
+
 int list_insert(bd_xjson_list* list, int pos, bd_xjson* val)
 {
     if(NULL == list)
