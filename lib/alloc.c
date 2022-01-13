@@ -7,7 +7,10 @@ void* xzmalloc(int s)
 {
     void* p;
     p = malloc(s);
-    MY_ASSERT(s != 0 && p != NULL);
+    if( s!=0 )
+    {
+        MY_ASSERT(p != NULL);
+    }
     memset(p, 0, s);
     return (p);
 }
@@ -15,7 +18,10 @@ void* xzmalloc(int s)
 void* xrealloc(void* p, int s)
 {
     p = realloc(p, s);
-    MY_ASSERT(s != 0 && p != NULL);
+    if( s!=0 )
+    {
+        MY_ASSERT(p != NULL);
+    }
     return (p);
 }
 
