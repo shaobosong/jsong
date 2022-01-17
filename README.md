@@ -39,6 +39,13 @@ int main()
     /* you can print your result in stdout */
     /* printf("%s\n", bd_xjson_stringify(obj)); */
     
+    /* free json obejct */
+    FREE_JSON(obj);
+    FREE_JSON(arr);
+    FREE_JSON(number);
+    FREE_JSON(maxint);
+    FREE_JSON(string);
+    
     return 0;
 }
 ```
