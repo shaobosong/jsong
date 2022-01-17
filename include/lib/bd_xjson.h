@@ -139,6 +139,7 @@ void arr_add(bd_xjson_array* arr, int pos, void* val);
 void arr_delete(bd_xjson_array* arr, int pos);
 void arr_search(bd_xjson_array* arr, int pos, void* val);
 void arr_update(bd_xjson_array* arr, int pos, void* val);
+void arr_qsort(bd_xjson_array* arr, int (*compare_fn)(const void*, const void*));
 struct bd_xjson_array
 {
 /* parent class */
@@ -149,6 +150,7 @@ struct bd_xjson_array
     void (*delete)(bd_xjson_array* this, int pos);
     void (*search)(bd_xjson_array* this, int pos, void* val);
     void (*update)(bd_xjson_array* this, int pos, void* val);
+    void (*sort)(bd_xjson_array* this, int (*compare_fn)(const void*, const void*));
 };
 #define BD_XJSON_ARRAY_CLASS(p)    \
     BD_XJSON(bd_xjson_array, p);   \
@@ -157,7 +159,8 @@ struct bd_xjson_array
     p->add = arr_add;              \
     p->delete = arr_delete;        \
     p->search = arr_search;        \
-    p->update = arr_update
+    p->update = arr_update;        \
+    p->sort = arr_qsort
 
 
 /*

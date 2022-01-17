@@ -234,6 +234,18 @@ void arr_update(bd_xjson_array* arr, int pos, void* val)
         THROW_EXCEPTION("update error");
     }
 }
+void arr_qsort(bd_xjson_array* arr, int (*compare_fn)(const void*, const void*))
+{
+    if(NULL == arr)
+    {
+        THROW_EXCEPTION("uninitialized array class try to update");
+    }
+    if(NULL == arr->data)
+    {
+        THROW_EXCEPTION("uninitialized data of array class try to update");
+    }
+    list_qsort(arr->data, compare_fn);
+}
 
 void str_default_cstr(bd_xjson_string* this)
 {

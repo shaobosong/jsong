@@ -531,3 +531,49 @@ int list_update(bd_xjson_list* list, int pos, bd_xjson* val)
     }
     return 0;
 }
+
+static void node_swap(bd_xjson_node* node1, bd_xjson_node* node2)
+{
+    if(node1 == node2)
+    {
+        return ;
+    }
+    void* temp = node1->value.data;
+    node1->value.data = node2->value.data;
+    node2->value.data = temp;
+    return ;
+}
+
+static void list_qsort_recur(
+    int (*compare_fn)(const void*, const void*),
+    bd_xjson_node* head,
+    bd_xjson_node* pivot,
+    bd_xjson_node* tail)
+{
+    if(head == tail || tail->next == head)
+    {
+        return ;
+    }
+    bd_xjson_node* ln = head;
+    bd_xjson_node* rn = tail;
+    while(ln != rn)
+    {
+        while(ln != rn && compare_fn(pivot->value.data, rn->value.data) <= 0)
+        {
+            rn = rn->prev;
+        }
+        while(ln != rn && compare_fn(ln->value.data, pivot->value.data) <= 0)
+        {
+            ln = ln->next;
+        }
+        node_swap(ln, rn);
+    }
+    node_swap(rn, pivot);
+    list_qsort_recur(compare_fn, head, head, rn->prev);
+    list_qsort_recur(compare_fn, rn->next, rn->next, tail);
+}
+
+void list_qsort(bd_xjson_list* list, int (*compare_fn)(const void*, const void*))
+{
+    list_qsort_recur(compare_fn, list->head, list->head, list->tail);
+}
