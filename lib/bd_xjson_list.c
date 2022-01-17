@@ -575,5 +575,8 @@ static void list_qsort_recur(
 
 void list_qsort(bd_xjson_list* list, int (*compare_fn)(const void*, const void*))
 {
+    bd_xjson_node sentinel = {.next = list->head, .prev = NULL};
+    list->head->prev = &sentinel;
     list_qsort_recur(compare_fn, list->head, list->head, list->tail);
+    list->head->prev = NULL;
 }
