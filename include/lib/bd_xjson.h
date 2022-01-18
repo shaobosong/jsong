@@ -57,6 +57,11 @@ void obj_copy_cstr(bd_xjson_object* this, bd_xjson_object* obj);
 void obj_default_dstr(bd_xjson_object* this);
 /* member functions */
 void obj_add(bd_xjson_object* obj, const char* key, void* val);
+void obj_add_str(bd_xjson_object* obj, const char* key, char* str);
+void obj_add_num(bd_xjson_object* obj, const char* key, int num);
+void obj_add_true(bd_xjson_object* obj, const char* key);
+void obj_add_false(bd_xjson_object* obj, const char* key);
+void obj_add_null(bd_xjson_object* obj, const char* key);
 void obj_delete(bd_xjson_object* obj, const char* key);
 void obj_search(bd_xjson_object* obj, const char* key, void* val);
 void obj_update(bd_xjson_object* obj, const char* key, void* val);
@@ -67,6 +72,11 @@ struct bd_xjson_object
 /* public */
     /* member functions */
     void (*add)(bd_xjson_object* this, const char* key, void* val);
+    void (*add_str)(bd_xjson_object* this, const char* key, char* val);
+    void (*add_num)(bd_xjson_object* this, const char* key, int val);
+    void (*add_true)(bd_xjson_object* this, const char* key);
+    void (*add_false)(bd_xjson_object* this, const char* key);
+    void (*add_null)(bd_xjson_object* this, const char* key);
     void (*delete)(bd_xjson_object* this, const char* key);
     void (*search)(bd_xjson_object* this, const char* key, void* val);
     void (*update)(bd_xjson_object* this, const char* key, void* val);
@@ -76,6 +86,11 @@ struct bd_xjson_object
     p->type = BD_XJSON_OBJECT;      \
     p->data = NULL;                 \
     p->add = obj_add;               \
+    p->add_str = obj_add_str;       \
+    p->add_num = obj_add_num;       \
+    p->add_true = obj_add_true;     \
+    p->add_false = obj_add_false;   \
+    p->add_null = obj_add_null;     \
     p->delete = obj_delete;         \
     p->search = obj_search;         \
     p->update = obj_update
@@ -136,6 +151,11 @@ void arr_copy_cstr(bd_xjson_array* this, bd_xjson_array* arr);
 void arr_default_dstr(bd_xjson_array* this);
 /* member functions */
 void arr_add(bd_xjson_array* arr, int pos, void* val);
+void arr_add_str(bd_xjson_array* arr, int pos, char* val);
+void arr_add_num(bd_xjson_array* arr, int pos, int val);
+void arr_add_true(bd_xjson_array* arr, int pos);
+void arr_add_false(bd_xjson_array* arr, int pos);
+void arr_add_null(bd_xjson_array* arr, int pos);
 void arr_delete(bd_xjson_array* arr, int pos);
 void arr_search(bd_xjson_array* arr, int pos, void* val);
 void arr_update(bd_xjson_array* arr, int pos, void* val);
@@ -147,6 +167,11 @@ struct bd_xjson_array
 /* public */
     /* member functions */
     void (*add)(bd_xjson_array* this, int pos, void* val);
+    void (*add_str)(bd_xjson_array* this, int pos, char* val);
+    void (*add_num)(bd_xjson_array* this, int pos, int val);
+    void (*add_true)(bd_xjson_array* this, int pos);
+    void (*add_false)(bd_xjson_array* this, int pos);
+    void (*add_null)(bd_xjson_array* this, int pos);
     void (*delete)(bd_xjson_array* this, int pos);
     void (*search)(bd_xjson_array* this, int pos, void* val);
     void (*update)(bd_xjson_array* this, int pos, void* val);
@@ -157,6 +182,11 @@ struct bd_xjson_array
     p->type = BD_XJSON_ARRAY;      \
     p->data = NULL;                \
     p->add = arr_add;              \
+    p->add_str = arr_add_str;      \
+    p->add_num = arr_add_num;      \
+    p->add_true = arr_add_true;    \
+    p->add_false = arr_add_false;  \
+    p->add_null = arr_add_null;    \
     p->delete = arr_delete;        \
     p->search = arr_search;        \
     p->update = arr_update;        \
