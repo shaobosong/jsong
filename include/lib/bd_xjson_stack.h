@@ -67,7 +67,7 @@ do{ \
 
 #define bd_xjson_stack_clear(__stk) \
 do{ \
-    (__stk).top = 0; \
+    (__stk).top = -1; \
     (__stk).capacity = 0; \
     (__stk).size = 0; \
     xfree((__stk).data); \
