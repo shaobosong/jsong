@@ -9,25 +9,35 @@ int main()
 {
     JSON_OBJECT(obj);
     JSON_ARRAY(arr);
-    JSON_NUMBER_ASSIGN(number, 2022);
-    JSON_NUMBER_ASSIGN(maxint, 2147483647);
-    JSON_STRING_ASSIGN(string, "good morning");
+    JSON_NUMBER(num, 2022);
+    JSON_NUMBER(max, 2147483647);
+    JSON_STRING(str, "");
 
     /* add a key-value in json OBJECT */
-    obj->add(obj, "key0", number);
+    obj->add(obj, "key0", num);
+    obj->add_str(obj, "key1", "this is a `string` message");
+    obj->add_num(obj, "key2", 1993);
+    obj->add_true(obj, "key3");
+    obj->add_false(obj, "key4");
+    obj->add_null(obj, "key5");
     /* update a key-value in json OBJECT */
-    obj->update(obj, "key0", maxint);
+    obj->update(obj, "key0", max);
     /* search a key-value in json OBJECT */
-    obj->search(obj, "key0", number);
+    obj->search(obj, "key1", str);
     /* delete a key-value in json OBJECT */
     obj->delete(obj, "key0");
 
     /* add a value in tail end of json ARRAY */
-    arr->add(arr, -1, number);
+    arr->add(arr, -1, num);
+    arr->add_str(arr, -1, "this is second `string` message");
+    arr->add_num(arr, -1, 1993);
+    arr->add_true(arr, -1);
+    arr->add_false(arr, -1);
+    arr->add_null(arr, -1);
     /* update a value in json ARRAY */
-    arr->update(arr, 0, maxint);
+    arr->update(arr, 0, max);
     /* search a value in json ARRAY */
-    arr->search(arr, -1, number);
+    arr->search(arr, 2, num);
     /* delete a value in json ARRAY */
     arr->delete(arr, -1);
 
@@ -38,14 +48,14 @@ int main()
     int res = bd_xjson_parse("{\"status\":0, \"list\":[{\"fullname\":\"/bin\", \"type\":4, \"mode\":\"drwx--x--x\"}]}", obj);
     /* you can print your result in stdout */
     /* printf("%s\n", bd_xjson_stringify(obj)); */
-    
+
     /* free json obejct */
     FREE_JSON(obj);
     FREE_JSON(arr);
-    FREE_JSON(number);
-    FREE_JSON(maxint);
-    FREE_JSON(string);
-    
+    FREE_JSON(num);
+    FREE_JSON(str);
+    FREE_JSON(max);
+
     return 0;
 }
 ```

@@ -14,8 +14,6 @@ typedef struct bd_xjson_true bd_xjson_true;
 typedef struct bd_xjson_false bd_xjson_false;
 typedef struct bd_xjson_null bd_xjson_null;
 
-#define BD_XJSON(type, p) \
-    type* p = xzmalloc(sizeof *p)
 #define FREE_JSON_DATA(p)                                   \
 do                                                          \
 {                                                           \
@@ -81,27 +79,29 @@ struct bd_xjson_object
     void (*search)(bd_xjson_object* this, const char* key, void* val);
     void (*update)(bd_xjson_object* this, const char* key, void* val);
 };
-#define BD_XJSON_OBJECT_CLASS(p)    \
-    BD_XJSON(bd_xjson_object, p);   \
-    p->type = BD_XJSON_OBJECT;      \
-    p->data = NULL;                 \
-    p->add = obj_add;               \
-    p->add_str = obj_add_str;       \
-    p->add_num = obj_add_num;       \
-    p->add_true = obj_add_true;     \
-    p->add_false = obj_add_false;   \
-    p->add_null = obj_add_null;     \
-    p->delete = obj_delete;         \
-    p->search = obj_search;         \
-    p->update = obj_update
+#define BD_XJSON_OBJECT_CLASS(__ptr)    \
+do                                      \
+{                                       \
+    (__ptr)->type = BD_XJSON_OBJECT;    \
+    (__ptr)->data = NULL;               \
+    (__ptr)->add = obj_add;             \
+    (__ptr)->add_str = obj_add_str;     \
+    (__ptr)->add_num = obj_add_num;     \
+    (__ptr)->add_true = obj_add_true;   \
+    (__ptr)->add_false = obj_add_false; \
+    (__ptr)->add_null = obj_add_null;   \
+    (__ptr)->delete = obj_delete;       \
+    (__ptr)->search = obj_search;       \
+    (__ptr)->update = obj_update;       \
+} while(0)
 
 
 /*
  *  bd_xjson_string class
  */
 /* constructor */
-void str_default_cstr(bd_xjson_string* this);
-void str_copy_cstr(bd_xjson_string* this, bd_xjson_string* str);
+void str_default_cstr(bd_xjson_string* this); /* deprecated */
+void str_copy_cstr(bd_xjson_string* this, bd_xjson_string* str); /* deprecated */
 void str_assign_cstr(bd_xjson_string* this, const char* chars);
 /* destructor */
 void str_default_dstr(bd_xjson_string* this);
@@ -110,18 +110,20 @@ struct bd_xjson_string
 /* parent class */
     bd_xjson_base;
 };
-#define BD_XJSON_STRING_CLASS(p)    \
-    BD_XJSON(bd_xjson_string, p);   \
-    p->type = BD_XJSON_STRING;      \
-    p->data = NULL
+#define BD_XJSON_STRING_CLASS(__ptr) \
+do                                   \
+{                                    \
+    (__ptr)->type = BD_XJSON_STRING; \
+    (__ptr)->data = NULL;            \
+} while(0)
 
 
 /*
  *  bd_xjson_number class
  */
 /* constructor */
-void num_default_cstr(bd_xjson_number* this);
-void num_copy_cstr(bd_xjson_number* this, bd_xjson_number* num);
+void num_default_cstr(bd_xjson_number* this); /* deprecated */
+void num_copy_cstr(bd_xjson_number* this, bd_xjson_number* num); /* deprecated */
 void num_assign_cstr(bd_xjson_number* this, int val);
 /* destructor */
 void num_default_dstr(bd_xjson_number* this);
@@ -130,10 +132,12 @@ struct bd_xjson_number
 /* parent class */
     bd_xjson_base;
 };
-#define BD_XJSON_NUMBER_CLASS(p)    \
-    BD_XJSON(bd_xjson_number, p);   \
-    p->type = BD_XJSON_NUMBER;      \
-    p->data = NULL
+#define BD_XJSON_NUMBER_CLASS(__ptr) \
+do                                   \
+{                                    \
+    (__ptr)->type = BD_XJSON_NUMBER; \
+    (__ptr)->data = NULL;            \
+} while(0)
 
 
 /*
@@ -177,20 +181,22 @@ struct bd_xjson_array
     void (*update)(bd_xjson_array* this, int pos, void* val);
     void (*sort)(bd_xjson_array* this, int (*compare_fn)(const void*, const void*));
 };
-#define BD_XJSON_ARRAY_CLASS(p)    \
-    BD_XJSON(bd_xjson_array, p);   \
-    p->type = BD_XJSON_ARRAY;      \
-    p->data = NULL;                \
-    p->add = arr_add;              \
-    p->add_str = arr_add_str;      \
-    p->add_num = arr_add_num;      \
-    p->add_true = arr_add_true;    \
-    p->add_false = arr_add_false;  \
-    p->add_null = arr_add_null;    \
-    p->delete = arr_delete;        \
-    p->search = arr_search;        \
-    p->update = arr_update;        \
-    p->sort = arr_qsort
+#define BD_XJSON_ARRAY_CLASS(__ptr)      \
+do                                       \
+{                                        \
+    (__ptr)->type = BD_XJSON_ARRAY;      \
+    (__ptr)->data = NULL;                \
+    (__ptr)->add = arr_add;              \
+    (__ptr)->add_str = arr_add_str;      \
+    (__ptr)->add_num = arr_add_num;      \
+    (__ptr)->add_true = arr_add_true;    \
+    (__ptr)->add_false = arr_add_false;  \
+    (__ptr)->add_null = arr_add_null;    \
+    (__ptr)->delete = arr_delete;        \
+    (__ptr)->search = arr_search;        \
+    (__ptr)->update = arr_update;        \
+    (__ptr)->sort = arr_qsort;           \
+} while(0)
 
 
 /*
@@ -201,10 +207,12 @@ struct bd_xjson_true
 /* parent class */
     bd_xjson_base;
 };
-#define BD_XJSON_TRUE_CLASS(p)     \
-    BD_XJSON(bd_xjson_true, p);    \
-    P->type = BD_XJSON_TRUE;       \
-    p->data = NULL
+#define BD_XJSON_TRUE_CLASS(__ptr)  \
+do                                  \
+{                                   \
+    (__ptr)->type = BD_XJSON_TRUE;  \
+    (__ptr)->data = NULL;           \
+} while(0)
 
 
 /*
@@ -215,10 +223,12 @@ struct bd_xjson_false
 /* parent class */
     bd_xjson_base;
 };
-#define BD_XJSON_FALSE_CLASS(p)    \
-    BD_XJSON(bd_xjson_false, p);   \
-    p->type = BD_XJSON_FALSE;      \
-    p->data = NULL
+#define BD_XJSON_FALSE_CLASS(__ptr) \
+do                                  \
+{                                   \
+    (__ptr)->type = BD_XJSON_FALSE; \
+    (__ptr)->data = NULL;           \
+} while(0)
 
 
 /*
@@ -229,10 +239,12 @@ struct bd_xjson_null
 /* parent class */
     bd_xjson_base;
 };
-#define BD_XJSON_NULL_CLASS(p)     \
-    BD_XJSON(bd_xjson_null, p);    \
-    p->type = BD_XJSON_NULL;       \
-    p->data = NULL
+#define BD_XJSON_NULL_CLASS(__ptr)  \
+do                                  \
+{                                   \
+    (__ptr)->type = BD_XJSON_NULL;  \
+    (__ptr)->data = NULL;           \
+} while(0)
 
 
 #endif
