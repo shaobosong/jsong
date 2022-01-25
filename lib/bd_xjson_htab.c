@@ -538,6 +538,39 @@ int htab_update(bd_xjson_htab* htab, const char* key, bd_xjson* val)
     return 0;
 }
 
+int htab_set(bd_xjson_htab* htab, const char* key, bd_xjson* val)
+{
+    if(NULL == htab)
+    {
+        THROW_WARNING("HTAB is not initialized");
+        return -1;
+    }
+    if(NULL == key)
+    {
+        THROW_WARNING("KEY is not initialized");
+        return -1;
+    }
+    if(NULL == val)
+    {
+        THROW_WARNING("VAL is not initialized");
+        return -1;
+    }
+
+    uint64_t i = htab_find_id(htab, key);
+
+    /* free old entry data if exist */
+    if(htab->entries[i].key)
+    {
+        htab_update(htab, key, val);
+    }
+    else
+    {
+        htab_insert(htab, key, val);
+    }
+
+    return 0;
+}
+
 bd_xjson_htab_iter htab_begin(bd_xjson_htab* htab)
 {
     bd_xjson_htab_iter iter = {0};

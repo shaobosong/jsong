@@ -54,30 +54,48 @@ void obj_copy_cstr(bd_xjson_object* this, bd_xjson_object* obj);
 /* destructor */
 void obj_default_dstr(bd_xjson_object* this);
 /* member functions */
-void obj_add(bd_xjson_object* obj, const char* key, void* val);
-void obj_add_str(bd_xjson_object* obj, const char* key, char* str);
-void obj_add_num(bd_xjson_object* obj, const char* key, int num);
-void obj_add_true(bd_xjson_object* obj, const char* key);
-void obj_add_false(bd_xjson_object* obj, const char* key);
-void obj_add_null(bd_xjson_object* obj, const char* key);
+void obj_add(bd_xjson_object* obj, const char* key, void* val); /* deprecated */
+void obj_add_str(bd_xjson_object* obj, const char* key, char* str); /* deprecated */
+void obj_add_num(bd_xjson_object* obj, const char* key, int num); /* deprecated */
+void obj_add_true(bd_xjson_object* obj, const char* key); /* deprecated */
+void obj_add_false(bd_xjson_object* obj, const char* key); /* deprecated */
+void obj_add_null(bd_xjson_object* obj, const char* key); /* deprecated */
 void obj_delete(bd_xjson_object* obj, const char* key);
-void obj_search(bd_xjson_object* obj, const char* key, void* val);
-void obj_update(bd_xjson_object* obj, const char* key, void* val);
+void obj_search(bd_xjson_object* obj, const char* key, void* val); /* deprecated */
+void obj_update(bd_xjson_object* obj, const char* key, void* val); /* deprecated */
+void obj_set(bd_xjson_object* obj, const char* key, void* val);
+void obj_set_str(bd_xjson_object* obj, const char* key, const char* val);
+void obj_set_num(bd_xjson_object* obj, const char* key, int val);
+void obj_set_true(bd_xjson_object* obj, const char* key);
+void obj_set_false(bd_xjson_object* obj, const char* key);
+void obj_set_null(bd_xjson_object* obj, const char* key);
+void obj_get(bd_xjson_object* obj, const char* key, void* val);
+char* obj_get_str(bd_xjson_object* obj, const char* key);
+int obj_get_num(bd_xjson_object* obj, const char* key);
 struct bd_xjson_object
 {
 /* parent class */
     bd_xjson_base;
 /* public */
     /* member functions */
-    void (*add)(bd_xjson_object* this, const char* key, void* val);
-    void (*add_str)(bd_xjson_object* this, const char* key, char* val);
-    void (*add_num)(bd_xjson_object* this, const char* key, int val);
-    void (*add_true)(bd_xjson_object* this, const char* key);
-    void (*add_false)(bd_xjson_object* this, const char* key);
-    void (*add_null)(bd_xjson_object* this, const char* key);
+    void (*add)(bd_xjson_object* this, const char* key, void* val); /* deprecated */
+    void (*add_str)(bd_xjson_object* this, const char* key, char* val); /* deprecated */
+    void (*add_num)(bd_xjson_object* this, const char* key, int val); /* deprecated */
+    void (*add_true)(bd_xjson_object* this, const char* key); /* deprecated */
+    void (*add_false)(bd_xjson_object* this, const char* key); /* deprecated */
+    void (*add_null)(bd_xjson_object* this, const char* key); /* deprecated */
     void (*delete)(bd_xjson_object* this, const char* key);
-    void (*search)(bd_xjson_object* this, const char* key, void* val);
-    void (*update)(bd_xjson_object* this, const char* key, void* val);
+    void (*search)(bd_xjson_object* this, const char* key, void* val); /* deprecated */
+    void (*update)(bd_xjson_object* this, const char* key, void* val); /* deprecated */
+    void (*set)(bd_xjson_object* this, const char* key, void* val);
+    void (*set_str)(bd_xjson_object* this, const char* key, const char* val);
+    void (*set_num)(bd_xjson_object* this, const char* key, int val);
+    void (*set_true)(bd_xjson_object* this, const char* key);
+    void (*set_false)(bd_xjson_object* this, const char* key);
+    void (*set_null)(bd_xjson_object* this, const char* key);
+    void (*get)(bd_xjson_object* this, const char* key, void* val);
+    char* (*get_str)(bd_xjson_object* this, const char* key);
+    int (*get_num)(bd_xjson_object* this, const char* key);
 };
 #define BD_XJSON_OBJECT_CLASS(__ptr)    \
 do                                      \
@@ -93,6 +111,15 @@ do                                      \
     (__ptr)->delete = obj_delete;       \
     (__ptr)->search = obj_search;       \
     (__ptr)->update = obj_update;       \
+    (__ptr)->set = obj_set;             \
+    (__ptr)->set_str = obj_set_str;     \
+    (__ptr)->set_num = obj_set_num;     \
+    (__ptr)->set_true = obj_set_true;   \
+    (__ptr)->set_false = obj_set_false; \
+    (__ptr)->set_null = obj_set_null;   \
+    (__ptr)->get = obj_get;             \
+    (__ptr)->get_str = obj_get_str;     \
+    (__ptr)->get_num = obj_get_num;     \
 } while(0)
 
 
@@ -154,15 +181,24 @@ void arr_copy_cstr(bd_xjson_array* this, bd_xjson_array* arr);
 /* desctrctor */
 void arr_default_dstr(bd_xjson_array* this);
 /* member functions */
-void arr_add(bd_xjson_array* arr, int pos, void* val);
-void arr_add_str(bd_xjson_array* arr, int pos, char* val);
-void arr_add_num(bd_xjson_array* arr, int pos, int val);
-void arr_add_true(bd_xjson_array* arr, int pos);
-void arr_add_false(bd_xjson_array* arr, int pos);
-void arr_add_null(bd_xjson_array* arr, int pos);
+void arr_add(bd_xjson_array* arr, int pos, void* val); /* deprecated */
+void arr_add_str(bd_xjson_array* arr, int pos, char* val); /* deprecated */
+void arr_add_num(bd_xjson_array* arr, int pos, int val); /* deprecated */
+void arr_add_true(bd_xjson_array* arr, int pos); /* deprecated */
+void arr_add_false(bd_xjson_array* arr, int pos); /* deprecated */
+void arr_add_null(bd_xjson_array* arr, int pos); /* deprecated */
 void arr_delete(bd_xjson_array* arr, int pos);
-void arr_search(bd_xjson_array* arr, int pos, void* val);
-void arr_update(bd_xjson_array* arr, int pos, void* val);
+void arr_search(bd_xjson_array* arr, int pos, void* val); /* deprecated */
+void arr_update(bd_xjson_array* arr, int pos, void* val); /* deprecated */
+void arr_set(bd_xjson_array* arr, int pos, void* val);
+void arr_set_str(bd_xjson_array* arr, int pos, char* val);
+void arr_set_num(bd_xjson_array* arr, int pos, int val);
+void arr_set_true(bd_xjson_array* arr, int pos);
+void arr_set_false(bd_xjson_array* arr, int pos);
+void arr_set_null(bd_xjson_array* arr, int pos);
+void arr_get(bd_xjson_array* arr, int pos, void* val);
+char* arr_get_str(bd_xjson_array* arr, int pos);
+int arr_get_num(bd_xjson_array* arr, int pos);
 void arr_qsort(bd_xjson_array* arr, int (*compare_fn)(const void*, const void*));
 struct bd_xjson_array
 {
@@ -170,15 +206,24 @@ struct bd_xjson_array
     bd_xjson_base; /* a linked list */
 /* public */
     /* member functions */
-    void (*add)(bd_xjson_array* this, int pos, void* val);
-    void (*add_str)(bd_xjson_array* this, int pos, char* val);
-    void (*add_num)(bd_xjson_array* this, int pos, int val);
-    void (*add_true)(bd_xjson_array* this, int pos);
-    void (*add_false)(bd_xjson_array* this, int pos);
-    void (*add_null)(bd_xjson_array* this, int pos);
+    void (*add)(bd_xjson_array* this, int pos, void* val); /* deprecated */
+    void (*add_str)(bd_xjson_array* this, int pos, char* val); /* deprecated */
+    void (*add_num)(bd_xjson_array* this, int pos, int val); /* deprecated */
+    void (*add_true)(bd_xjson_array* this, int pos); /* deprecated */
+    void (*add_false)(bd_xjson_array* this, int pos); /* deprecated */
+    void (*add_null)(bd_xjson_array* this, int pos); /* deprecated */
     void (*delete)(bd_xjson_array* this, int pos);
-    void (*search)(bd_xjson_array* this, int pos, void* val);
-    void (*update)(bd_xjson_array* this, int pos, void* val);
+    void (*search)(bd_xjson_array* this, int pos, void* val); /* deprecated */
+    void (*update)(bd_xjson_array* this, int pos, void* val); /* deprecated */
+    void (*set)(bd_xjson_array* this, int pos, void* val);
+    void (*set_str)(bd_xjson_array* this, int pos, char* val);
+    void (*set_num)(bd_xjson_array* this, int pos, int val);
+    void (*set_true)(bd_xjson_array* this, int pos);
+    void (*set_false)(bd_xjson_array* this, int pos);
+    void (*set_null)(bd_xjson_array* this, int pos);
+    void (*get)(bd_xjson_array* this, int pos, void* val);
+    char* (*get_str)(bd_xjson_array* this, int pos);
+    int (*get_num)(bd_xjson_array* this, int pos);
     void (*sort)(bd_xjson_array* this, int (*compare_fn)(const void*, const void*));
 };
 #define BD_XJSON_ARRAY_CLASS(__ptr)      \
@@ -195,6 +240,15 @@ do                                       \
     (__ptr)->delete = arr_delete;        \
     (__ptr)->search = arr_search;        \
     (__ptr)->update = arr_update;        \
+    (__ptr)->set = arr_set;              \
+    (__ptr)->set_str = arr_set_str;      \
+    (__ptr)->set_num = arr_set_num;      \
+    (__ptr)->set_true = arr_set_true;    \
+    (__ptr)->set_false = arr_set_false;  \
+    (__ptr)->set_null = arr_set_null;    \
+    (__ptr)->get = arr_get;              \
+    (__ptr)->get_str = arr_get_str;      \
+    (__ptr)->get_num = arr_get_num;      \
     (__ptr)->sort = arr_qsort;           \
 } while(0)
 

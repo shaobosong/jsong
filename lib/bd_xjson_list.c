@@ -438,7 +438,7 @@ int list_find(bd_xjson_list* list, int pos, bd_xjson* val)
         THROW_WARNING("try to find in illegal position");
         return -1;
     }
-    bd_xjson_node* node;
+    bd_xjson_node* node = NULL;
     /* find from head by position */
     if(pos >= 0)
     {
@@ -494,12 +494,12 @@ int list_update(bd_xjson_list* list, int pos, bd_xjson* val)
         THROW_WARNING("empty list try to update");
         return -1;
     }
-    if( pos >= (int)list->size || pos < -list->size)
+    if( pos >= (int)list->size || pos <= -list->size - 1)
     {
         THROW_WARNING("try to update in illegal position");
         return -1;
     }
-    bd_xjson_node* node;
+    bd_xjson_node* node = NULL;
     /* find from head by position */
     if(pos >= 0)
     {
@@ -529,6 +529,36 @@ int list_update(bd_xjson_list* list, int pos, bd_xjson* val)
         THROW_WARNING("copy VAL to data field of node failed");
         return -1;
     }
+    return 0;
+}
+
+int list_set(bd_xjson_list* list, int pos, bd_xjson* val)
+{
+    if(NULL == list)
+    {
+        THROW_WARNING("LIST is not initialized");
+        return -1;
+    }
+    if(NULL == val)
+    {
+        THROW_WARNING("VAL is not initialized");
+        return -1;
+    }
+    if(pos > list->size || pos < -list->size - 1)
+    {
+        THROW_WARNING("try to set in illegal POS");
+        return -1;
+    }
+
+    if(pos == list->size || pos == -list->size - 1)
+    {
+        list_insert(list, pos, val);
+    }
+    else
+    {
+        list_update(list, pos, val);
+    }
+
     return 0;
 }
 

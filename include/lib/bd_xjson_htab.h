@@ -34,6 +34,7 @@ int htab_insert(bd_xjson_htab* htab, const char* key, bd_xjson* val);
 int htab_erase(bd_xjson_htab* htab, const char* key);
 int htab_find(bd_xjson_htab* htab, const char* key, bd_xjson* val);
 int htab_update(bd_xjson_htab* htab, const char* key, bd_xjson* val);
+int htab_set(bd_xjson_htab* htab, const char* key, bd_xjson* val);
 
 /* define struct of iterator by type and name of data */
 typedef bd_xjson_iter(bd_xjson_entry, entry) bd_xjson_htab_iter;

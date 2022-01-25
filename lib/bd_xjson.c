@@ -203,6 +203,161 @@ void obj_update(bd_xjson_object* obj, const char* key, void* val)
         THROW_EXCEPTION("update error");
     }
 }
+void obj_set(bd_xjson_object* obj, const char* key, void* val)
+{
+    if(NULL == obj)
+    {
+        THROW_EXCEPTION("uninitialized object class try to set");
+    }
+    if(NULL == obj->data)
+    {
+        THROW_EXCEPTION("uninitialized data of object class try to set");
+    }
+    if(htab_set(obj->data, key, val))
+    {
+        THROW_EXCEPTION("set error");
+    }
+}
+
+void obj_set_str(bd_xjson_object* obj, const char* key, const char* str)
+{
+    if(NULL == obj)
+    {
+        THROW_EXCEPTION("uninitialized object class try to set");
+    }
+    if(NULL == obj->data)
+    {
+        THROW_EXCEPTION("uninitialized data of object class try to set");
+    }
+    bd_xjson json = {.type = BD_XJSON_STRING, .data = (char*)str};
+    if(htab_set(obj->data, key, &json))
+    {
+        THROW_EXCEPTION("set error");
+    }
+}
+
+void obj_set_num(bd_xjson_object* obj, const char* key, int num)
+{
+    if(NULL == obj)
+    {
+        THROW_EXCEPTION("uninitialized object class try to set");
+    }
+    if(NULL == obj->data)
+    {
+        THROW_EXCEPTION("uninitialized data of object class try to set");
+    }
+    bd_xjson json = {.type = BD_XJSON_NUMBER, .data = &num};
+    if(htab_set(obj->data, key, &json))
+    {
+        THROW_EXCEPTION("set error");
+    }
+}
+
+void obj_set_true(bd_xjson_object* obj, const char* key)
+{
+    if(NULL == obj)
+    {
+        THROW_EXCEPTION("uninitialized object class try to set");
+    }
+    if(NULL == obj->data)
+    {
+        THROW_EXCEPTION("uninitialized data of object class try to set");
+    }
+    bd_xjson json = {.type = BD_XJSON_TRUE, .data = NULL};
+    if(htab_set(obj->data, key, &json))
+    {
+        THROW_EXCEPTION("set error");
+    }
+}
+
+void obj_set_false(bd_xjson_object* obj, const char* key)
+{
+    if(NULL == obj)
+    {
+        THROW_EXCEPTION("uninitialized object class try to set");
+    }
+    if(NULL == obj->data)
+    {
+        THROW_EXCEPTION("uninitialized data of object class try to set");
+    }
+    bd_xjson json = {.type = BD_XJSON_FALSE, .data = NULL};
+    if(htab_set(obj->data, key, &json))
+    {
+        THROW_EXCEPTION("set error");
+    }
+}
+
+void obj_set_null(bd_xjson_object* obj, const char* key)
+{
+    if(NULL == obj)
+    {
+        THROW_EXCEPTION("uninitialized object class try to set");
+    }
+    if(NULL == obj->data)
+    {
+        THROW_EXCEPTION("uninitialized data of object class try to set");
+    }
+    bd_xjson json = {.type = BD_XJSON_NULL, .data = NULL};
+    if(htab_set(obj->data, key, &json))
+    {
+        THROW_EXCEPTION("set error");
+    }
+}
+
+void obj_get(bd_xjson_object* obj, const char* key, void* val)
+{
+    if(NULL == obj)
+    {
+        THROW_EXCEPTION("uninitialized object class try to search");
+    }
+    if(NULL == obj->data)
+    {
+        THROW_EXCEPTION("uninitialized data of object class try to find");
+    }
+    if(htab_find(obj->data, key, val))
+    {
+        THROW_EXCEPTION("search error");
+    }
+}
+
+char* obj_get_str(bd_xjson_object* obj, const char* key)
+{
+    if(NULL == obj)
+    {
+        THROW_EXCEPTION("uninitialized object class try to get");
+    }
+    if(NULL == obj->data)
+    {
+        THROW_EXCEPTION("uninitialized data of object class try to get");
+    }
+    bd_xjson json = {.type = BD_XJSON_STRING, .data = NULL};
+    if(htab_find(obj->data, key, &json))
+    {
+        THROW_EXCEPTION("get error");
+    }
+    return json.data;
+}
+
+int obj_get_num(bd_xjson_object* obj, const char* key)
+{
+    if(NULL == obj)
+    {
+        THROW_EXCEPTION("uninitialized object class try to get");
+    }
+    if(NULL == obj->data)
+    {
+        THROW_EXCEPTION("uninitialized data of object class try to get");
+    }
+    bd_xjson json = {.type = BD_XJSON_NUMBER, .data = NULL};
+    int num;
+    if(htab_find(obj->data, key, &json))
+    {
+        THROW_EXCEPTION("get error");
+    }
+    num = *(int*)json.data;
+    xfree(json.data);
+    return num;
+}
 
 /* constructor */
 void arr_default_cstr(bd_xjson_array* this)
@@ -399,6 +554,153 @@ void arr_update(bd_xjson_array* arr, int pos, void* val)
     {
         THROW_EXCEPTION("update error");
     }
+}
+void arr_set(bd_xjson_array* arr, int pos, void* val)
+{
+    if(NULL == arr)
+    {
+        THROW_EXCEPTION("unitialized array class try to set");
+    }
+    if(NULL == arr->data)
+    {
+        THROW_EXCEPTION("unitialized data of array calss try to set");
+    }
+    if(list_set(arr->data, pos, val))
+    {
+        THROW_EXCEPTION("set error");
+    }
+}
+void arr_set_str(bd_xjson_array* arr, int pos, char* str)
+{
+    if(NULL == arr)
+    {
+        THROW_EXCEPTION("unitialized array class try to set");
+    }
+    if(NULL == arr->data)
+    {
+        THROW_EXCEPTION("unitialized data of array calss try to set");
+    }
+    bd_xjson json = {.type = BD_XJSON_STRING, .data = str};
+    if(list_set(arr->data, pos, &json))
+    {
+        THROW_EXCEPTION("set error");
+    }
+}
+void arr_set_num(bd_xjson_array* arr, int pos, int num)
+{
+    if(NULL == arr)
+    {
+        THROW_EXCEPTION("unitialized array class try to set");
+    }
+    if(NULL == arr->data)
+    {
+        THROW_EXCEPTION("unitialized data of array calss try to set");
+    }
+    bd_xjson json = {.type = BD_XJSON_NUMBER, .data = &num};
+    if(list_set(arr->data, pos, &json))
+    {
+        THROW_EXCEPTION("set error");
+    }
+}
+void arr_set_true(bd_xjson_array* arr, int pos)
+{
+    if(NULL == arr)
+    {
+        THROW_EXCEPTION("unitialized array class try to set");
+    }
+    if(NULL == arr->data)
+    {
+        THROW_EXCEPTION("unitialized data of array calss try to set");
+    }
+    bd_xjson json = {.type = BD_XJSON_TRUE, .data = NULL};
+    if(list_set(arr->data, pos, &json))
+    {
+        THROW_EXCEPTION("set error");
+    }
+}
+void arr_set_false(bd_xjson_array* arr, int pos)
+{
+    if(NULL == arr)
+    {
+        THROW_EXCEPTION("unitialized array class try to set");
+    }
+    if(NULL == arr->data)
+    {
+        THROW_EXCEPTION("unitialized data of array calss try to set");
+    }
+    bd_xjson json = {.type = BD_XJSON_FALSE, .data = NULL};
+    if(list_set(arr->data, pos, &json))
+    {
+        THROW_EXCEPTION("set error");
+    }
+}
+void arr_set_null(bd_xjson_array* arr, int pos)
+{
+    if(NULL == arr)
+    {
+        THROW_EXCEPTION("unitialized array class try to set");
+    }
+    if(NULL == arr->data)
+    {
+        THROW_EXCEPTION("unitialized data of array calss try to set");
+    }
+    bd_xjson json = {.type = BD_XJSON_NULL, .data = NULL};
+    if(list_set(arr->data, pos, &json))
+    {
+        THROW_EXCEPTION("set error");
+    }
+}
+void arr_get(bd_xjson_array* arr, int pos, void* val)
+{
+    if(NULL == arr)
+    {
+        THROW_EXCEPTION("uninitialized array class try to search");
+    }
+    if(NULL == arr->data)
+    {
+        THROW_EXCEPTION("uninitialized data of array class try to find");
+    }
+    if(list_find(arr->data, pos, val))
+    {
+        THROW_EXCEPTION("search error");
+    }
+}
+char* arr_get_str(bd_xjson_array* arr, int pos)
+{
+    if(NULL == arr)
+    {
+        THROW_EXCEPTION("unitialized array class try to get");
+    }
+    if(NULL == arr->data)
+    {
+        THROW_EXCEPTION("unitialized data of array calss try to get");
+    }
+    bd_xjson json = {.type = BD_XJSON_STRING, .data = NULL};
+    if(list_find(arr->data, pos, &json))
+    {
+        THROW_EXCEPTION("get error");
+    }
+    return json.data;
+}
+int arr_get_num(bd_xjson_array* arr, int pos)
+{
+    if(NULL == arr)
+    {
+        THROW_EXCEPTION("unitialized array class try to get");
+    }
+    if(NULL == arr->data)
+    {
+        THROW_EXCEPTION("unitialized data of array calss try to get");
+    }
+    bd_xjson json = {.type = BD_XJSON_NUMBER, .data = NULL};
+    int num;
+    if(list_find(arr->data, pos, &json))
+    {
+        THROW_EXCEPTION("get error");
+    }
+    num = *(int*)json.data;
+    xfree(json.data);
+    return num;
 }
 void arr_qsort(bd_xjson_array* arr, int (*compare_fn)(const void*, const void*))
 {
