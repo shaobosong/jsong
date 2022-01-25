@@ -15,13 +15,13 @@
 #define EXPECT_IF_NOT(__ptr, __char, __act) \
 do \
 { \
-    if(*(__ptr) != __char) \
+    if(*(__ptr) == __char) \
     { \
-        __act; \
+        (__ptr)++; \
     } \
     else \
     { \
-        (__ptr)++; \
+        __act; \
     } \
 } while(0)
 
@@ -47,9 +47,7 @@ int bd_xjson_parse_object(char** pstr, bd_xjson* json);
 int bd_xjson_parse_string(char** pstr, bd_xjson* json);
 int bd_xjson_parse_number(char** pstr, bd_xjson* json);
 int bd_xjson_parse_array(char** pstr, bd_xjson* json);
-int bd_xjson_parse_true(char** pstr, bd_xjson* json);
-int bd_xjson_parse_false(char** pstr, bd_xjson* json);
-int bd_xjson_parse_null(char** pstr, bd_xjson* json);
+int bd_xjson_parse_literal(char** pstr, bd_xjson* json);
 
 int bd_xjson_copy(bd_xjson* dest, bd_xjson* src)
 {
@@ -439,7 +437,7 @@ int bd_xjson_parse_object(char** pstr, bd_xjson* json)
                 MY_ASSERT(htab_create((bd_xjson_htab**)&(sub.data), 1) == 0);
                 if(bd_xjson_parse_object(&str, &sub))
                 {
-                    THROW_WARNING("parse JSON OBJECT failed");
+                    THROW_WARNING("JSON OBJECT parsing failed");
                     htab_free((bd_xjson_htab*)sub.data);
                     return -1;
                 }
@@ -448,7 +446,7 @@ int bd_xjson_parse_object(char** pstr, bd_xjson* json)
                 sub.type = BD_XJSON_STRING;
                 if(bd_xjson_parse_string(&str, &sub))
                 {
-                    THROW_WARNING("parse JSON STRING failed");
+                    THROW_WARNING("JSON STRING parsing failed");
                     return -1;
                 }
                 break;
@@ -466,7 +464,7 @@ int bd_xjson_parse_object(char** pstr, bd_xjson* json)
                 sub.type = BD_XJSON_NUMBER;
                 if(bd_xjson_parse_number(&str, &sub))
                 {
-                    THROW_WARNING("parse JSON NUMBER failed");
+                    THROW_WARNING("JSON NUMBER parsing failed");
                     return -1;
                 }
                 break;
@@ -475,32 +473,32 @@ int bd_xjson_parse_object(char** pstr, bd_xjson* json)
                 MY_ASSERT(list_create((bd_xjson_list**)&(sub.data)) == 0);
                 if(bd_xjson_parse_array(&str, &sub))
                 {
-                    THROW_WARNING("parse JSON ARRAY failed");
+                    THROW_WARNING("JSON ARRAY parsing failed");
                     list_free((bd_xjson_list*)sub.data);
                     return -1;
                 }
                 break;
             case 't':
                 sub.type = BD_XJSON_TRUE;
-                if(bd_xjson_parse_true(&str, &sub))
+                if(bd_xjson_parse_literal(&str, &sub))
                 {
-                    THROW_WARNING("parse JSON TRUE failed");
+                    THROW_WARNING("JSON TRUE parsing failed");
                     return -1;
                 }
                 break;
             case 'f':
                 sub.type = BD_XJSON_FALSE;
-                if(bd_xjson_parse_false(&str, &sub))
+                if(bd_xjson_parse_literal(&str, &sub))
                 {
-                    THROW_WARNING("parse JSON FALSE failed");
+                    THROW_WARNING("JSON FALSE parsing failed");
                     return -1;
                 }
                 break;
             case 'n':
                 sub.type = BD_XJSON_NULL;
-                if(bd_xjson_parse_null(&str, &sub))
+                if(bd_xjson_parse_literal(&str, &sub))
                 {
-                    THROW_WARNING("parse JSON NULL failed");
+                    THROW_WARNING("JSON NULL parsing failed");
                     return -1;
                 }
                 break;
@@ -548,7 +546,7 @@ int bd_xjson_parse_array(char** pstr, bd_xjson* json)
                 if(bd_xjson_parse_object(&str, &sub))
                 {
                     htab_free((bd_xjson_htab*)sub.data);
-                    THROW_WARNING("parse JSON OBJECT failed");
+                    THROW_WARNING("JSON OBJECT parsing failed");
                     return -1;
                 }
                 break;
@@ -556,7 +554,7 @@ int bd_xjson_parse_array(char** pstr, bd_xjson* json)
                 sub.type = BD_XJSON_STRING;
                 if(bd_xjson_parse_string(&str, &sub))
                 {
-                    THROW_WARNING("parse JSON STRING failed");
+                    THROW_WARNING("JSON STRING parsing failed");
                     return -1;
                 }
                 break;
@@ -574,7 +572,7 @@ int bd_xjson_parse_array(char** pstr, bd_xjson* json)
                 sub.type = BD_XJSON_NUMBER;
                 if(bd_xjson_parse_number(&str, &sub))
                 {
-                    THROW_WARNING("parse JSON NUMBER failed");
+                    THROW_WARNING("JSON NUMBER parsing failed");
                     return -1;
                 }
                 break;
@@ -584,31 +582,31 @@ int bd_xjson_parse_array(char** pstr, bd_xjson* json)
                 if(bd_xjson_parse_array(&str, &sub))
                 {
                     list_free((bd_xjson_list*)sub.data);
-                    THROW_WARNING("parse JSON ARRAY failed");
+                    THROW_WARNING("JSON ARRAY parsing failed");
                     return -1;
                 }
                 break;
             case 't':
                 sub.type = BD_XJSON_TRUE;
-                if(bd_xjson_parse_true(&str, &sub))
+                if(bd_xjson_parse_literal(&str, &sub))
                 {
-                    THROW_WARNING("parse JSON TRUE failed");
+                    THROW_WARNING("JSON TRUE parsing failed");
                     return -1;
                 }
                 break;
             case 'f':
                 sub.type = BD_XJSON_FALSE;
-                if(bd_xjson_parse_false(&str, &sub))
+                if(bd_xjson_parse_literal(&str, &sub))
                 {
-                    THROW_WARNING("parse JSON FALSE failed");
+                    THROW_WARNING("JSON FALSE parsing failed");
                     return -1;
                 }
                 break;
             case 'n':
                 sub.type = BD_XJSON_NULL;
-                if(bd_xjson_parse_null(&str, &sub))
+                if(bd_xjson_parse_literal(&str, &sub))
                 {
-                    THROW_WARNING("parse JSON NULL failed");
+                    THROW_WARNING("JSON NULL parsing failed");
                     return -1;
                 }
                 break;
@@ -664,11 +662,11 @@ int bd_xjson_parse_string(char** pstr, bd_xjson* json)
     return -1;
 }
 
-/* only support int-type integer */
+/* only support signed integer */
 int bd_xjson_parse_number(char** pstr, bd_xjson* json)
 {
     char* str = *pstr;
-    int res=0;
+    int res = 0;
     int sign = *str == '-'? -1 : 1;
 
     MY_ASSERT(json->type == BD_XJSON_NUMBER);
@@ -709,49 +707,39 @@ int bd_xjson_parse_number(char** pstr, bd_xjson* json)
     return -1;
 }
 
-int bd_xjson_parse_literal(char* type, char** str)
+int bd_xjson_parse_literal(char** pstr, bd_xjson* json)
 {
-    for(int i = 0; type[i]; i++, (*str)++)
+    char* literal = NULL;
+    char* str = *pstr;
+
+    MY_ASSERT(*str == 't' || *str == 'f' || *str == 'n');
+    switch(*str)
     {
-        if(type[i] != **str)
+        case 't':
+        /* to do */
+        /* alter assertion to throw warning */
+            MY_ASSERT(json->type == BD_XJSON_TRUE);
+            literal = "true";
+            break;
+        case 'f':
+            MY_ASSERT(json->type == BD_XJSON_FALSE);
+            literal = "false";
+            break;
+        case 'n':
+            MY_ASSERT(json->type == BD_XJSON_NULL);
+            literal = "null";
+            break;
+        /* assertion for first letter checking in first line */
+    }
+    for(; *literal; literal++, str++)
+    {
+        if(*literal != *str)
         {
             THROW_WARNING("illegal character");
             return -1;
         }
     }
-    return 0;
-}
-
-int bd_xjson_parse_true(char** str, bd_xjson* json)
-{
-    MY_ASSERT(json->type == BD_XJSON_TRUE);
-    if(bd_xjson_parse_literal("true", str))
-    {
-        THROW_WARNING("illegal character");
-        return -1;
-    }
-    return 0;
-}
-
-int bd_xjson_parse_false(char** str, bd_xjson* json)
-{
-    MY_ASSERT(json->type == BD_XJSON_FALSE);
-    if(bd_xjson_parse_literal("false", str))
-    {
-        THROW_WARNING("illegal character");
-        return -1;
-    }
-    return 0;
-}
-
-int bd_xjson_parse_null(char** str, bd_xjson* json)
-{
-    MY_ASSERT(json->type == BD_XJSON_NULL);
-    if(bd_xjson_parse_literal("null", str))
-    {
-        THROW_WARNING("illegal character");
-        return -1;
-    }
+    *pstr = str;
     return 0;
 }
 
@@ -764,7 +752,7 @@ int bd_xjson_parse_entry(char* str, bd_xjson* json)
             MY_ASSERT(htab_create((bd_xjson_htab**)&(json->data), 1) == 0);
             if(bd_xjson_parse_object(&str, json))
             {
-                THROW_WARNING("parse JSON OBJECT failed");
+                THROW_WARNING("JSON OBJECT parsing failed");
                 htab_free((bd_xjson_htab*)json->data);
                 return -1;
             }
@@ -772,7 +760,7 @@ int bd_xjson_parse_entry(char* str, bd_xjson* json)
         case '\"':
             if(bd_xjson_parse_string(&str, json))
             {
-                THROW_WARNING("parse JSON STRING failed");
+                THROW_WARNING("JSON STRING parsing failed");
                 return -1;
             }
             break;
@@ -789,7 +777,7 @@ int bd_xjson_parse_entry(char* str, bd_xjson* json)
         case '9':
             if(bd_xjson_parse_number(&str, json))
             {
-                THROW_WARNING("parse JSON NUMBER failed");
+                THROW_WARNING("JSON NUMBER parsing failed");
                 return -1;
             }
             break;
@@ -797,34 +785,22 @@ int bd_xjson_parse_entry(char* str, bd_xjson* json)
             MY_ASSERT(list_create((bd_xjson_list**)&(json->data)) == 0);
             if(bd_xjson_parse_array(&str, json))
             {
-                THROW_WARNING("parse JSON ARRAY failed");
+                THROW_WARNING("JSON ARRAY parsing failed");
                 list_free((bd_xjson_list*)json->data);
                 return -1;
             }
             break;
         case 't':
-            if(bd_xjson_parse_true(&str, json))
-            {
-                THROW_WARNING("parse JSON TREU failed");
-                return -1;
-            }
-            break;
         case 'f':
-            if(bd_xjson_parse_false(&str, json))
-            {
-                THROW_WARNING("parse JSON FALSE failed");
-                return -1;
-            }
-            break;
         case 'n':
-            if(bd_xjson_parse_null(&str, json))
+            if(bd_xjson_parse_literal(&str, json))
             {
-                THROW_WARNING("parse JSON NULL failed");
+                THROW_WARNING("JSON LITERAL parsing failed");
                 return -1;
             }
             break;
         default:
-            THROW_WARNING("parse JSON unknown type");
+            THROW_WARNING("JSON parsing unknown type");
             return -1;
     }
     bypass_white_space(&str);

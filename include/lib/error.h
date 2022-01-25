@@ -15,10 +15,12 @@
 #define MY_ASSERT(expr) \
 do \
 { \
-      if (expr) \
+    if (expr) \
         ; /* empty */ \
-      else \
-        err_quit(BOLD"%s:%d: "NONE"[----"L_RED"%s"NONE"----]: Assertion '"#expr"' failed", __FILE__, __LINE__, __func__); \
+    else \
+        err_quit(BOLD"%s:%d: "NONE"[----"L_RED"%s"NONE"----]: " \
+            "Assertion '"#expr"' failed", \
+            __FILE__, __LINE__, __func__); \
 } while(0)
 
 /* error related to system call*/
