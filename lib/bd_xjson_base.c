@@ -186,7 +186,9 @@ void bd_xjson_stringify_string(char* chars, char** pstr, int* plen)
 {
     *plen = strlen(chars) + 3;
     *pstr = xzmalloc(*plen);
-    mstrcat(*pstr, "\"", chars, "\"", "\0");
+    (*pstr)[0] = '\"';
+    strcat(*pstr, chars);
+    (*pstr)[*plen - 2] = '\"';
     return ;
 }
 
@@ -249,9 +251,10 @@ void bd_xjson_stringify_object(bd_xjson_htab* htab, char** pstr, int* plen)
     (*pstr)[0] = '{';
     while(!bd_xjson_stack_empty(kstk))
     {
+        strcat(*pstr, "\"");
+        strcat(*pstr, bd_xjson_stack_top(kstk));
         mstrcat(*pstr,
-            "\"", bd_xjson_stack_top(kstk), "\""
-            ":",
+            "\":",
             bd_xjson_stack_top(vstk),
             ",",
             "\0");
@@ -407,7 +410,8 @@ int bd_xjson_parse_object(char** pstr, bd_xjson* json)
         /* parse key */
         save_stack_top = g_char_stk.top;
         EXPECT_IF_NOT(str, '\"', THROW_WARNING("illegal character"); return -1);
-        MAYBE_AND_THEN(str, '\"', THROW_WARNING("illegal character"); return -1); /* unsupport zero-length string */
+        /* unsupport zero-length key string */
+        /* MAYBE_AND_THEN(str, '\"', THROW_WARNING("illegal character"); return -1); */
         for(; ; str++)
         {
             if(*str == '\"')
@@ -635,7 +639,8 @@ int bd_xjson_parse_string(char** pstr, bd_xjson* json)
 
     MY_ASSERT(json->type == BD_XJSON_STRING);
     EXPECT_IF_NOT(str, '\"', THROW_WARNING("illegal character"); return -1);
-    MAYBE_AND_THEN(str, '\"', THROW_WARNING("illegal character"); return -1); /* unsupport zero-length string */
+    /* support zero-length string */
+    /* MAYBE_AND_THEN(str, '\"', THROW_WARNING("illegal character"); return -1); */
     for(; ; str++)
     {
         switch(*str)
