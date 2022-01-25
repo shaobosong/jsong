@@ -37,6 +37,6 @@ typedef bd_xjson_base bd_xjson;
 int bd_xjson_copy(bd_xjson* dest, bd_xjson* src);
 int bd_xjson_free(bd_xjson* json);
 
-void bd_xjson_stringify(void* __xjson, char** __str, int* __len);
-int bd_xjson_parse(char* __str, void* __xjson);
+void bd_xjson_stringify(void* json, char** pstr, int* plen);
+int bd_xjson_parse(char* str, void* json);
 #endif

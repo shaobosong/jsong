@@ -144,18 +144,18 @@ int bd_xjson_free(bd_xjson* json)
     return 0;
 }
 
-static int bd_xjson_type_is_valid(bd_xjson_type json_type)
+static int bd_xjson_type_is_valid(bd_xjson_type type)
 {
-    return json_type != 0 && (json_type & ~7UL) == 0;
+    return type != 0 && (type & ~7UL) == 0;
 }
 
-void bd_xjson_stringify_number(int v, char** str, int* len)
+void bd_xjson_stringify_number(int v, char** pstr, int* plen)
 {
     if(v == 0)
     {
-        *len = 2;
-        *str = xzmalloc(*len);
-        strcat(*str, "0");
+        *plen = 2;
+        *pstr = xzmalloc(*plen);
+        strcat(*pstr, "0");
         return ;
     }
     int t = v;
@@ -173,31 +173,31 @@ void bd_xjson_stringify_number(int v, char** str, int* len)
         buf[sz] = '-';
         ++sz;
     }
-    *len = sz + 1;
-    *str = xzmalloc(*len);
+    *plen = sz + 1;
+    *pstr = xzmalloc(*plen);
     for(int i=0; sz>0; --sz, ++i)
     {
-        (*str)[i] = buf[sz-1];
+        (*pstr)[i] = buf[sz-1];
     }
     return ;
 }
 
-void bd_xjson_stringify_string(char* chars, char** str, int* len)
+void bd_xjson_stringify_string(char* chars, char** pstr, int* plen)
 {
-    *len = strlen(chars) + 3;
-    *str = xzmalloc(*len);
-    mstrcat(*str, "\"", chars, "\"", "\0");
+    *plen = strlen(chars) + 3;
+    *pstr = xzmalloc(*plen);
+    mstrcat(*pstr, "\"", chars, "\"", "\0");
     return ;
 }
 
-void bd_xjson_stringify_object(bd_xjson_htab* htab, char** str, int* len)
+void bd_xjson_stringify_object(bd_xjson_htab* htab, char** pstr, int* plen)
 {
     bd_xjson_stack(char*) kstk;
     bd_xjson_stack_init(kstk, htab->size);
     bd_xjson_stack(char*) vstk;
     bd_xjson_stack_init(vstk, htab->size);
 
-    *len = 2;
+    *plen = 2;
     bd_xjson_htab_foreach(htab, iter, end)
     {
         int vl = 0;
@@ -209,7 +209,7 @@ void bd_xjson_stringify_object(bd_xjson_htab* htab, char** str, int* len)
                 bd_xjson_stack_push(g_chars_stk, v);
                 break;
             case BD_XJSON_STRING:
-                bd_xjson_stringify_string(iter.entry.value.data, &v, &vl);
+                bd_xjson_stringify_string((char*)iter.entry.value.data, &v, &vl);
                 bd_xjson_stack_push(g_chars_stk, v);
                 break;
             case BD_XJSON_NUMBER:
@@ -238,18 +238,18 @@ void bd_xjson_stringify_object(bd_xjson_htab* htab, char** str, int* len)
         }
         bd_xjson_stack_push(kstk, iter.entry.key);
         bd_xjson_stack_push(vstk, v);
-        *len += (vl + strlen(iter.entry.key) + 3);
+        *plen += (vl + strlen(iter.entry.key) + 3);
     }
     if(htab->size == 0)
     {
-        *len += 1;
+        *plen += 1;
     }
     /* concatenate every element and json string */
-    *str = xzmalloc(*len);
-    (*str)[0] = '{';
+    *pstr = xzmalloc(*plen);
+    (*pstr)[0] = '{';
     while(!bd_xjson_stack_empty(kstk))
     {
-        mstrcat(*str,
+        mstrcat(*pstr,
             "\"", bd_xjson_stack_top(kstk), "\""
             ":",
             bd_xjson_stack_top(vstk),
@@ -258,20 +258,20 @@ void bd_xjson_stringify_object(bd_xjson_htab* htab, char** str, int* len)
         bd_xjson_stack_pop(kstk);
         bd_xjson_stack_pop(vstk);
     }
-    (*str)[*len-2] = '}';
+    (*pstr)[*plen-2] = '}';
     /* stack clear */
     bd_xjson_stack_clear(kstk);
     bd_xjson_stack_clear(vstk);
     return ;
 }
 
-void bd_xjson_stringify_array(bd_xjson_list* list, char** str, int* len)
+void bd_xjson_stringify_array(bd_xjson_list* list, char** pstr, int* plen)
 {
     /* create two stacks and their size are equal to size of list */
     bd_xjson_stack(char*) stk;
     bd_xjson_stack_init(stk, list->size);
 
-    *len = 2;
+    *plen = 2;
     bd_xjson_list_foreach_in_reverse(list, node)
     {
         int vl = 0;
@@ -283,7 +283,7 @@ void bd_xjson_stringify_array(bd_xjson_list* list, char** str, int* len)
                 bd_xjson_stack_push(g_chars_stk, v);
                 break;
             case BD_XJSON_STRING:
-                bd_xjson_stringify_string(node->value.data, &v, &vl);
+                bd_xjson_stringify_string((char*)node->value.data, &v, &vl);
                 bd_xjson_stack_push(g_chars_stk, v);
                 break;
             case BD_XJSON_NUMBER:
@@ -311,64 +311,62 @@ void bd_xjson_stringify_array(bd_xjson_list* list, char** str, int* len)
                 return ;
         }
         bd_xjson_stack_push(stk, v);
-        *len += vl;
+        *plen += vl;
     }
     if(bd_xjson_stack_empty(stk))
     {
-        *len += 1;
+        *plen += 1;
     }
     /* concatenate every element and json string */
-    *str = xzmalloc(*len);
-    (*str)[0] = '[';
+    *pstr = xzmalloc(*plen);
+    (*pstr)[0] = '[';
     while(!bd_xjson_stack_empty(stk))
     {
-        mstrcat(*str, bd_xjson_stack_top(stk), ",", "\0");
+        mstrcat(*pstr, bd_xjson_stack_top(stk), ",", "\0");
         bd_xjson_stack_pop(stk);
     }
-    (*str)[*len-2] = ']';
+    (*pstr)[*plen-2] = ']';
     /* stack clear */
     bd_xjson_stack_clear(stk);
 
     return ;
 }
 
-void bd_xjson_stringify(void* __xjson, char** __str, int* __len)
+void bd_xjson_stringify(void* raw, char** pstr, int* plen)
 {
-    char* str = NULL;
-    int len;
-    bd_xjson* xjson = (bd_xjson*)__xjson;
+    bd_xjson* json = (bd_xjson*)raw;
     bd_xjson_stack_init(g_chars_stk, 256);
-    switch(xjson->type)
+    switch(json->type)
     {
         case BD_XJSON_OBJECT:
-            bd_xjson_stringify_object((bd_xjson_htab*)xjson->data, &str, &len);
+            bd_xjson_stringify_object((bd_xjson_htab*)json->data, pstr, plen);
             break;
         case BD_XJSON_STRING:
-            bd_xjson_stringify_string(xjson->data, &str, &len);
+            bd_xjson_stringify_string((char*)json->data, pstr, plen);
             break;
         case BD_XJSON_NUMBER:
-            bd_xjson_stringify_number(*(int*)xjson->data, &str, &len);
+            bd_xjson_stringify_number(*(int*)json->data, pstr, plen);
             break;
         case BD_XJSON_ARRAY:
-            bd_xjson_stringify_array((bd_xjson_list*)xjson->data, &str, &len);
+            bd_xjson_stringify_array((bd_xjson_list*)json->data, pstr, plen);
             break;
         case BD_XJSON_TRUE:
-            len = 5;
-            str = xzmalloc(len);
-            strcat(str, "true");
+            *plen = 5;
+            *pstr = xzmalloc(*plen);
+            strcat(*pstr, "true");
             break;
         case BD_XJSON_FALSE:
-            len = 6;
-            str = xzmalloc(len);
-            strcat(str, "false");
+            *plen = 6;
+            *pstr = xzmalloc(*plen);
+            strcat(*pstr, "false");
             break;
         case BD_XJSON_NULL:
-            len = 5;
-            str = xzmalloc(len);
-            strcat(str, "null");
+            *plen = 5;
+            *pstr = xzmalloc(*plen);
+            strcat(*pstr, "null");
             break;
         default:
-            MY_ASSERT(bd_xjson_type_is_valid(xjson->type));
+            MY_ASSERT(bd_xjson_type_is_valid(json->type));
             return ;
     }
     /* free stack element */
@@ -379,19 +377,17 @@ void bd_xjson_stringify(void* __xjson, char** __str, int* __len)
     }
     /* clear stack */
     bd_xjson_stack_clear(g_chars_stk);
-    *__str = str;
-    *__len = len;
     return ;
 }
 
-static void bypass_white_space(char** str)
+static void bypass_white_space(char** pstr)
 {
-    char* c = *str;
-    while(*c == '\t' || *c == ' ' || *c == '\n' || *c == '\r')
+    char* str = *pstr;
+    while(*str == '\t' || *str == ' ' || *str == '\n' || *str == '\r')
     {
-        c++;
+        str++;
     }
-    *str = c;
+    *pstr = str;
 }
 
 int bd_xjson_parse_object(char** pstr, bd_xjson* json)
