@@ -304,7 +304,7 @@ void obj_set_null(bd_xjson_object* obj, const char* key)
     }
 }
 
-void obj_get(const bd_xjson_object* obj, const char* key, void* val)
+void* obj_get(const bd_xjson_object* obj, const char* key, void* val)
 {
     if(NULL == obj)
     {
@@ -318,6 +318,7 @@ void obj_get(const bd_xjson_object* obj, const char* key, void* val)
     {
         THROW_EXCEPTION("search error");
     }
+    return val;
 }
 
 char* obj_get_str(const bd_xjson_object* obj, const char* key)
@@ -412,7 +413,7 @@ void arr_default_dstr(bd_xjson_array* this)
     }
 }
 
-void arr_add(bd_xjson_array* arr, int pos, void* val)
+void arr_add(bd_xjson_array* arr, int pos, const void* val)
 {
     if(NULL == arr)
     {
@@ -428,7 +429,7 @@ void arr_add(bd_xjson_array* arr, int pos, void* val)
     }
 }
 
-void arr_add_str(bd_xjson_array* arr, int pos, char* val)
+void arr_add_str(bd_xjson_array* arr, int pos, const char* val)
 {
     if(NULL == arr)
     {
@@ -438,7 +439,7 @@ void arr_add_str(bd_xjson_array* arr, int pos, char* val)
     {
         THROW_EXCEPTION("uninitialized data of array class try to insert");
     }
-    bd_xjson json = {.type = BD_XJSON_STRING, .data = val};
+    bd_xjson json = {.type = BD_XJSON_STRING, .data = (char*)val};
     if(list_insert(arr->data, pos, &json)) /* cast to parent class */
     {
         THROW_EXCEPTION("add error");
@@ -650,7 +651,7 @@ void arr_set_null(bd_xjson_array* arr, int pos)
         THROW_EXCEPTION("set error");
     }
 }
-void arr_get(const bd_xjson_array* arr, int pos, void* val)
+void* arr_get(const bd_xjson_array* arr, int pos, void* val)
 {
     if(NULL == arr)
     {
@@ -664,6 +665,7 @@ void arr_get(const bd_xjson_array* arr, int pos, void* val)
     {
         THROW_EXCEPTION("search error");
     }
+    return val;
 }
 char* arr_get_str(const bd_xjson_array* arr, int pos)
 {
