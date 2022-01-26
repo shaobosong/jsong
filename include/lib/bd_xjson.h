@@ -167,15 +167,15 @@ void arr_copy_cstr(bd_xjson_array* this, const bd_xjson_array* arr);
 void arr_default_dstr(bd_xjson_array* this);
 /* member functions */
 void arr_delete(bd_xjson_array* arr, int pos);
-void arr_set(bd_xjson_array* arr, int pos, void* val);
-void arr_set_str(bd_xjson_array* arr, int pos, char* val);
+void arr_set(bd_xjson_array* arr, int pos, const void* val);
+void arr_set_str(bd_xjson_array* arr, int pos, const char* val);
 void arr_set_num(bd_xjson_array* arr, int pos, int val);
 void arr_set_true(bd_xjson_array* arr, int pos);
 void arr_set_false(bd_xjson_array* arr, int pos);
 void arr_set_null(bd_xjson_array* arr, int pos);
-void arr_get(bd_xjson_array* arr, int pos, void* val);
-char* arr_get_str(bd_xjson_array* arr, int pos);
-int arr_get_num(bd_xjson_array* arr, int pos);
+void arr_get(const bd_xjson_array* arr, int pos, void* val);
+char* arr_get_str(const bd_xjson_array* arr, int pos);
+int arr_get_num(const bd_xjson_array* arr, int pos);
 void arr_qsort(bd_xjson_array* arr, int (*compare_fn)(const void*, const void*));
 struct bd_xjson_array
 {
@@ -184,15 +184,15 @@ struct bd_xjson_array
 /* public */
     /* member functions */
     void (*delete)(bd_xjson_array* this, int pos);
-    void (*set)(bd_xjson_array* this, int pos, void* val);
-    void (*set_str)(bd_xjson_array* this, int pos, char* val);
+    void (*set)(bd_xjson_array* this, int pos, const void* val);
+    void (*set_str)(bd_xjson_array* this, int pos, const char* val);
     void (*set_num)(bd_xjson_array* this, int pos, int val);
     void (*set_true)(bd_xjson_array* this, int pos);
     void (*set_false)(bd_xjson_array* this, int pos);
     void (*set_null)(bd_xjson_array* this, int pos);
-    void (*get)(bd_xjson_array* this, int pos, void* val);
-    char* (*get_str)(bd_xjson_array* this, int pos);
-    int (*get_num)(bd_xjson_array* this, int pos);
+    void (*get)(const bd_xjson_array* this, int pos, void* val);
+    char* (*get_str)(const bd_xjson_array* this, int pos);
+    int (*get_num)(const bd_xjson_array* this, int pos);
     void (*sort)(bd_xjson_array* this, int (*compare_fn)(const void*, const void*));
 };
 #define BD_XJSON_ARRAY_CLASS(__ptr)      \

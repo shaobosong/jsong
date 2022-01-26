@@ -555,7 +555,7 @@ void arr_update(bd_xjson_array* arr, int pos, void* val)
         THROW_EXCEPTION("update error");
     }
 }
-void arr_set(bd_xjson_array* arr, int pos, void* val)
+void arr_set(bd_xjson_array* arr, int pos, const void* val)
 {
     if(NULL == arr)
     {
@@ -570,7 +570,7 @@ void arr_set(bd_xjson_array* arr, int pos, void* val)
         THROW_EXCEPTION("set error");
     }
 }
-void arr_set_str(bd_xjson_array* arr, int pos, char* val)
+void arr_set_str(bd_xjson_array* arr, int pos, const char* val)
 {
     if(NULL == arr)
     {
@@ -580,7 +580,7 @@ void arr_set_str(bd_xjson_array* arr, int pos, char* val)
     {
         THROW_EXCEPTION("unitialized data of array calss try to set");
     }
-    bd_xjson json = {.type = BD_XJSON_STRING, .data = val};
+    bd_xjson json = {.type = BD_XJSON_STRING, .data = (char*)val};
     if(list_set(arr->data, pos, &json))
     {
         THROW_EXCEPTION("set error");
@@ -650,7 +650,7 @@ void arr_set_null(bd_xjson_array* arr, int pos)
         THROW_EXCEPTION("set error");
     }
 }
-void arr_get(bd_xjson_array* arr, int pos, void* val)
+void arr_get(const bd_xjson_array* arr, int pos, void* val)
 {
     if(NULL == arr)
     {
@@ -665,7 +665,7 @@ void arr_get(bd_xjson_array* arr, int pos, void* val)
         THROW_EXCEPTION("search error");
     }
 }
-char* arr_get_str(bd_xjson_array* arr, int pos)
+char* arr_get_str(const bd_xjson_array* arr, int pos)
 {
     if(NULL == arr)
     {
@@ -682,7 +682,7 @@ char* arr_get_str(bd_xjson_array* arr, int pos)
     }
     return json.data;
 }
-int arr_get_num(bd_xjson_array* arr, int pos)
+int arr_get_num(const bd_xjson_array* arr, int pos)
 {
     if(NULL == arr)
     {
