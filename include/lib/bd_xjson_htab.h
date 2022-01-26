@@ -27,20 +27,20 @@ struct bd_xjson_htab
     uint64_t last;
 };
 int htab_create(bd_xjson_htab** htab, uint64_t capacity);
-int htab_copy(bd_xjson_htab* dest, bd_xjson_htab* src);
+int htab_copy(bd_xjson_htab* dest, const bd_xjson_htab* src);
 int htab_free(bd_xjson_htab* htab);
-int htab_insert_direct(bd_xjson_htab* htab, const char* key, bd_xjson* val);
-int htab_insert(bd_xjson_htab* htab, const char* key, bd_xjson* val);
+int htab_insert_direct(bd_xjson_htab* htab, const char* key, const bd_xjson* val);
+int htab_insert(bd_xjson_htab* htab, const char* key, const bd_xjson* val);
 int htab_erase(bd_xjson_htab* htab, const char* key);
-int htab_find(bd_xjson_htab* htab, const char* key, bd_xjson* val);
-int htab_update(bd_xjson_htab* htab, const char* key, bd_xjson* val);
-int htab_set(bd_xjson_htab* htab, const char* key, bd_xjson* val);
+int htab_find(const bd_xjson_htab* htab, const char* key, bd_xjson* val);
+int htab_update(bd_xjson_htab* htab, const char* key, const bd_xjson* val);
+int htab_set(bd_xjson_htab* htab, const char* key, const bd_xjson* val);
 
 /* define struct of iterator by type and name of data */
 typedef bd_xjson_iter(bd_xjson_entry, entry) bd_xjson_htab_iter;
-bd_xjson_htab_iter htab_begin(bd_xjson_htab* htab);
-bd_xjson_htab_iter htab_end(bd_xjson_htab* htab);
-bd_xjson_htab_iter htab_iterate(bd_xjson_htab* htab, bd_xjson_htab_iter iter);
+bd_xjson_htab_iter htab_begin(const bd_xjson_htab* htab);
+bd_xjson_htab_iter htab_end(const bd_xjson_htab* htab);
+bd_xjson_htab_iter htab_iterate(const bd_xjson_htab* htab, bd_xjson_htab_iter iter);
 #define bd_xjson_htab_foreach(__htab, __iter, __end) \
     for(bd_xjson_htab_iter __iter = htab_begin(__htab), \
         __end = htab_end(__htab); \

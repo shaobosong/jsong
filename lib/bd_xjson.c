@@ -20,7 +20,7 @@ void obj_default_cstr(bd_xjson_object* this)
     }
 
 }
-void obj_copy_cstr(bd_xjson_object* this, bd_xjson_object* obj)
+void obj_copy_cstr(bd_xjson_object* this, const bd_xjson_object* obj)
 {
     if(NULL == this)
     {
@@ -59,7 +59,7 @@ void obj_default_dstr(bd_xjson_object* this)
     }
 }
 
-void obj_add(bd_xjson_object* obj, const char* key, void* val)
+void obj_add(bd_xjson_object* obj, const char* key, const void* val)
 {
     if(NULL == obj)
     {
@@ -75,7 +75,7 @@ void obj_add(bd_xjson_object* obj, const char* key, void* val)
     }
 }
 
-void obj_add_str(bd_xjson_object* obj, const char* key, char* val)
+void obj_add_str(bd_xjson_object* obj, const char* key, const char* val)
 {
     if(NULL == obj)
     {
@@ -85,7 +85,7 @@ void obj_add_str(bd_xjson_object* obj, const char* key, char* val)
     {
         THROW_EXCEPTION("uninitialized data of object class try to insert");
     }
-    bd_xjson json = {.type = BD_XJSON_STRING, .data = val};
+    bd_xjson json = {.type = BD_XJSON_STRING, .data = (char*)val};
     if(htab_insert(obj->data, key, &json)) /* cast to parent class */
     {
         THROW_EXCEPTION("add error");
@@ -188,7 +188,7 @@ void obj_search(bd_xjson_object* obj, const char* key, void* val)
         THROW_EXCEPTION("search error");
     }
 }
-void obj_update(bd_xjson_object* obj, const char* key, void* val)
+void obj_update(bd_xjson_object* obj, const char* key, const void* val)
 {
     if(NULL == obj)
     {
@@ -203,7 +203,7 @@ void obj_update(bd_xjson_object* obj, const char* key, void* val)
         THROW_EXCEPTION("update error");
     }
 }
-void obj_set(bd_xjson_object* obj, const char* key, void* val)
+void obj_set(bd_xjson_object* obj, const char* key, const void* val)
 {
     if(NULL == obj)
     {
@@ -304,7 +304,7 @@ void obj_set_null(bd_xjson_object* obj, const char* key)
     }
 }
 
-void obj_get(bd_xjson_object* obj, const char* key, void* val)
+void obj_get(const bd_xjson_object* obj, const char* key, void* val)
 {
     if(NULL == obj)
     {
@@ -320,7 +320,7 @@ void obj_get(bd_xjson_object* obj, const char* key, void* val)
     }
 }
 
-char* obj_get_str(bd_xjson_object* obj, const char* key)
+char* obj_get_str(const bd_xjson_object* obj, const char* key)
 {
     if(NULL == obj)
     {
@@ -338,7 +338,7 @@ char* obj_get_str(bd_xjson_object* obj, const char* key)
     return json.data;
 }
 
-int obj_get_num(bd_xjson_object* obj, const char* key)
+int obj_get_num(const bd_xjson_object* obj, const char* key)
 {
     if(NULL == obj)
     {
@@ -373,7 +373,7 @@ void arr_default_cstr(bd_xjson_array* this)
 
 }
 
-void arr_copy_cstr(bd_xjson_array* this, bd_xjson_array* arr)
+void arr_copy_cstr(bd_xjson_array* this, const bd_xjson_array* arr)
 {
     if(NULL == this)
     {
@@ -767,7 +767,7 @@ void str_default_dstr(bd_xjson_string* this)
     }
     xfree(this->data);
 }
-void str_set(bd_xjson_string* str, char* val)
+void str_set(bd_xjson_string* str, const char* val)
 {
     if(NULL == str)
     {
@@ -781,7 +781,7 @@ void str_set(bd_xjson_string* str, char* val)
     str->data = xzmalloc(strlen(val) + 1);
     strcat(str->data, val);
 }
-char* str_get(bd_xjson_string* str)
+char* str_get(const bd_xjson_string* str)
 {
     if(NULL == str)
     {
@@ -851,7 +851,7 @@ void num_set(bd_xjson_number* num, int val)
     }
     *(int*)num->data = val;
 }
-int num_get(bd_xjson_number* num)
+int num_get(const bd_xjson_number* num)
 {
     if(NULL == num)
     {

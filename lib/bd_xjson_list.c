@@ -6,7 +6,7 @@
 #include "lib/error.h"
 #include "lib/alloc.h"
 
-int node_create(bd_xjson_node** node)
+static int node_create(bd_xjson_node** node)
 {
     if(*node)
     {
@@ -23,7 +23,7 @@ int node_create(bd_xjson_node** node)
     return 0;
 }
 /* only copy value and type */
-int node_copy(bd_xjson_node* dest, bd_xjson_node* src)
+static int node_copy(bd_xjson_node* dest, const bd_xjson_node* src)
 {
     /* don't responsible for initializing node */
     if(NULL == dest)
@@ -46,7 +46,7 @@ int node_copy(bd_xjson_node* dest, bd_xjson_node* src)
     return 0;
 }
 
-int node_free(bd_xjson_node* node)
+static int node_free(bd_xjson_node* node)
 {
     if(NULL == node)
     {
@@ -78,7 +78,7 @@ int list_create(bd_xjson_list** list)
     return 0;
 }
 
-int list_copy(bd_xjson_list* dest, bd_xjson_list* src)
+int list_copy(bd_xjson_list* dest, const bd_xjson_list* src)
 {
     /* don't responsible for initializing list */
     if(NULL == dest)
@@ -92,7 +92,7 @@ int list_copy(bd_xjson_list* dest, bd_xjson_list* src)
         return -1;
     }
     bd_xjson_node* list_node = NULL;
-    bd_xjson_node* copy_node = src->head;
+    const bd_xjson_node* copy_node = src->head;
     bd_xjson_node* list_node_prev = NULL;
     for(; copy_node; list_node = list_node->next, copy_node = copy_node->next)
     {
@@ -128,7 +128,7 @@ int list_copy(bd_xjson_list* dest, bd_xjson_list* src)
     return 0;
 }
 
-int list_insert_direct(bd_xjson_list* list, int pos, bd_xjson* val)
+int list_insert_direct(bd_xjson_list* list, int pos, const bd_xjson* val)
 {
     if(NULL == list)
     {
@@ -219,7 +219,7 @@ int list_insert_direct(bd_xjson_list* list, int pos, bd_xjson* val)
     return -1;
 }
 
-int list_insert(bd_xjson_list* list, int pos, bd_xjson* val)
+int list_insert(bd_xjson_list* list, int pos, const bd_xjson* val)
 {
     if(NULL == list)
     {
@@ -416,7 +416,7 @@ int list_free(bd_xjson_list* list)
 
 /* val: deep copy */
 /* you must initialize 'val->data' in your code */
-int list_find(bd_xjson_list* list, int pos, bd_xjson* val)
+int list_find(const bd_xjson_list* list, int pos, bd_xjson* val)
 {
     if( NULL == list)
     {
@@ -477,7 +477,7 @@ int list_find(bd_xjson_list* list, int pos, bd_xjson* val)
     return 0;
 }
 
-int list_update(bd_xjson_list* list, int pos, bd_xjson* val)
+int list_update(bd_xjson_list* list, int pos, const bd_xjson* val)
 {
     if(NULL == list)
     {
@@ -532,7 +532,7 @@ int list_update(bd_xjson_list* list, int pos, bd_xjson* val)
     return 0;
 }
 
-int list_set(bd_xjson_list* list, int pos, bd_xjson* val)
+int list_set(bd_xjson_list* list, int pos, const bd_xjson* val)
 {
     if(NULL == list)
     {

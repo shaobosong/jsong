@@ -38,7 +38,7 @@ static int entry_clear(bd_xjson_entry* entry)
     return 0;
 }
 
-static int entry_copy(bd_xjson_entry* dest, bd_xjson_entry* src)
+static int entry_copy(bd_xjson_entry* dest, const bd_xjson_entry* src)
 {
     if(NULL == dest)
     {
@@ -222,7 +222,7 @@ static int htab_grow(bd_xjson_htab* htab, uint64_t new_capacity)
     return 0;
 }
 
-int htab_copy(bd_xjson_htab* dest, bd_xjson_htab* src)
+int htab_copy(bd_xjson_htab* dest, const bd_xjson_htab* src)
 {
     if(NULL == dest)
     {
@@ -256,7 +256,7 @@ int htab_copy(bd_xjson_htab* dest, bd_xjson_htab* src)
     return 0;
 }
 
-static uint64_t htab_find_id(bd_xjson_htab* htab, const char* key)
+static uint64_t htab_find_id(const bd_xjson_htab* htab, const char* key)
 {
     uint64_t i = hash_key(key) & (htab->capacity - 1);
     uint64_t c = 0;
@@ -277,7 +277,7 @@ static uint64_t htab_find_id(bd_xjson_htab* htab, const char* key)
     return i;
 }
 
-int htab_insert_direct(bd_xjson_htab* htab, const char* key, bd_xjson* val)
+int htab_insert_direct(bd_xjson_htab* htab, const char* key, const bd_xjson* val)
 {
     if(NULL == htab)
     {
@@ -324,7 +324,7 @@ int htab_insert_direct(bd_xjson_htab* htab, const char* key, bd_xjson* val)
     return 0;
 }
 
-int htab_insert(bd_xjson_htab* htab, const char* key, bd_xjson* val)
+int htab_insert(bd_xjson_htab* htab, const char* key, const bd_xjson* val)
 {
     if(NULL == htab)
     {
@@ -449,7 +449,7 @@ int htab_erase(bd_xjson_htab* htab, const char* key)
 }
 
 /* check if type of val matches type of found element */
-int htab_find(bd_xjson_htab* htab, const char* key, bd_xjson* val)
+int htab_find(const bd_xjson_htab* htab, const char* key, bd_xjson* val)
 {
     if(NULL == htab)
     {
@@ -497,7 +497,7 @@ int htab_find(bd_xjson_htab* htab, const char* key, bd_xjson* val)
     return 0;
 }
 
-int htab_update(bd_xjson_htab* htab, const char* key, bd_xjson* val)
+int htab_update(bd_xjson_htab* htab, const char* key, const bd_xjson* val)
 {
     if(NULL == htab)
     {
@@ -538,7 +538,7 @@ int htab_update(bd_xjson_htab* htab, const char* key, bd_xjson* val)
     return 0;
 }
 
-int htab_set(bd_xjson_htab* htab, const char* key, bd_xjson* val)
+int htab_set(bd_xjson_htab* htab, const char* key, const bd_xjson* val)
 {
     if(NULL == htab)
     {
@@ -571,7 +571,7 @@ int htab_set(bd_xjson_htab* htab, const char* key, bd_xjson* val)
     return 0;
 }
 
-bd_xjson_htab_iter htab_begin(bd_xjson_htab* htab)
+bd_xjson_htab_iter htab_begin(const bd_xjson_htab* htab)
 {
     bd_xjson_htab_iter iter = {0};
     iter.index = htab->first;
@@ -579,7 +579,7 @@ bd_xjson_htab_iter htab_begin(bd_xjson_htab* htab)
     return iter;
 }
 
-bd_xjson_htab_iter htab_end(bd_xjson_htab* htab)
+bd_xjson_htab_iter htab_end(const bd_xjson_htab* htab)
 {
     bd_xjson_htab_iter iter = {0};
     iter.index = htab->capacity;
@@ -587,7 +587,7 @@ bd_xjson_htab_iter htab_end(bd_xjson_htab* htab)
 }
 
 bd_xjson_htab_iter
-htab_iterate(bd_xjson_htab* htab, bd_xjson_htab_iter iter)
+htab_iterate(const bd_xjson_htab* htab, bd_xjson_htab_iter iter)
 {
     iter.index = iter.entry.next;
     iter.entry = htab->entries[iter.entry.next];

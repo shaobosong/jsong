@@ -39,17 +39,17 @@ static bd_xjson_stack(char*) g_chars_stk;
 static bd_xjson_stack(char) g_char_stk;
 
 void bd_xjson_stringify_number(int v, char** pstr, int* len);
-void bd_xjson_stringify_string(char* chars, char** pstr, int* len);
-void bd_xjson_stringify_array(bd_xjson_list* list, char** pstr, int* len);
-void bd_xjson_stringify_object(bd_xjson_htab* htab, char** pstr, int* len);
+void bd_xjson_stringify_string(const char* chars, char** pstr, int* len);
+void bd_xjson_stringify_array(const bd_xjson_list* list, char** pstr, int* len);
+void bd_xjson_stringify_object(const bd_xjson_htab* htab, char** pstr, int* len);
 
-int bd_xjson_parse_object(char** pstr, bd_xjson* json);
-int bd_xjson_parse_string(char** pstr, bd_xjson* json);
-int bd_xjson_parse_number(char** pstr, bd_xjson* json);
-int bd_xjson_parse_array(char** pstr, bd_xjson* json);
-int bd_xjson_parse_literal(char** pstr, bd_xjson* json);
+int bd_xjson_parse_object(const char** const pstr, bd_xjson* json);
+int bd_xjson_parse_string(const char** const pstr, bd_xjson* json);
+int bd_xjson_parse_number(const char** const pstr, bd_xjson* json);
+int bd_xjson_parse_array(const char** const pstr, bd_xjson* json);
+int bd_xjson_parse_literal(const char** const pstr, bd_xjson* json);
 
-int bd_xjson_copy(bd_xjson* dest, bd_xjson* src)
+int bd_xjson_copy(bd_xjson* dest, const bd_xjson* src)
 {
     if(NULL == dest)
     {
@@ -182,7 +182,7 @@ void bd_xjson_stringify_number(int v, char** pstr, int* plen)
     return ;
 }
 
-void bd_xjson_stringify_string(char* chars, char** pstr, int* plen)
+void bd_xjson_stringify_string(const char* chars, char** pstr, int* plen)
 {
     *plen = strlen(chars) + 3;
     *pstr = xzmalloc(*plen);
@@ -192,7 +192,7 @@ void bd_xjson_stringify_string(char* chars, char** pstr, int* plen)
     return ;
 }
 
-void bd_xjson_stringify_object(bd_xjson_htab* htab, char** pstr, int* plen)
+void bd_xjson_stringify_object(const bd_xjson_htab* htab, char** pstr, int* plen)
 {
     bd_xjson_stack(char*) kstk;
     bd_xjson_stack_init(kstk, htab->size);
@@ -268,7 +268,7 @@ void bd_xjson_stringify_object(bd_xjson_htab* htab, char** pstr, int* plen)
     return ;
 }
 
-void bd_xjson_stringify_array(bd_xjson_list* list, char** pstr, int* plen)
+void bd_xjson_stringify_array(const bd_xjson_list* list, char** pstr, int* plen)
 {
     /* create two stacks and their size are equal to size of list */
     bd_xjson_stack(char*) stk;
@@ -335,9 +335,9 @@ void bd_xjson_stringify_array(bd_xjson_list* list, char** pstr, int* plen)
     return ;
 }
 
-void bd_xjson_stringify(void* raw, char** pstr, int* plen)
+void bd_xjson_stringify(const void* raw, char** pstr, int* plen)
 {
-    bd_xjson* json = (bd_xjson*)raw;
+    const bd_xjson* json = raw;
     bd_xjson_stack_init(g_chars_stk, 256);
     switch(json->type)
     {
@@ -383,9 +383,9 @@ void bd_xjson_stringify(void* raw, char** pstr, int* plen)
     return ;
 }
 
-static void bypass_white_space(char** pstr)
+static void bypass_white_space(const char** const pstr)
 {
-    char* str = *pstr;
+    const char* str = *pstr;
     while(*str == '\t' || *str == ' ' || *str == '\n' || *str == '\r')
     {
         str++;
@@ -393,10 +393,10 @@ static void bypass_white_space(char** pstr)
     *pstr = str;
 }
 
-int bd_xjson_parse_object(char** pstr, bd_xjson* json)
+int bd_xjson_parse_object(const char** const pstr, bd_xjson* json)
 {
     int64_t old_stk_top = g_char_stk.top;
-    char* str = *pstr;
+    const char* str = *pstr;
     int64_t save_stack_top;
     bd_xjson sub;
 
@@ -525,9 +525,9 @@ int bd_xjson_parse_object(char** pstr, bd_xjson* json)
     return -1;
 }
 
-int bd_xjson_parse_array(char** pstr, bd_xjson* json)
+int bd_xjson_parse_array(const char** const pstr, bd_xjson* json)
 {
-    char* str = *pstr;
+    const char* str = *pstr;
     bd_xjson sub;
 
     MY_ASSERT(json->type == BD_XJSON_ARRAY);
@@ -632,10 +632,10 @@ int bd_xjson_parse_array(char** pstr, bd_xjson* json)
     return -1;
 }
 
-int bd_xjson_parse_string(char** pstr, bd_xjson* json)
+int bd_xjson_parse_string(const char** const pstr, bd_xjson* json)
 {
     int64_t old_stk_top = g_char_stk.top;
-    char* str = *pstr;
+    const char* str = *pstr;
 
     MY_ASSERT(json->type == BD_XJSON_STRING);
     EXPECT_IF_NOT(str, '\"', THROW_WARNING("illegal character"); return -1);
@@ -664,9 +664,9 @@ int bd_xjson_parse_string(char** pstr, bd_xjson* json)
 }
 
 /* only support signed integer */
-int bd_xjson_parse_number(char** pstr, bd_xjson* json)
+int bd_xjson_parse_number(const char** const pstr, bd_xjson* json)
 {
-    char* str = *pstr;
+    const char* str = *pstr;
     int res = 0;
     int sign = *str == '-'? -1 : 1;
 
@@ -708,10 +708,10 @@ int bd_xjson_parse_number(char** pstr, bd_xjson* json)
     return -1;
 }
 
-int bd_xjson_parse_literal(char** pstr, bd_xjson* json)
+int bd_xjson_parse_literal(const char** const pstr, bd_xjson* json)
 {
     char* literal = NULL;
-    char* str = *pstr;
+    const char* str = *pstr;
 
     MY_ASSERT(*str == 't' || *str == 'f' || *str == 'n');
     switch(*str)
@@ -744,7 +744,7 @@ int bd_xjson_parse_literal(char** pstr, bd_xjson* json)
     return 0;
 }
 
-int bd_xjson_parse_entry(char* str, bd_xjson* json)
+int bd_xjson_parse_entry(const char* str, bd_xjson* json)
 {
     bypass_white_space(&str);
     switch(*str)
@@ -809,9 +809,9 @@ int bd_xjson_parse_entry(char* str, bd_xjson* json)
     return 0;
 }
 
-int bd_xjson_parse(char* str, void* raw)
+int bd_xjson_parse(const char* str, void* raw)
 {
-    bd_xjson* json = (bd_xjson*)raw;
+    bd_xjson* json = raw;
     bd_xjson old = *json;
     json->data = NULL;
 
