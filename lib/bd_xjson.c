@@ -75,7 +75,7 @@ void obj_add(bd_xjson_object* obj, const char* key, void* val)
     }
 }
 
-void obj_add_str(bd_xjson_object* obj, const char* key, char* str)
+void obj_add_str(bd_xjson_object* obj, const char* key, char* val)
 {
     if(NULL == obj)
     {
@@ -85,14 +85,14 @@ void obj_add_str(bd_xjson_object* obj, const char* key, char* str)
     {
         THROW_EXCEPTION("uninitialized data of object class try to insert");
     }
-    bd_xjson json = {.type = BD_XJSON_STRING, .data = str};
+    bd_xjson json = {.type = BD_XJSON_STRING, .data = val};
     if(htab_insert(obj->data, key, &json)) /* cast to parent class */
     {
         THROW_EXCEPTION("add error");
     }
 }
 
-void obj_add_num(bd_xjson_object* obj, const char* key, int num)
+void obj_add_num(bd_xjson_object* obj, const char* key, int val)
 {
     if(NULL == obj)
     {
@@ -102,7 +102,7 @@ void obj_add_num(bd_xjson_object* obj, const char* key, int num)
     {
         THROW_EXCEPTION("uninitialized data of object class try to insert");
     }
-    bd_xjson json = {.type = BD_XJSON_NUMBER, .data = &num};
+    bd_xjson json = {.type = BD_XJSON_NUMBER, .data = &val};
     if(htab_insert(obj->data, key, &json)) /* cast to parent class */
     {
         THROW_EXCEPTION("add error");
@@ -219,7 +219,7 @@ void obj_set(bd_xjson_object* obj, const char* key, void* val)
     }
 }
 
-void obj_set_str(bd_xjson_object* obj, const char* key, const char* str)
+void obj_set_str(bd_xjson_object* obj, const char* key, const char* val)
 {
     if(NULL == obj)
     {
@@ -229,14 +229,14 @@ void obj_set_str(bd_xjson_object* obj, const char* key, const char* str)
     {
         THROW_EXCEPTION("uninitialized data of object class try to set");
     }
-    bd_xjson json = {.type = BD_XJSON_STRING, .data = (char*)str};
+    bd_xjson json = {.type = BD_XJSON_STRING, .data = (char*)val};
     if(htab_set(obj->data, key, &json))
     {
         THROW_EXCEPTION("set error");
     }
 }
 
-void obj_set_num(bd_xjson_object* obj, const char* key, int num)
+void obj_set_num(bd_xjson_object* obj, const char* key, int val)
 {
     if(NULL == obj)
     {
@@ -246,7 +246,7 @@ void obj_set_num(bd_xjson_object* obj, const char* key, int num)
     {
         THROW_EXCEPTION("uninitialized data of object class try to set");
     }
-    bd_xjson json = {.type = BD_XJSON_NUMBER, .data = &num};
+    bd_xjson json = {.type = BD_XJSON_NUMBER, .data = &val};
     if(htab_set(obj->data, key, &json))
     {
         THROW_EXCEPTION("set error");
@@ -428,7 +428,7 @@ void arr_add(bd_xjson_array* arr, int pos, void* val)
     }
 }
 
-void arr_add_str(bd_xjson_array* arr, int pos, char* str)
+void arr_add_str(bd_xjson_array* arr, int pos, char* val)
 {
     if(NULL == arr)
     {
@@ -438,14 +438,14 @@ void arr_add_str(bd_xjson_array* arr, int pos, char* str)
     {
         THROW_EXCEPTION("uninitialized data of array class try to insert");
     }
-    bd_xjson json = {.type = BD_XJSON_STRING, .data = str};
+    bd_xjson json = {.type = BD_XJSON_STRING, .data = val};
     if(list_insert(arr->data, pos, &json)) /* cast to parent class */
     {
         THROW_EXCEPTION("add error");
     }
 }
 
-void arr_add_num(bd_xjson_array* arr, int pos, int num)
+void arr_add_num(bd_xjson_array* arr, int pos, int val)
 {
     if(NULL == arr)
     {
@@ -455,7 +455,7 @@ void arr_add_num(bd_xjson_array* arr, int pos, int num)
     {
         THROW_EXCEPTION("uninitialized data of array class try to insert");
     }
-    bd_xjson json = {.type = BD_XJSON_NUMBER, .data = &num};
+    bd_xjson json = {.type = BD_XJSON_NUMBER, .data = &val};
     if(list_insert(arr->data, pos, &json)) /* cast to parent class */
     {
         THROW_EXCEPTION("add error");
@@ -570,7 +570,7 @@ void arr_set(bd_xjson_array* arr, int pos, void* val)
         THROW_EXCEPTION("set error");
     }
 }
-void arr_set_str(bd_xjson_array* arr, int pos, char* str)
+void arr_set_str(bd_xjson_array* arr, int pos, char* val)
 {
     if(NULL == arr)
     {
@@ -580,13 +580,13 @@ void arr_set_str(bd_xjson_array* arr, int pos, char* str)
     {
         THROW_EXCEPTION("unitialized data of array calss try to set");
     }
-    bd_xjson json = {.type = BD_XJSON_STRING, .data = str};
+    bd_xjson json = {.type = BD_XJSON_STRING, .data = val};
     if(list_set(arr->data, pos, &json))
     {
         THROW_EXCEPTION("set error");
     }
 }
-void arr_set_num(bd_xjson_array* arr, int pos, int num)
+void arr_set_num(bd_xjson_array* arr, int pos, int val)
 {
     if(NULL == arr)
     {
@@ -596,7 +596,7 @@ void arr_set_num(bd_xjson_array* arr, int pos, int num)
     {
         THROW_EXCEPTION("unitialized data of array calss try to set");
     }
-    bd_xjson json = {.type = BD_XJSON_NUMBER, .data = &num};
+    bd_xjson json = {.type = BD_XJSON_NUMBER, .data = &val};
     if(list_set(arr->data, pos, &json))
     {
         THROW_EXCEPTION("set error");
@@ -741,19 +741,19 @@ void str_copy_cstr(bd_xjson_string* this, bd_xjson_string* str)
     this->data = xzmalloc(s);
     strcat(this->data, str->data);
 }
-void str_assign_cstr(bd_xjson_string* this, const char* chars)
+void str_assign_cstr(bd_xjson_string* this, const char* val)
 {
     if(NULL == this)
     {
         THROW_EXCEPTION("uninitialized string class try to construct");
     }
-    if(NULL == chars)
+    if(NULL == val)
     {
         THROW_EXCEPTION("uninitialized characters try to be the assigned");
     }
-    unsigned s = strlen(chars) + 1;
+    unsigned s = strlen(val) + 1;
     this->data = xzmalloc(s);
-    strcat(this->data, chars);
+    strcat(this->data, val);
 }
 void str_default_dstr(bd_xjson_string* this)
 {
@@ -766,6 +766,34 @@ void str_default_dstr(bd_xjson_string* this)
         THROW_EXCEPTION("uninitialized data of string class try to desctruct");
     }
     xfree(this->data);
+}
+void str_set(bd_xjson_string* str, char* val)
+{
+    if(NULL == str)
+    {
+        THROW_EXCEPTION("uninitialized string class try to set");
+    }
+    if(NULL == str->data)
+    {
+        THROW_EXCEPTION("uninitialized data of string class try to set");
+    }
+    xfree(str->data);
+    str->data = xzmalloc(strlen(val) + 1);
+    strcat(str->data, val);
+}
+char* str_get(bd_xjson_string* str)
+{
+    if(NULL == str)
+    {
+        THROW_EXCEPTION("uninitialized string class try to get");
+    }
+    if(NULL == str->data)
+    {
+        THROW_EXCEPTION("uninitialized data of string class try to get");
+    }
+    char* chars = xzmalloc(strlen(str->data) + 1);
+    strcat(chars, str->data);
+    return chars;
 }
 
 void num_default_cstr(bd_xjson_number* this)
@@ -810,4 +838,28 @@ void num_default_dstr(bd_xjson_number* this)
         THROW_EXCEPTION("uninitialized data of number class try to desctruct");
     }
     xfree(this->data);
+}
+void num_set(bd_xjson_number* num, int val)
+{
+    if(NULL == num)
+    {
+        THROW_EXCEPTION("uninitialized number class try to set");
+    }
+    if(NULL == num->data)
+    {
+        THROW_EXCEPTION("uninitialized data of number class try to set");
+    }
+    *(int*)num->data = val;
+}
+int num_get(bd_xjson_number* num)
+{
+    if(NULL == num)
+    {
+        THROW_EXCEPTION("uninitialized number class try to get");
+    }
+    if(NULL == num->data)
+    {
+        THROW_EXCEPTION("uninitialized data of number class try to get");
+    }
+    return *(int*)num->data;
 }

@@ -55,8 +55,8 @@ void obj_copy_cstr(bd_xjson_object* this, bd_xjson_object* obj);
 void obj_default_dstr(bd_xjson_object* this);
 /* member functions */
 void obj_add(bd_xjson_object* obj, const char* key, void* val); /* deprecated */
-void obj_add_str(bd_xjson_object* obj, const char* key, char* str); /* deprecated */
-void obj_add_num(bd_xjson_object* obj, const char* key, int num); /* deprecated */
+void obj_add_str(bd_xjson_object* obj, const char* key, char* val); /* deprecated */
+void obj_add_num(bd_xjson_object* obj, const char* key, int val); /* deprecated */
 void obj_add_true(bd_xjson_object* obj, const char* key); /* deprecated */
 void obj_add_false(bd_xjson_object* obj, const char* key); /* deprecated */
 void obj_add_null(bd_xjson_object* obj, const char* key); /* deprecated */
@@ -129,19 +129,26 @@ do                                      \
 /* constructor */
 void str_default_cstr(bd_xjson_string* this); /* deprecated */
 void str_copy_cstr(bd_xjson_string* this, bd_xjson_string* str); /* deprecated */
-void str_assign_cstr(bd_xjson_string* this, const char* chars);
+void str_assign_cstr(bd_xjson_string* this, const char* val);
 /* destructor */
 void str_default_dstr(bd_xjson_string* this);
+/* member functions */
+void str_set(bd_xjson_string* str, char* val);
+char* str_get(bd_xjson_string* str);
 struct bd_xjson_string
 {
 /* parent class */
     bd_xjson_base;
+    void (*set)(bd_xjson_string* this, char* val);
+    char* (*get)(bd_xjson_string* this);
 };
 #define BD_XJSON_STRING_CLASS(__ptr) \
 do                                   \
 {                                    \
     (__ptr)->type = BD_XJSON_STRING; \
     (__ptr)->data = NULL;            \
+    (__ptr)->set = str_set;          \
+    (__ptr)->get = str_get;          \
 } while(0)
 
 
@@ -154,16 +161,23 @@ void num_copy_cstr(bd_xjson_number* this, bd_xjson_number* num); /* deprecated *
 void num_assign_cstr(bd_xjson_number* this, int val);
 /* destructor */
 void num_default_dstr(bd_xjson_number* this);
+/* member functions */
+void num_set(bd_xjson_number* num, int val);
+int num_get(bd_xjson_number* num);
 struct bd_xjson_number
 {
 /* parent class */
     bd_xjson_base;
+    void (*set)(bd_xjson_number* this, int val);
+    int (*get)(bd_xjson_number* this);
 };
 #define BD_XJSON_NUMBER_CLASS(__ptr) \
 do                                   \
 {                                    \
     (__ptr)->type = BD_XJSON_NUMBER; \
     (__ptr)->data = NULL;            \
+    (__ptr)->set = num_set;          \
+    (__ptr)->get = num_get;          \
 } while(0)
 
 
