@@ -204,22 +204,22 @@ void bd_xjson_stringify_object(const bd_xjson_htab* htab, char** pstr, int* plen
     {
         int vl = 0;
         char* v = NULL;
-        switch(iter.entry.value.type)
+        switch(iter.data.value.type)
         {
             case BD_XJSON_OBJECT:
-                bd_xjson_stringify_object((bd_xjson_htab*)iter.entry.value.data, &v, &vl);
+                bd_xjson_stringify_object((bd_xjson_htab*)iter.data.value.data, &v, &vl);
                 bd_xjson_stack_push(g_chars_stk, v);
                 break;
             case BD_XJSON_STRING:
-                bd_xjson_stringify_string((char*)iter.entry.value.data, &v, &vl);
+                bd_xjson_stringify_string((char*)iter.data.value.data, &v, &vl);
                 bd_xjson_stack_push(g_chars_stk, v);
                 break;
             case BD_XJSON_NUMBER:
-                bd_xjson_stringify_number(*(int*)iter.entry.value.data, &v, &vl);
+                bd_xjson_stringify_number(*(int*)iter.data.value.data, &v, &vl);
                 bd_xjson_stack_push(g_chars_stk, v);
                 break;
             case BD_XJSON_ARRAY:
-                bd_xjson_stringify_array((bd_xjson_list*)iter.entry.value.data, &v, &vl);
+                bd_xjson_stringify_array((bd_xjson_list*)iter.data.value.data, &v, &vl);
                 bd_xjson_stack_push(g_chars_stk, v);
                 break;
             case BD_XJSON_TRUE:
@@ -235,12 +235,12 @@ void bd_xjson_stringify_object(const bd_xjson_htab* htab, char** pstr, int* plen
                 vl = 5;
                 break;
             default:
-                MY_ASSERT(bd_xjson_type_is_valid(iter.entry.value.type));
+                MY_ASSERT(bd_xjson_type_is_valid(iter.data.value.type));
                 return ;
         }
-        bd_xjson_stack_push(kstk, iter.entry.key);
+        bd_xjson_stack_push(kstk, iter.data.key);
         bd_xjson_stack_push(vstk, v);
-        *plen += (vl + strlen(iter.entry.key) + 3);
+        *plen += (vl + strlen(iter.data.key) + 3);
     }
     if(htab->size == 0)
     {
@@ -801,7 +801,7 @@ int bd_xjson_parse_entry(const char* str, bd_xjson* json)
             }
             break;
         default:
-            THROW_WARNING("JSON parsing unknown type");
+            THROW_WARNING("parsing unknown JSON type");
             return -1;
     }
     bypass_white_space(&str);

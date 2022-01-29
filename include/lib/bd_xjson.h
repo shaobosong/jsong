@@ -2,8 +2,12 @@
 #define bd_xjson_h
 
 #include <stddef.h>
+#include <stdint.h>
 
 #include "lib/bd_xjson_base.h"
+#include "lib/bd_xjson_iter.h"
+#include "lib/bd_xjson_htab.h"
+#include "lib/bd_xjson_list.h"
 #include "lib/alloc.h"
 
 typedef struct bd_xjson_object bd_xjson_object;
@@ -47,6 +51,8 @@ do                                                          \
  *  @set: add or update a <key>-<val@bd_json_*> pair by a given <key> and <val@bd_json_*>
  *  @delete: delete a <key>-<val@bd_json_*> pair by a given <key>
  *  @get: search <val@bd_json_*> by a given <key>
+ *  @begin: return a iterator to the first element in the bd_xjson_object
+ *  @end: return a past-the-end iterator that points to the element following the last element of the bd_xjson_object
  */
 /* constructor */
 void obj_default_cstr(bd_xjson_object* this);
@@ -70,6 +76,16 @@ void obj_set_null(bd_xjson_object* obj, const char* key);
 void* obj_get(const bd_xjson_object* obj, const char* key, void* val);
 char* obj_get_str(const bd_xjson_object* obj, const char* key);
 int obj_get_num(const bd_xjson_object* obj, const char* key);
+bd_xjson_htab_iter obj_begin(const bd_xjson_object* obj);
+bd_xjson_htab_iter obj_end(const bd_xjson_object* obj);
+bd_xjson_htab_iter obj_iterate(const bd_xjson_object* this, bd_xjson_htab_iter iter);
+#define bd_xjson_object_foreach(__obj, __iter, __end) \
+    for(; \
+        __iter.index != __end.index; \
+        __iter = obj_iterate(__obj, __iter))
+void* obj_iter_get(bd_xjson_htab_iter iter, void* val);
+char* obj_iter_get_str(bd_xjson_htab_iter iter);
+int obj_iter_get_num(bd_xjson_htab_iter iter);
 struct bd_xjson_object
 {
 /* parent class */
@@ -92,6 +108,8 @@ struct bd_xjson_object
     void* (*get)(const bd_xjson_object* this, const char* key, void* val);
     char* (*get_str)(const bd_xjson_object* this, const char* key);
     int (*get_num)(const bd_xjson_object* this, const char* key);
+    bd_xjson_htab_iter (*begin)(const bd_xjson_object* this);
+    bd_xjson_htab_iter (*end)(const bd_xjson_object* this);
 };
 #define BD_XJSON_OBJECT_CLASS(__ptr)    \
 do                                      \
@@ -114,6 +132,8 @@ do                                      \
     (__ptr)->get = obj_get;             \
     (__ptr)->get_str = obj_get_str;     \
     (__ptr)->get_num = obj_get_num;     \
+    (__ptr)->begin = obj_begin;         \
+    (__ptr)->end = obj_end;             \
 } while(0)
 
 
@@ -179,6 +199,10 @@ do                                   \
  *  @delete: delete a <val@bd_json_*> by a given <pos>
  *  @get: search <val@bd_json_*> by a given <pos>
  *  @sort: sort all items by quick sort
+ *  @begin: return a iterator to the first element in the bd_xjson_array
+ *  @end: return a past-the-end iterator that points to the element following the last element of the bd_xjson_array
+ *  @rbegin: return a iterator to the first element in a reversed bd_xjson_array
+ *  @rend: return a past-the-end reverse iterator that points to the element following the last element of the reversed bd_xjson_array
  */
 /* constructor */
 void arr_default_cstr(bd_xjson_array* this);
@@ -203,6 +227,23 @@ void* arr_get(const bd_xjson_array* arr, int pos, void* val);
 char* arr_get_str(const bd_xjson_array* arr, int pos);
 int arr_get_num(const bd_xjson_array* arr, int pos);
 void arr_qsort(bd_xjson_array* arr, int (*compare_fn)(const void*, const void*));
+bd_xjson_list_iter arr_begin(const bd_xjson_array* arr);
+bd_xjson_list_iter arr_end(const bd_xjson_array* arr);
+bd_xjson_list_iter arr_iterate(const bd_xjson_array* this, bd_xjson_list_iter iter);
+bd_xjson_list_iter arr_rbegin(const bd_xjson_array* arr);
+bd_xjson_list_iter arr_rend(const bd_xjson_array* arr);
+bd_xjson_list_iter arr_riterate(const bd_xjson_array* this, bd_xjson_list_iter iter);
+#define bd_xjson_array_foreach(__arr, __iter, __end) \
+    for(; \
+        __iter.index != __end.index; \
+        __iter = arr_iterate(__arr, __iter))
+#define bd_xjson_array_reverse_foreach(__arr, __iter, __end) \
+    for(; \
+        __iter.index != __end.index; \
+        __iter = arr_riterate(__arr, __iter))
+void* arr_iter_get(bd_xjson_list_iter iter, void* val);
+char* arr_iter_get_str(bd_xjson_list_iter iter);
+int arr_iter_get_num(bd_xjson_list_iter iter);
 struct bd_xjson_array
 {
 /* parent class */
@@ -226,6 +267,10 @@ struct bd_xjson_array
     char* (*get_str)(const bd_xjson_array* this, int pos);
     int (*get_num)(const bd_xjson_array* this, int pos);
     void (*sort)(bd_xjson_array* this, int (*compare_fn)(const void*, const void*));
+    bd_xjson_list_iter (*begin)(const bd_xjson_array* this);
+    bd_xjson_list_iter (*end)(const bd_xjson_array* this);
+    bd_xjson_list_iter (*rbegin)(const bd_xjson_array* this);
+    bd_xjson_list_iter (*rend)(const bd_xjson_array* this);
 };
 #define BD_XJSON_ARRAY_CLASS(__ptr)      \
 do                                       \
@@ -249,6 +294,10 @@ do                                       \
     (__ptr)->get_str = arr_get_str;      \
     (__ptr)->get_num = arr_get_num;      \
     (__ptr)->sort = arr_qsort;           \
+    (__ptr)->begin = arr_begin;          \
+    (__ptr)->end = arr_end;              \
+    (__ptr)->rbegin = arr_rbegin;        \
+    (__ptr)->rend = arr_rend;            \
 } while(0)
 
 

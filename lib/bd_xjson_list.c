@@ -408,7 +408,11 @@ int list_free(bd_xjson_list* list)
     unsigned size = list->size;
     for(int i = 0; i < size; i++)
     {
-        list_erase(list, 0);
+        if(list_erase(list, 0))
+        {
+            THROW_WARNING("LIST erase failed");
+            return -1;
+        }
     }
     xfree(list);
     return 0;
@@ -552,11 +556,19 @@ int list_set(bd_xjson_list* list, int pos, const bd_xjson* val)
 
     if(pos == list->size || pos == -list->size - 1)
     {
-        list_insert(list, pos, val);
+        if(list_insert(list, pos, val))
+        {
+            THROW_WARNING("LIST set using insert method error");
+            return -1;
+        }
     }
     else
     {
-        list_update(list, pos, val);
+        if(list_update(list, pos, val))
+        {
+            THROW_WARNING("LIST set using update method error");
+            return -1;
+        }
     }
 
     return 0;
@@ -609,4 +621,65 @@ void list_qsort(bd_xjson_list* list, int (*compare_fn)(const void*, const void*)
     list->head->prev = &sentinel;
     list_qsort_recur(compare_fn, list->head, list->head, list->tail);
     list->head->prev = NULL;
+}
+
+bd_xjson_list_iter list_begin(const bd_xjson_list* list)
+{
+    bd_xjson_list_iter iter;
+    iter.index = list->head;
+    iter.data = *(list->head);
+    return iter;
+}
+bd_xjson_list_iter list_end(const bd_xjson_list* list)
+{
+    bd_xjson_list_iter iter = {0};
+    return iter;
+}
+bd_xjson_list_iter list_iterate(const bd_xjson_list* list, bd_xjson_list_iter iter)
+{
+    iter.index = iter.data.next;
+    iter.data = iter.index ? *(iter.index) : iter.data;
+    return iter;
+}
+bd_xjson_list_iter list_rbegin(const bd_xjson_list* list)
+{
+    bd_xjson_list_iter iter;
+    iter.index = list->tail;
+    iter.data = *(list->tail);
+    return iter;
+}
+bd_xjson_list_iter list_rend(const bd_xjson_list* list)
+{
+    bd_xjson_list_iter iter = {0};
+    return iter;
+}
+bd_xjson_list_iter list_riterate(const bd_xjson_list* list, bd_xjson_list_iter iter)
+{
+    iter.index = iter.data.prev;
+    iter.data = iter.index ? *(iter.index) : iter.data;
+    return iter;
+}
+int list_iter_get(bd_xjson_list_iter iter, bd_xjson* val)
+{
+    if(val->type != iter.data.value.type)
+    {
+        THROW_WARNING("unmatched JSON type to get value in iterator");
+        return -1;
+    }
+    /* free old val data if exist */
+    if(val->data)
+    {
+        if(bd_xjson_free(val))
+        {
+            THROW_WARNING("value free failed");
+            return -1;
+        }
+    }
+    /* copy from iter data */
+    if(bd_xjson_copy(val, &(iter.data.value)))
+    {
+        THROW_WARNING("copy failed");
+        return -1;
+    }
+    return 0;
 }

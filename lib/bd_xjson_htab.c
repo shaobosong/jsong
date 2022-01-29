@@ -207,13 +207,13 @@ static int htab_grow(bd_xjson_htab* htab, uint64_t new_capacity)
     /* apply shallow copy but not deep copy to improve performance */
     bd_xjson_htab_foreach(&old_htab, iter, end)
     {
-        uint64_t index = (uint64_t)(hash_key(iter.entry.key) & (new_capacity - 1));
+        uint64_t index = (uint64_t)(hash_key(iter.data.key) & (new_capacity - 1));
         /* unsafe */
         while(htab->entries[index].key)
         {
             index = (index + 1) & (new_capacity - 1);
         }
-        htab->entries[index] = iter.entry;
+        htab->entries[index] = iter.data;
         entry_placed_in(htab, index);
     }
     /* free old entries */
@@ -561,11 +561,19 @@ int htab_set(bd_xjson_htab* htab, const char* key, const bd_xjson* val)
     /* free old entry data if exist */
     if(htab->entries[i].key)
     {
-        htab_update(htab, key, val);
+        if(htab_update(htab, key, val))
+        {
+            THROW_WARNING("HTAB set using update method error");
+            return -1;
+        }
     }
     else
     {
-        htab_insert(htab, key, val);
+        if(htab_insert(htab, key, val))
+        {
+            THROW_WARNING("HTAB set using insert method error");
+            return -1;
+        }
     }
 
     return 0;
@@ -575,7 +583,7 @@ bd_xjson_htab_iter htab_begin(const bd_xjson_htab* htab)
 {
     bd_xjson_htab_iter iter = {0};
     iter.index = htab->first;
-    iter.entry = htab->entries[htab->first];
+    iter.data = htab->entries[htab->first];
     return iter;
 }
 
@@ -589,7 +597,32 @@ bd_xjson_htab_iter htab_end(const bd_xjson_htab* htab)
 bd_xjson_htab_iter
 htab_iterate(const bd_xjson_htab* htab, bd_xjson_htab_iter iter)
 {
-    iter.index = iter.entry.next;
-    iter.entry = htab->entries[iter.entry.next];
+    iter.index = iter.data.next;
+    iter.data = htab->entries[iter.data.next];
     return iter;
+}
+
+int htab_iter_get(bd_xjson_htab_iter iter, bd_xjson* val)
+{
+    if(val->type != iter.data.value.type)
+    {
+        THROW_WARNING("unmatched JSON type to get value in iterator");
+        return -1;
+    }
+    /* free old val data if exist */
+    if(val->data)
+    {
+        if(bd_xjson_free(val))
+        {
+            THROW_WARNING("value free failed");
+            return -1;
+        }
+    }
+    /* copy from iter data */
+    if(bd_xjson_copy(val, &(iter.data.value)))
+    {
+        THROW_WARNING("copy failed");
+        return -1;
+    }
+    return 0;
 }
