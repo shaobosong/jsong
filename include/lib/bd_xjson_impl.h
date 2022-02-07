@@ -18,6 +18,9 @@ typedef struct bd_xjson_true bd_xjson_true;
 typedef struct bd_xjson_false bd_xjson_false;
 typedef struct bd_xjson_null bd_xjson_null;
 
+typedef bd_xjson_htab_iter bd_xjson_object_iter;
+typedef bd_xjson_list_iter bd_xjson_array_iter;
+
 #define FREE_JSON_DATA(p)                                   \
 do                                                          \
 {                                                           \
@@ -76,13 +79,13 @@ void obj_set_null(bd_xjson_object* obj, const char* key);
 void* obj_get(const bd_xjson_object* obj, const char* key, void* val);
 char* obj_get_str(const bd_xjson_object* obj, const char* key);
 int obj_get_num(const bd_xjson_object* obj, const char* key);
-bd_xjson_htab_iter obj_begin(const bd_xjson_object* obj);
-bd_xjson_htab_iter obj_end(const bd_xjson_object* obj);
+bd_xjson_object_iter obj_begin(const bd_xjson_object* obj);
+bd_xjson_object_iter obj_end(const bd_xjson_object* obj);
 #define bd_xjson_object_foreach(__iter, __end) \
     bd_xjson_htab_foreach(__iter, __end)
-void* obj_iter_get(bd_xjson_htab_iter iter, void* val);
-char* obj_iter_get_str(bd_xjson_htab_iter iter);
-int obj_iter_get_num(bd_xjson_htab_iter iter);
+void* obj_iter_get(bd_xjson_object_iter iter, void* val);
+char* obj_iter_get_str(bd_xjson_object_iter iter);
+int obj_iter_get_num(bd_xjson_object_iter iter);
 #define bd_xjson_object(__class) \
 struct __class \
 { \
@@ -106,8 +109,8 @@ struct __class \
     void* (*get)(const bd_xjson_object* this, const char* key, void* val); \
     char* (*get_str)(const bd_xjson_object* this, const char* key); \
     int (*get_num)(const bd_xjson_object* this, const char* key); \
-    bd_xjson_htab_iter (*begin)(const bd_xjson_object* this); \
-    bd_xjson_htab_iter (*end)(const bd_xjson_object* this); \
+    bd_xjson_object_iter (*begin)(const bd_xjson_object* this); \
+    bd_xjson_object_iter (*end)(const bd_xjson_object* this); \
 }
 bd_xjson_object(bd_xjson_object);
 #define BD_XJSON_OBJECT_CLASS(__ptr)    \
@@ -230,17 +233,17 @@ void* arr_get(const bd_xjson_array* arr, int pos, void* val);
 char* arr_get_str(const bd_xjson_array* arr, int pos);
 int arr_get_num(const bd_xjson_array* arr, int pos);
 void arr_qsort(bd_xjson_array* arr, int (*compare_fn)(const void*, const void*));
-bd_xjson_list_iter arr_begin(const bd_xjson_array* arr);
-bd_xjson_list_iter arr_end(const bd_xjson_array* arr);
-bd_xjson_list_iter arr_rbegin(const bd_xjson_array* arr);
-bd_xjson_list_iter arr_rend(const bd_xjson_array* arr);
+bd_xjson_array_iter arr_begin(const bd_xjson_array* arr);
+bd_xjson_array_iter arr_end(const bd_xjson_array* arr);
+bd_xjson_array_iter arr_rbegin(const bd_xjson_array* arr);
+bd_xjson_array_iter arr_rend(const bd_xjson_array* arr);
 #define bd_xjson_array_foreach(__iter, __end) \
     bd_xjson_list_foreach(__iter, __end)
 #define bd_xjson_array_reverse_foreach(__iter, __end) \
     bd_xjson_list_reverse_foreach(__iter, __end)
-void* arr_iter_get(bd_xjson_list_iter iter, void* val);
-char* arr_iter_get_str(bd_xjson_list_iter iter);
-int arr_iter_get_num(bd_xjson_list_iter iter);
+void* arr_iter_get(bd_xjson_array_iter iter, void* val);
+char* arr_iter_get_str(bd_xjson_array_iter iter);
+int arr_iter_get_num(bd_xjson_array_iter iter);
 #define bd_xjson_array(__class) \
 struct __class \
 { \
@@ -265,10 +268,10 @@ struct __class \
     char* (*get_str)(const bd_xjson_array* this, int pos); \
     int (*get_num)(const bd_xjson_array* this, int pos); \
     void (*sort)(bd_xjson_array* this, int (*compare_fn)(const void*, const void*)); \
-    bd_xjson_list_iter (*begin)(const bd_xjson_array* this); \
-    bd_xjson_list_iter (*end)(const bd_xjson_array* this); \
-    bd_xjson_list_iter (*rbegin)(const bd_xjson_array* this); \
-    bd_xjson_list_iter (*rend)(const bd_xjson_array* this); \
+    bd_xjson_array_iter (*begin)(const bd_xjson_array* this); \
+    bd_xjson_array_iter (*end)(const bd_xjson_array* this); \
+    bd_xjson_array_iter (*rbegin)(const bd_xjson_array* this); \
+    bd_xjson_array_iter (*rend)(const bd_xjson_array* this); \
 }
 bd_xjson_array(bd_xjson_array);
 #define BD_XJSON_ARRAY_CLASS(__ptr)      \
