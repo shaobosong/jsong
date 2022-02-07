@@ -385,19 +385,6 @@ bd_xjson_htab_iter obj_end(const bd_xjson_object* obj)
     bd_xjson_htab_iter iter = htab_end(obj->data);
     return iter;
 }
-bd_xjson_htab_iter obj_iterate(const bd_xjson_object* obj, bd_xjson_htab_iter iter)
-{
-    if(NULL == obj)
-    {
-        THROW_EXCEPTION("uninitialized object class try to iterate");
-    }
-    if(NULL == obj->data)
-    {
-        THROW_EXCEPTION("uninitialized data of object class try to iterate");
-    }
-    iter = htab_iterate(obj->data, iter);
-    return iter;
-}
 void* obj_iter_get(bd_xjson_htab_iter iter, void* val)
 {
     if(htab_iter_get(iter, val))
@@ -810,19 +797,6 @@ bd_xjson_list_iter arr_end(const bd_xjson_array* arr)
     bd_xjson_list_iter iter = list_end(arr->data);
     return iter;
 }
-bd_xjson_list_iter arr_iterate(const bd_xjson_array* arr, bd_xjson_list_iter iter)
-{
-    if(NULL == arr)
-    {
-        THROW_EXCEPTION("uninitialized array class try to iterate");
-    }
-    if(NULL == arr->data)
-    {
-        THROW_EXCEPTION("uninitialized data of array class try to iterate");
-    }
-    iter = list_iterate(arr->data, iter);
-    return iter;
-}
 bd_xjson_list_iter arr_rbegin(const bd_xjson_array* arr)
 {
     if(NULL == arr)
@@ -847,19 +821,6 @@ bd_xjson_list_iter arr_rend(const bd_xjson_array* arr)
         THROW_EXCEPTION("uninitialized data of array class try to rendify");
     }
     bd_xjson_list_iter iter = list_rend(arr->data);
-    return iter;
-}
-bd_xjson_list_iter arr_riterate(const bd_xjson_array* arr, bd_xjson_list_iter iter)
-{
-    if(NULL == arr)
-    {
-        THROW_EXCEPTION("uninitialized array class try to iterate in reverse");
-    }
-    if(NULL == arr->data)
-    {
-        THROW_EXCEPTION("uninitialized data of array class try to iterate in reverse");
-    }
-    iter = list_riterate(arr->data, iter);
     return iter;
 }
 void* arr_iter_get(bd_xjson_list_iter iter, void* val)

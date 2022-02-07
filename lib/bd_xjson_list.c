@@ -15,9 +15,6 @@ static int node_create(bd_xjson_node** node)
     }
     bd_xjson_node* n;
     n = xzmalloc(sizeof *n);
-    n->next = n->prev = NULL;
-    n->value.data = NULL;
-    n->value.type = 0;
 
     *node = n;
     return 0;
@@ -405,14 +402,12 @@ int list_free(bd_xjson_list* list)
         THROW_WARNING("LIST is not initialized");
         return -1;
     }
-    unsigned size = list->size;
-    for(int i = 0; i < size; i++)
+    bd_xjson_node* cur = list->head;
+    bd_xjson_node* next = NULL;
+    for(; cur; cur = next)
     {
-        if(list_erase(list, 0))
-        {
-            THROW_WARNING("LIST erase failed");
-            return -1;
-        }
+        next = cur->next;
+        xfree(cur);
     }
     xfree(list);
     return 0;
@@ -625,9 +620,9 @@ void list_qsort(bd_xjson_list* list, int (*compare_fn)(const void*, const void*)
 
 bd_xjson_list_iter list_begin(const bd_xjson_list* list)
 {
-    bd_xjson_list_iter iter;
+    bd_xjson_list_iter iter = {0};
     iter.index = list->head;
-    iter.data = *(list->head);
+    iter.data = iter.index ? *(iter.index) : iter.data;
     return iter;
 }
 bd_xjson_list_iter list_end(const bd_xjson_list* list)
@@ -635,7 +630,7 @@ bd_xjson_list_iter list_end(const bd_xjson_list* list)
     bd_xjson_list_iter iter = {0};
     return iter;
 }
-bd_xjson_list_iter list_iterate(const bd_xjson_list* list, bd_xjson_list_iter iter)
+bd_xjson_list_iter list_iterate(bd_xjson_list_iter iter)
 {
     iter.index = iter.data.next;
     iter.data = iter.index ? *(iter.index) : iter.data;
@@ -643,9 +638,9 @@ bd_xjson_list_iter list_iterate(const bd_xjson_list* list, bd_xjson_list_iter it
 }
 bd_xjson_list_iter list_rbegin(const bd_xjson_list* list)
 {
-    bd_xjson_list_iter iter;
+    bd_xjson_list_iter iter = {0};
     iter.index = list->tail;
-    iter.data = *(list->tail);
+    iter.data = iter.index ? *(iter.index) : iter.data;
     return iter;
 }
 bd_xjson_list_iter list_rend(const bd_xjson_list* list)
@@ -653,7 +648,7 @@ bd_xjson_list_iter list_rend(const bd_xjson_list* list)
     bd_xjson_list_iter iter = {0};
     return iter;
 }
-bd_xjson_list_iter list_riterate(const bd_xjson_list* list, bd_xjson_list_iter iter)
+bd_xjson_list_iter list_riterate(bd_xjson_list_iter iter)
 {
     iter.index = iter.data.prev;
     iter.data = iter.index ? *(iter.index) : iter.data;

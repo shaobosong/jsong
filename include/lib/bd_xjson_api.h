@@ -19,8 +19,8 @@ do                     \
 #define JSON_OBJECT_COPY(__id, __copy) \
     bd_xjson_object* __id = for_json_object_copy(__copy)
 typedef bd_xjson_htab_iter JSON_OBJECT_ITER;
-#define JSON_OBJECT_FOREACH(__obj, __iter, __end) \
-    bd_xjson_object_foreach(__obj, __iter, __end)
+#define JSON_OBJECT_FOREACH(__iter, __end) \
+    bd_xjson_object_foreach(__iter, __end)
 /* get copy */
 #define JSON_OBJECT_ITER_GET(__iter, __void) \
     obj_iter_get(__iter, __void)
@@ -53,10 +53,10 @@ typedef bd_xjson_htab_iter JSON_OBJECT_ITER;
 #define JSON_ARRAY_COPY(__id, __copy) \
     bd_xjson_array* __id = for_json_array_copy(__copy)
 typedef bd_xjson_list_iter JSON_ARRAY_ITER;
-#define JSON_ARRAY_FOREACH(__arr, __iter, __end) \
-    bd_xjson_array_foreach(__arr, __iter, __end)
-#define JSON_ARRAY_REVERSE_FOREACH(__arr, __iter, __end) \
-    bd_xjson_array_reverse_foreach(__arr, __iter, __end)
+#define JSON_ARRAY_FOREACH(__iter, __end) \
+    bd_xjson_array_foreach(__iter, __end)
+#define JSON_ARRAY_REVERSE_FOREACH(__iter, __end) \
+    bd_xjson_array_reverse_foreach(__iter, __end)
 /* get copy */
 #define JSON_ARRAY_ITER_GET(__iter, __void) \
     arr_iter_get(__iter, __void)

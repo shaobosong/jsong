@@ -78,18 +78,15 @@ char* obj_get_str(const bd_xjson_object* obj, const char* key);
 int obj_get_num(const bd_xjson_object* obj, const char* key);
 bd_xjson_htab_iter obj_begin(const bd_xjson_object* obj);
 bd_xjson_htab_iter obj_end(const bd_xjson_object* obj);
-bd_xjson_htab_iter obj_iterate(const bd_xjson_object* this, bd_xjson_htab_iter iter);
-#define bd_xjson_object_foreach(__obj, __iter, __end) \
-    for(; \
-        __iter.index != __end.index; \
-        __iter = obj_iterate(__obj, __iter))
+#define bd_xjson_object_foreach(__iter, __end) \
+    bd_xjson_htab_foreach(__iter, __end)
 void* obj_iter_get(bd_xjson_htab_iter iter, void* val);
 char* obj_iter_get_str(bd_xjson_htab_iter iter);
 int obj_iter_get_num(bd_xjson_htab_iter iter);
 struct bd_xjson_object
 {
 /* parent class */
-    bd_xjson_base;
+    bd_xjson();
 /* public */
     /* member functions */
     void (*add)(bd_xjson_object* this, const char* key, const void* val);
@@ -150,7 +147,7 @@ char* str_get(const bd_xjson_string* str);
 struct bd_xjson_string
 {
 /* parent class */
-    bd_xjson_base;
+    bd_xjson();
     void (*set)(bd_xjson_string* this, const char* val);
     char* (*get)(const bd_xjson_string* this);
 };
@@ -177,7 +174,7 @@ int num_get(const bd_xjson_number* num);
 struct bd_xjson_number
 {
 /* parent class */
-    bd_xjson_base;
+    bd_xjson();
     void (*set)(bd_xjson_number* this, int val);
     int (*get)(const bd_xjson_number* this);
 };
@@ -229,25 +226,19 @@ int arr_get_num(const bd_xjson_array* arr, int pos);
 void arr_qsort(bd_xjson_array* arr, int (*compare_fn)(const void*, const void*));
 bd_xjson_list_iter arr_begin(const bd_xjson_array* arr);
 bd_xjson_list_iter arr_end(const bd_xjson_array* arr);
-bd_xjson_list_iter arr_iterate(const bd_xjson_array* this, bd_xjson_list_iter iter);
 bd_xjson_list_iter arr_rbegin(const bd_xjson_array* arr);
 bd_xjson_list_iter arr_rend(const bd_xjson_array* arr);
-bd_xjson_list_iter arr_riterate(const bd_xjson_array* this, bd_xjson_list_iter iter);
-#define bd_xjson_array_foreach(__arr, __iter, __end) \
-    for(; \
-        __iter.index != __end.index; \
-        __iter = arr_iterate(__arr, __iter))
-#define bd_xjson_array_reverse_foreach(__arr, __iter, __end) \
-    for(; \
-        __iter.index != __end.index; \
-        __iter = arr_riterate(__arr, __iter))
+#define bd_xjson_array_foreach(__iter, __end) \
+    bd_xjson_list_foreach(__iter, __end)
+#define bd_xjson_array_reverse_foreach(__iter, __end) \
+    bd_xjson_list_reverse_foreach(__iter, __end)
 void* arr_iter_get(bd_xjson_list_iter iter, void* val);
 char* arr_iter_get_str(bd_xjson_list_iter iter);
 int arr_iter_get_num(bd_xjson_list_iter iter);
 struct bd_xjson_array
 {
 /* parent class */
-    bd_xjson_base; /* a linked list */
+    bd_xjson(); /* a linked list */
 /* public */
     /* member functions */
     void (*add)(bd_xjson_array* this, int pos, const void* val);
@@ -307,7 +298,7 @@ do                                       \
 struct bd_xjson_true
 {
 /* parent class */
-    bd_xjson_base;
+    bd_xjson();
 };
 #define BD_XJSON_TRUE_CLASS(__ptr)  \
 do                                  \
@@ -323,7 +314,7 @@ do                                  \
 struct bd_xjson_false
 {
 /* parent class */
-    bd_xjson_base;
+    bd_xjson();
 };
 #define BD_XJSON_FALSE_CLASS(__ptr) \
 do                                  \
@@ -339,7 +330,7 @@ do                                  \
 struct bd_xjson_null
 {
 /* parent class */
-    bd_xjson_base;
+    bd_xjson();
 };
 #define BD_XJSON_NULL_CLASS(__ptr)  \
 do                                  \

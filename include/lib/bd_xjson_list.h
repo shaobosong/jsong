@@ -30,19 +30,25 @@ int list_find(const bd_xjson_list* list, int pos, bd_xjson* val);
 int list_update(bd_xjson_list* list, int pos, const bd_xjson* val);
 int list_set(bd_xjson_list* list, int pos, const bd_xjson* val);
 void list_qsort(bd_xjson_list* list, int (*compare_fn)(const void*, const void*));
-#define bd_xjson_list_foreach(__list, __node) \
-    for(bd_xjson_node* __node = __list->head; __node; __node = __node->next)
-#define bd_xjson_list_foreach_in_reverse(__list, __node) \
-    for(bd_xjson_node* __node = __list->tail; __node; __node = __node->prev)
-
-typedef bd_xjson_iter(bd_xjson_node*, index, bd_xjson_node, data)
-    bd_xjson_list_iter;
+typedef struct bd_xjson_list_iter
+{
+/* parent class */
+    bd_xjson_iter(bd_xjson_node*, bd_xjson_node);
+} bd_xjson_list_iter;
 bd_xjson_list_iter list_begin(const bd_xjson_list* list);
 bd_xjson_list_iter list_end(const bd_xjson_list* list);
-bd_xjson_list_iter list_iterate(const bd_xjson_list* list, bd_xjson_list_iter iter);
+bd_xjson_list_iter list_iterate(bd_xjson_list_iter iter);
 bd_xjson_list_iter list_rbegin(const bd_xjson_list* list);
 bd_xjson_list_iter list_rend(const bd_xjson_list* list);
-bd_xjson_list_iter list_riterate(const bd_xjson_list* list, bd_xjson_list_iter iter);
+bd_xjson_list_iter list_riterate(bd_xjson_list_iter iter);
+#define bd_xjson_list_foreach(__iter, __end) \
+    for(; \
+        __iter.index != __end.index; \
+        __iter = list_iterate(__iter))
+#define bd_xjson_list_reverse_foreach(__iter, __end) \
+    for(; \
+        __iter.index != __end.index; \
+        __iter = list_riterate(__iter))
 int list_iter_get(bd_xjson_list_iter iter, bd_xjson* val);
 
 #endif

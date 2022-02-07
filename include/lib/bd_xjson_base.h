@@ -26,13 +26,13 @@
  *      false:     BD_XJSON_FALSE
  *      null:      BD_XJSON_NULL
  */
-#define bd_xjson_base  \
+#define bd_xjson()     \
 struct                 \
 {                      \
     void* data;        \
     bd_xjson_type type;\
 }
-typedef bd_xjson_base bd_xjson;
+typedef bd_xjson() bd_xjson;
 
 int bd_xjson_copy(bd_xjson* dest, const bd_xjson* src);
 int bd_xjson_free(bd_xjson* json);

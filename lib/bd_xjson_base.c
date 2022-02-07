@@ -146,7 +146,7 @@ int bd_xjson_free(bd_xjson* json)
 
 static int bd_xjson_type_is_valid(bd_xjson_type type)
 {
-    return type != 0 && (type & ~7UL) == 0;
+    return type >= 1 && type <= 7;
 }
 
 void bd_xjson_stringify_number(int v, char** pstr, int* plen)
@@ -200,7 +200,9 @@ void bd_xjson_stringify_object(const bd_xjson_htab* htab, char** pstr, int* plen
     bd_xjson_stack_init(vstk, htab->size);
 
     *plen = 2;
-    bd_xjson_htab_foreach(htab, iter, end)
+    bd_xjson_htab_iter iter = htab_begin(htab);
+    bd_xjson_htab_iter end = htab_end(htab);
+    bd_xjson_htab_foreach(iter, end)
     {
         int vl = 0;
         char* v = NULL;
@@ -275,7 +277,7 @@ void bd_xjson_stringify_array(const bd_xjson_list* list, char** pstr, int* plen)
     bd_xjson_stack_init(stk, list->size);
 
     *plen = 2;
-    bd_xjson_list_foreach_in_reverse(list, node)
+    for(bd_xjson_node* node = list->tail; node; node = node->prev)
     {
         int vl = 0;
         char* v = NULL;

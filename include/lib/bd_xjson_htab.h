@@ -37,16 +37,20 @@ int htab_update(bd_xjson_htab* htab, const char* key, const bd_xjson* val);
 int htab_set(bd_xjson_htab* htab, const char* key, const bd_xjson* val);
 
 /* define struct of iterator by type and name of data */
-typedef bd_xjson_iter(uint64_t, index, bd_xjson_entry, data)
-    bd_xjson_htab_iter;
+typedef struct bd_xjson_htab_iter
+{
+/* parent class */
+    bd_xjson_iter(uint64_t, bd_xjson_entry);
+/* private */
+    bd_xjson_entry* entries;
+} bd_xjson_htab_iter;
 bd_xjson_htab_iter htab_begin(const bd_xjson_htab* htab);
 bd_xjson_htab_iter htab_end(const bd_xjson_htab* htab);
-bd_xjson_htab_iter htab_iterate(const bd_xjson_htab* htab, bd_xjson_htab_iter iter);
-#define bd_xjson_htab_foreach(__htab, __iter, __end) \
-    for(bd_xjson_htab_iter __iter = htab_begin(__htab), \
-        __end = htab_end(__htab); \
+bd_xjson_htab_iter htab_iterate(bd_xjson_htab_iter iter);
+#define bd_xjson_htab_foreach(__iter, __end) \
+    for(; \
         __iter.index != __end.index; \
-        __iter = htab_iterate(__htab, __iter))
+        __iter = htab_iterate(__iter))
 int htab_iter_get(bd_xjson_htab_iter iter, bd_xjson* val);
 
 #endif
