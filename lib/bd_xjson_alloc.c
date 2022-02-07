@@ -1,5 +1,5 @@
 #include "lib/bd_xjson_alloc.h"
-#include "lib/bd_xjson.h"
+#include "lib/bd_xjson_impl.h"
 
 bd_xjson_object* for_json_object(void)
 {

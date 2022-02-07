@@ -9,7 +9,7 @@ RANLIB = ranlib
 # in the lib/ directories.
 LIBTARGET = $(SRCDIR)/libsimp.a
 
-LIB_OBJS = 	bd_xjson_base.o bd_xjson.o bd_xjson_list.o bd_xjson_htab.o \
+LIB_OBJS = 	bd_xjson.o bd_xjson_impl.o bd_xjson_list.o bd_xjson_htab.o \
 			bd_xjson_alloc.o error.o alloc.o util.o
 
 all:	${LIB_OBJS}

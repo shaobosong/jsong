@@ -1,7 +1,7 @@
 #ifndef bd_xjson_list_h
 #define bd_xjson_list_h
 
-#include "lib/bd_xjson_base.h"
+#include "lib/bd_xjson.h"
 #include "lib/bd_xjson_iter.h"
 
 typedef struct bd_xjson_node bd_xjson_node;

@@ -3,7 +3,7 @@
 
 #include <stddef.h>
 #include <stdint.h>
-#include "lib/bd_xjson_base.h"
+#include "lib/bd_xjson.h"
 #include "lib/bd_xjson_iter.h"
 
 #define DEFAULT_CAPACITY 16

@@ -1,7 +1,7 @@
 #ifndef bd_xjson_alloc_h
 #define bd_xjson_alloc_h
 
-#include "lib/bd_xjson.h"
+#include "lib/bd_xjson_impl.h"
 
 bd_xjson_object* for_json_object(void);
 bd_xjson_object* for_json_object_copy(bd_xjson_object* copy);
