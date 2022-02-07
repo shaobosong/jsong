@@ -5,56 +5,92 @@ A simple json library for c language
 # usage
 ```
 #include "lib/bd_xjson_api.h"
+#include <stdlib.h>
 int main()
 {
-    JSON_OBJECT(obj);
-    JSON_ARRAY(arr);
-    JSON_NUMBER(num, 2022);
-    JSON_NUMBER(max, 2147483647);
-    JSON_STRING(str, "");
+    /* create a empty json OBJECT */
+    JSON_OBJECT(json_obj);
+    /* create a empty json ARRAY */
+    JSON_ARRAY(json_arr);
+    /* create a json NUMBER */
+    JSON_NUMBER(json_num, 2022);
+    JSON_NUMBER(json_max, 2147483647);
+    /* create a json STRING */
+    JSON_STRING(json_str, "");
 
     /* add a key-value in json OBJECT */
-    obj->add(obj, "key0", num);
-    obj->add_str(obj, "key1", "this is a `string` message");
-    obj->add_num(obj, "key2", 1993);
-    obj->add_true(obj, "key3");
-    obj->add_false(obj, "key4");
-    obj->add_null(obj, "key5");
-    /* update a key-value in json OBJECT */
-    obj->update(obj, "key0", max);
-    /* search a key-value in json OBJECT */
-    obj->search(obj, "key1", str);
+    json_obj->add(json_obj, "key0", json_num);
+    json_obj->add_str(json_obj, "key1", "this is a `string` message");
+    json_obj->add_num(json_obj, "key2", 1993);
+    json_obj->add_true(json_obj, "key3");
+    json_obj->add_false(json_obj, "key4");
+    json_obj->add_null(json_obj, "key5");
+    /* set a key-value in json OBJECT */
+    json_obj->set(json_obj, "key0", json_max);
+    json_obj->set_num(json_obj, "key1", 2022);
+    json_obj->set_str(json_obj, "key2", "this is a `set` test");
+    json_obj->set_null(json_obj, "key3");
+    json_obj->set_true(json_obj, "key4");
+    json_obj->set_false(json_obj, "key5");
+    /* get a key-value in json OBJECT */
+    json_obj->get(json_obj, "key2", json_str);
+    int num = json_obj->get_num(json_obj, "key1");
+    char* chars = json_obj->get_str(json_obj, "key2");
+    free(chars);
     /* delete a key-value in json OBJECT */
-    obj->delete(obj, "key0");
+    json_obj->delete(json_obj, "key0");
 
     /* add a value in tail end of json ARRAY */
-    arr->add(arr, -1, num);
-    arr->add_str(arr, -1, "this is second `string` message");
-    arr->add_num(arr, -1, 1993);
-    arr->add_true(arr, -1);
-    arr->add_false(arr, -1);
-    arr->add_null(arr, -1);
-    /* update a value in json ARRAY */
-    arr->update(arr, 0, max);
-    /* search a value in json ARRAY */
-    arr->search(arr, 2, num);
+    json_arr->add(json_arr, -1, json_num);
+    json_arr->add_str(json_arr, -1, "this is second `string` message");
+    json_arr->add_num(json_arr, -1, 1993);
+    json_arr->add_true(json_arr, -1);
+    json_arr->add_false(json_arr, -1);
+    json_arr->add_null(json_arr, -1);
+    /* set a value in json ARRAY */
+    json_arr->set(json_arr, 0, json_max);
+    json_arr->set_num(json_arr, 1, 2022);
+    json_arr->set_str(json_arr, 2, "this is a `set` test");
+    json_arr->set_null(json_arr, 3);
+    json_arr->set_true(json_arr, -2);
+    json_arr->set_false(json_arr, -1);
+    /* get a value in json ARRAY */
+    json_arr->get(json_arr, 1, json_num);
+    num = json_arr->get_num(json_arr, 1);
+    chars = json_arr->get_str(json_arr, 2);
+    free(chars);
     /* delete a value in json ARRAY */
-    arr->delete(arr, -1);
+    json_arr->delete(json_arr, -1);
 
-    /* stringify a json object */
-    char* json_str = bd_xjson_stringify(obj);
+    /* stringify a json */
+    char* str;
+    int len;
+    bd_xjson_stringify(json_obj, &str, &len);
+    free(str);
 
     /* parse json string to a json object */
-    int res = bd_xjson_parse("{\"status\":0, \"list\":[{\"fullname\":\"/bin\", \"type\":4, \"mode\":\"drwx--x--x\"}]}", obj);
-    /* you can print your result in stdout */
-    /* printf("%s\n", bd_xjson_stringify(obj)); */
+    str =
+    "{"
+        "\"object\":"
+            "{"
+                "\"\":\"\""
+            "},"
+        "\"array\":"
+            "[],"
+        "\"false\":false,"
+        "\"string\":\"this is a string\","
+        "\"true\":true,"
+        "\"null\":null,"
+        "\"number\":2022"
+    "}";
+    int res = bd_xjson_parse(str, json_obj);
 
     /* free json obejct */
-    FREE_JSON(obj);
-    FREE_JSON(arr);
-    FREE_JSON(num);
-    FREE_JSON(str);
-    FREE_JSON(max);
+    FREE_JSON(json_obj);
+    FREE_JSON(json_arr);
+    FREE_JSON(json_num);
+    FREE_JSON(json_str);
+    FREE_JSON(json_max);
 
     return 0;
 }
