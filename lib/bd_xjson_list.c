@@ -407,7 +407,7 @@ int list_free(bd_xjson_list* list)
     for(; cur; cur = next)
     {
         next = cur->next;
-        xfree(cur);
+        node_free(cur);
     }
     xfree(list);
     return 0;
