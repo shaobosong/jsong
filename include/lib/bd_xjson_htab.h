@@ -40,7 +40,7 @@ int htab_set(bd_xjson_htab* htab, const char* key, const bd_xjson* val);
 typedef struct bd_xjson_htab_iter
 {
 /* parent class */
-    bd_xjson_iter(uint64_t, bd_xjson_entry);
+    bd_xjson_iter(, uint64_t, bd_xjson_entry);
 /* private */
     bd_xjson_entry* entries;
 } bd_xjson_htab_iter;

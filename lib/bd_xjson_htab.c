@@ -587,17 +587,21 @@ int htab_set(bd_xjson_htab* htab, const char* key, const bd_xjson* val)
 
 bd_xjson_htab_iter htab_begin(const bd_xjson_htab* htab)
 {
-    bd_xjson_htab_iter iter = {0};
-    iter.index = htab->first;
-    iter.data = htab->entries[htab->first];
-    iter.entries = htab->entries;
+    bd_xjson_htab_iter iter =
+    {
+        .index = htab->first,
+        .data = htab->entries[htab->first],
+        .entries = htab->entries
+    };
     return iter;
 }
 
 bd_xjson_htab_iter htab_end(const bd_xjson_htab* htab)
 {
-    bd_xjson_htab_iter iter = {0};
-    iter.index = htab->capacity;
+    bd_xjson_htab_iter iter =
+    {
+        .index = htab->capacity
+    };
     return iter;
 }
 

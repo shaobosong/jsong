@@ -17,7 +17,7 @@ struct bd_xjson_node
 
 struct bd_xjson_list
 {
-    bd_xjson_node* head, * tail;
+    bd_xjson_node* head, * tail, * nil;
     int size;
 };
 int list_create(bd_xjson_list** list);
@@ -33,7 +33,7 @@ void list_qsort(bd_xjson_list* list, int (*compare_fn)(const void*, const void*)
 typedef struct bd_xjson_list_iter
 {
 /* parent class */
-    bd_xjson_iter(bd_xjson_node*, bd_xjson_node);
+    bd_xjson_iter(, bd_xjson_node*, bd_xjson_node);
 } bd_xjson_list_iter;
 bd_xjson_list_iter list_begin(const bd_xjson_list* list);
 bd_xjson_list_iter list_end(const bd_xjson_list* list);

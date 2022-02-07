@@ -19,29 +19,6 @@ static int node_create(bd_xjson_node** node)
     *node = n;
     return 0;
 }
-/* only copy value and type */
-static int node_copy(bd_xjson_node* dest, const bd_xjson_node* src)
-{
-    /* don't responsible for initializing node */
-    if(NULL == dest)
-    {
-        THROW_WARNING("DEST is not initialized");
-        return -1;
-    }
-    if(NULL == src)
-    {
-        THROW_WARNING("SRC is not initialized");
-        return -1;
-    }
-    /* only copy data */
-    if(bd_xjson_copy(&(dest->value), &(src->value)))
-    {
-        THROW_WARNING("copy data of SRC to data field of DEST failed");
-        return -1;
-    }
-
-    return 0;
-}
 
 static int node_free(bd_xjson_node* node)
 {
@@ -69,6 +46,14 @@ int list_create(bd_xjson_list** list)
     bd_xjson_list* l;
     l = xzmalloc(sizeof *l);
     l->head = l->tail = NULL;
+
+    /* create a dummy node */
+    bd_xjson_node* n = NULL;
+    node_create(&n);
+    n->next = n;
+    n->prev = n;
+
+    l->nil = n;
     l->size = 0;
 
     *list = l;
@@ -88,40 +73,38 @@ int list_copy(bd_xjson_list* dest, const bd_xjson_list* src)
         THROW_WARNING("SRC is not initialized");
         return -1;
     }
-    bd_xjson_node* list_node = NULL;
-    const bd_xjson_node* copy_node = src->head;
-    bd_xjson_node* list_node_prev = NULL;
-    for(; copy_node; list_node = list_node->next, copy_node = copy_node->next)
+
+    const bd_xjson_node* snode = src->nil->next; /* start in head */
+    const bd_xjson_node* enode = src->nil; /* end */
+    if(snode == enode)
     {
-        if(node_create(&(list_node)))
+        return 0;
+    }
+    for(; snode != enode; snode = snode->next)
+    {
+        bd_xjson_node* dnode = NULL;
+        if(node_create(&dnode))
         {
             THROW_WARNING("node initializaition failed");
             return -1;
         }
-        if(node_copy(list_node, copy_node))
+        if(bd_xjson_copy(&dnode->value, &snode->value))
         {
-            THROW_WARNING("copy node of SRC to area of DEST failed");
+            THROW_WARNING("copy VAL to data field of node failed");
             return -1;
         }
-        /* prev of node*/
-        list_node->prev = list_node_prev;
-        if(list_node_prev)
-        {
-            /* next of node */
-            list_node_prev->next = list_node;
-        }
-        else
-        {
-            /* head of list */
-            dest->head = list_node;
-        }
-
-        /* tail and size of list */
-        dest->tail = list_node;
-        dest->size += 1;
-        /* save current node */
-        list_node_prev = list_node;
+        /* old tail node */
+        bd_xjson_node* tail = dest->nil->prev;
+        /* insert */
+        dnode->next = tail->next;
+        dnode->prev = tail;
+        tail->next->prev = dnode;
+        tail->next = dnode;
     }
+    /* new head and tail node */
+    dest->head = dest->nil->next;
+    dest->tail = dest->nil->prev;
+    dest->size = src->size;
     return 0;
 }
 
@@ -144,76 +127,49 @@ int list_insert_direct(bd_xjson_list* list, int pos, const bd_xjson* val)
     }
 
     bd_xjson_node* node = NULL;
-    if(node_create(&(node)))
+    if(node_create(&node))
     {
         THROW_WARNING("node initializaition failed");
         return -1;
     }
     node->value = *val;
 
-    /* insert into head if list have no any nodes */
-    if( 0 == list->size)
-    {
-        node->next = NULL;
-        node->prev = NULL;
-        list->head = node;
-        list->tail = node;
-        list->size += 1;
-        return 0;
-    }
-    /* insert into head behind position */
-    if( 0 == pos || -list->size-1 == pos)
-    {
-        node->next = list->head;
-        node->prev = NULL;
-        list->head->prev = node;
-        list->head = node; /* new head node */
-        list->size += 1;
-        return 0;
-    }
-    /* insert into tail behind position */
-    if(-1 == pos || list->size == pos)
-    {
-        node->next = NULL;
-        node->prev = list->tail;
-        list->tail->next = node;
-        list->tail = node;
-        list->size += 1;
-        return 0;
-    }
-    /* insert from head behind position */
-    if(pos > 0)
+    if(pos >= 0)
     {
         bd_xjson_node* curr;
-        curr = list->head->next;
-        for(int i = 1; i < pos; i++)
+        /* head */
+        curr = list->nil->next;
+        /* find node */
+        for(int i = 0; i < pos; i++)
         {
             curr = curr->next;
         }
+        /* insert */
         node->next = curr;
         node->prev = curr->prev;
         curr->prev->next = node;
         curr->prev = node;
-        list->size += 1;
-        return 0;
-    }
-    /* insert from tail behind position */
-    else if(pos < -1)
+    } else
     {
         bd_xjson_node* curr;
-        curr = list->tail->prev;
-        for(int i = -2; i > pos; i--)
+        /* tail */
+        curr = list->nil->prev;
+        /* find node */
+        for(int i = -1; i > pos; i--)
         {
             curr = curr->prev;
         }
+        /* insert */
         node->next = curr->next;
         node->prev = curr;
         curr->next->prev = node;
         curr->next = node;
-        list->size += 1;
-        return 0;
     }
-    return -1;
+
+    list->size += 1;
+    list->head = list->nil->next;
+    list->tail = list->nil->prev;
+    return 0;
 }
 
 int list_insert(bd_xjson_list* list, int pos, const bd_xjson* val)
@@ -235,80 +191,54 @@ int list_insert(bd_xjson_list* list, int pos, const bd_xjson* val)
     }
 
     bd_xjson_node* node = NULL;
-    if(node_create(&(node)))
+    if(node_create(&node))
     {
         THROW_WARNING("node initializaition failed");
         return -1;
     }
-    if(bd_xjson_copy(&(node->value), val))
+    if(bd_xjson_copy(&node->value, val))
     {
         THROW_WARNING("copy VAL to data field of node failed");
         return -1;
     }
 
-    /* insert into head if list have no any nodes */
-    if( 0 == list->size)
-    {
-        node->next = NULL;
-        node->prev = NULL;
-        list->head = node;
-        list->tail = node;
-        list->size += 1;
-        return 0;
-    }
-    /* insert into head behind position */
-    if( 0 == pos || -list->size-1 == pos)
-    {
-        node->next = list->head;
-        node->prev = NULL;
-        list->head->prev = node;
-        list->head = node; /* new head node */
-        list->size += 1;
-        return 0;
-    }
-    /* insert into tail behind position */
-    if(-1 == pos || list->size == pos)
-    {
-        node->next = NULL;
-        node->prev = list->tail;
-        list->tail->next = node;
-        list->tail = node;
-        list->size += 1;
-        return 0;
-    }
-    /* insert from head behind position */
-    if(pos > 0)
+    if(pos >= 0)
     {
         bd_xjson_node* curr;
-        curr = list->head->next;
-        for(int i = 1; i < pos; i++)
+        /* head */
+        curr = list->nil->next;
+        /* find node */
+        for(int i = 0; i < pos; i++)
         {
             curr = curr->next;
         }
+        /* insert */
         node->next = curr;
         node->prev = curr->prev;
         curr->prev->next = node;
         curr->prev = node;
-        list->size += 1;
-        return 0;
     }
-    /* insert from tail behind position */
-    else if(pos < -1)
+    else if(pos <= -1)
     {
         bd_xjson_node* curr;
-        curr = list->tail->prev;
-        for(int i = -2; i > pos; i--)
+        /* tail */
+        curr = list->nil->prev;
+        /* find node */
+        for(int i = -1; i > pos; i--)
         {
             curr = curr->prev;
         }
+        /* insert */
         node->next = curr->next;
         node->prev = curr;
         curr->next->prev = node;
         curr->next = node;
-        list->size += 1;
-        return 0;
     }
-    return -1;
+
+    list->size += 1;
+    list->head = list->nil->next;
+    list->tail = list->nil->prev;
+    return 0;
 }
 
 int list_erase(bd_xjson_list* list, int pos)
@@ -323,76 +253,56 @@ int list_erase(bd_xjson_list* list, int pos)
         THROW_WARNING("emptry LIST try to erase");
         return -1;
     }
-    if(pos >= (int)list->size || pos < -list->size)
+    if(pos >= list->size || pos < -list->size)
     {
         THROW_WARNING("try to erase in illegal POS");
         return -1;
     }
-    /* remove head */
-    if( 0 == pos || pos == -list->size)
-    {
-        bd_xjson_node* head = list->head;
-        bd_xjson_node* next = list->head->next;
-        node_free(head);
-        if(next)
-        {
-            next->prev = NULL;
-            list->head = next;
-        }
-        else
-        {
-            list->head = list->tail = NULL;
-        }
-        list->size -= 1;
-        return 0;
-    }
-    /* remove tail */
-    if(-1 == pos || pos == list->size - 1)
-    {
-        bd_xjson_node* tail = list->tail;
-        bd_xjson_node* prev = list->tail->prev;
-        node_free(tail);
-        if(prev)
-        {
-            prev->next = NULL;
-            list->tail = prev;
-        }
-        else
-        {
-            list->head = list->tail = NULL;
-        }
-        list->size -= 1;
-        return 0;
-    }
+
     /* remove from head by position */
-    if(pos > 0)
+    if(pos >= 0)
     {
         bd_xjson_node* curr;
-        curr = list->head->next;
-        for(int i = 1; i < pos; i++){
+        /* head */
+        curr = list->nil->next;
+        /* find node */
+        for(int i = 0; i < pos; i++)
+        {
             curr = curr->next;
         }
+        /* erase node */
         curr->prev->next = curr->next;
         curr->next->prev = curr->prev;
         node_free(curr);
-        list->size -= 1;
-        return 0;
     }
     /* remove from tail by position */
-    else if(pos < -1)
+    else if(pos <= -1)
     {
         bd_xjson_node* curr;
-        curr = list->tail->prev;
-        for(int i = -2; i > pos; i--){
+        /* tail */
+        curr = list->nil->prev;
+        /* find node */
+        for(int i = -1; i > pos; i--)
+        {
             curr = curr->prev;
         }
+        /* erase node */
         curr->prev->next = curr->next;
         curr->next->prev = curr->prev;
         node_free(curr);
-        list->size -= 1;
-        return 0;
     }
-    return -1;
+
+    list->size -= 1;
+    if(list->size == 0)
+    {
+        list->head = list->tail = NULL;
+    } else
+    {
+        list->head = list->nil->next;
+        list->tail = list->nil->prev;
+    }
+
+    return 0;
 }
 
 int list_free(bd_xjson_list* list)
@@ -402,13 +312,15 @@ int list_free(bd_xjson_list* list)
         THROW_WARNING("LIST is not initialized");
         return -1;
     }
-    bd_xjson_node* cur = list->head;
+    bd_xjson_node* curr = list->nil->next; /* start in head */
+    bd_xjson_node* end = list->nil; /* end */
     bd_xjson_node* next = NULL;
-    for(; cur; cur = next)
+    for(; curr != end; curr = next)
     {
-        next = cur->next;
-        node_free(cur);
+        next = curr->next;
+        node_free(curr);
     }
+    xfree(list->nil);
     xfree(list);
     return 0;
 }
@@ -432,7 +344,7 @@ int list_find(const bd_xjson_list* list, int pos, bd_xjson* val)
         THROW_WARNING("empty list try to find");
         return -1;
     }
-    if( pos >= (int)list->size || pos < -list->size)
+    if( pos >= list->size || pos < -list->size)
     {
         THROW_WARNING("try to find in illegal position");
         return -1;
@@ -447,7 +359,7 @@ int list_find(const bd_xjson_list* list, int pos, bd_xjson* val)
         }
     }
     /* find from tail by position */
-    if(pos <= -1)
+    else if(pos <= -1)
     {
         node = list->tail;
         for(int i = -1; i > pos; i--){
@@ -468,7 +380,7 @@ int list_find(const bd_xjson_list* list, int pos, bd_xjson* val)
             return -1;
         }
     }
-    if(bd_xjson_copy(val, &(node->value)))
+    if(bd_xjson_copy(val, &node->value))
     {
         THROW_WARNING("copy data of node to VAL failed");
         return -1;
@@ -493,7 +405,7 @@ int list_update(bd_xjson_list* list, int pos, const bd_xjson* val)
         THROW_WARNING("empty list try to update");
         return -1;
     }
-    if( pos >= (int)list->size || pos <= -list->size - 1)
+    if( pos >= list->size || pos <= -list->size - 1)
     {
         THROW_WARNING("try to update in illegal position");
         return -1;
@@ -508,7 +420,7 @@ int list_update(bd_xjson_list* list, int pos, const bd_xjson* val)
         }
     }
     /* find from tail by position */
-    if(pos <= -1)
+    else if(pos <= -1)
     {
         node = list->tail;
         for(int i = -1; i > pos; i--){
@@ -517,13 +429,13 @@ int list_update(bd_xjson_list* list, int pos, const bd_xjson* val)
     }
 
     /* free old node data */
-    if(bd_xjson_free(&(node->value)))
+    if(bd_xjson_free(&node->value))
     {
         THROW_WARNING("data of node free failed");
         return -1;
     }
     /* update type and value */
-    if(bd_xjson_copy(&(node->value), val))
+    if(bd_xjson_copy(&node->value, val))
     {
         THROW_WARNING("copy VAL to data field of node failed");
         return -1;
@@ -612,46 +524,53 @@ static void list_qsort_recur(
 
 void list_qsort(bd_xjson_list* list, int (*compare_fn)(const void*, const void*))
 {
-    bd_xjson_node sentinel = {.next = list->head, .prev = NULL};
-    list->head->prev = &sentinel;
     list_qsort_recur(compare_fn, list->head, list->head, list->tail);
-    list->head->prev = NULL;
 }
 
 bd_xjson_list_iter list_begin(const bd_xjson_list* list)
 {
-    bd_xjson_list_iter iter = {0};
-    iter.index = list->head;
-    iter.data = iter.index ? *(iter.index) : iter.data;
+    bd_xjson_list_iter iter =
+    {
+        .index = list->head,
+        .data = *(iter.index)
+    };
     return iter;
 }
 bd_xjson_list_iter list_end(const bd_xjson_list* list)
 {
-    bd_xjson_list_iter iter = {0};
+    bd_xjson_list_iter iter =
+    {
+        .index = list->nil
+    };
     return iter;
 }
 bd_xjson_list_iter list_iterate(bd_xjson_list_iter iter)
 {
     iter.index = iter.data.next;
-    iter.data = iter.index ? *(iter.index) : iter.data;
+    iter.data = *(iter.index);
     return iter;
 }
 bd_xjson_list_iter list_rbegin(const bd_xjson_list* list)
 {
-    bd_xjson_list_iter iter = {0};
-    iter.index = list->tail;
-    iter.data = iter.index ? *(iter.index) : iter.data;
+    bd_xjson_list_iter iter =
+    {
+        .index = list->tail,
+        .data = *(iter.index)
+    };
     return iter;
 }
 bd_xjson_list_iter list_rend(const bd_xjson_list* list)
 {
-    bd_xjson_list_iter iter = {0};
+    bd_xjson_list_iter iter =
+    {
+        .index = list->nil
+    };
     return iter;
 }
 bd_xjson_list_iter list_riterate(bd_xjson_list_iter iter)
 {
     iter.index = iter.data.prev;
-    iter.data = iter.index ? *(iter.index) : iter.data;
+    iter.data = *(iter.index);
     return iter;
 }
 int list_iter_get(bd_xjson_list_iter iter, bd_xjson* val)
@@ -671,7 +590,7 @@ int list_iter_get(bd_xjson_list_iter iter, bd_xjson* val)
         }
     }
     /* copy from iter data */
-    if(bd_xjson_copy(val, &(iter.data.value)))
+    if(bd_xjson_copy(val, &iter.data.value))
     {
         THROW_WARNING("copy failed");
         return -1;

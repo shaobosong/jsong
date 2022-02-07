@@ -277,7 +277,9 @@ void bd_xjson_stringify_array(const bd_xjson_list* list, char** pstr, int* plen)
     bd_xjson_stack_init(stk, list->size);
 
     *plen = 2;
-    for(bd_xjson_node* node = list->tail; node; node = node->prev)
+    bd_xjson_node* node = list->tail;
+    bd_xjson_node* enode = list->nil;
+    for(; node != enode; node = node->prev)
     {
         int vl = 0;
         char* v = NULL;
