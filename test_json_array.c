@@ -29,6 +29,12 @@ bd_xjson_node* get_json_array_list_tail(bd_xjson_array* arr)
 }
 
 /* this method only for test */
+bd_xjson_node* get_json_array_list_nil(bd_xjson_array* arr)
+{
+    return ((bd_xjson_list*)(arr->data))->nil;
+}
+
+/* this method only for test */
 int get_json_array_list_size(bd_xjson_array* arr)
 {
     return ((bd_xjson_list*)(arr->data))->size;
@@ -50,8 +56,8 @@ void test_json_array_create_and_remove(void)
 {
     /* create a array */
     JSON_ARRAY(json);
-    TEST_EXPECT(get_json_array_list_head(json), NULL);
-    TEST_EXPECT(get_json_array_list_tail(json), NULL);
+    TEST_EXPECT(get_json_array_list_head(json), get_json_array_list_nil(json));
+    TEST_EXPECT(get_json_array_list_tail(json), get_json_array_list_nil(json));
     TEST_EXPECT(get_json_array_list_size(json), 0);
     TEST_EXPECT(get_json_type((bd_xjson*)json), BD_XJSON_ARRAY);
     /* remove a array */
@@ -797,8 +803,8 @@ void test_json_array_delete_json(void)
     /* delete a array in [-1] */
     json_arr->delete(json_arr, -1);
     TEST_EXPECT(get_json_array_list_size(json_arr), 0);
-    TEST_EXPECT(get_json_array_list_head(json_arr), NULL);
-    TEST_EXPECT(get_json_array_list_tail(json_arr), NULL);
+    TEST_EXPECT(get_json_array_list_head(json_arr), get_json_array_list_nil(json_arr));
+    TEST_EXPECT(get_json_array_list_tail(json_arr), get_json_array_list_nil(json_arr));
 
     FREE_JSON(json_arr);
     FREE_JSON(sub_json_arr);

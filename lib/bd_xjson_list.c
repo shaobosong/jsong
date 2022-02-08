@@ -45,7 +45,6 @@ int list_create(bd_xjson_list** list)
     }
     bd_xjson_list* l;
     l = xzmalloc(sizeof *l);
-    l->head = l->tail = NULL;
 
     /* create a dummy node */
     bd_xjson_node* n = NULL;
@@ -53,7 +52,7 @@ int list_create(bd_xjson_list** list)
     n->next = n;
     n->prev = n;
 
-    l->nil = n;
+    l->nil = l->head = l->tail = n;
     l->size = 0;
 
     *list = l;
@@ -74,12 +73,8 @@ int list_copy(bd_xjson_list* dest, const bd_xjson_list* src)
         return -1;
     }
 
-    const bd_xjson_node* snode = src->nil->next; /* start in head */
+    const bd_xjson_node* snode = src->head; /* start in head */
     const bd_xjson_node* enode = src->nil; /* end */
-    if(snode == enode)
-    {
-        return 0;
-    }
     for(; snode != enode; snode = snode->next)
     {
         bd_xjson_node* dnode = NULL;
@@ -293,14 +288,8 @@ int list_erase(bd_xjson_list* list, int pos)
     }
 
     list->size -= 1;
-    if(list->size == 0)
-    {
-        list->head = list->tail = NULL;
-    } else
-    {
-        list->head = list->nil->next;
-        list->tail = list->nil->prev;
-    }
+    list->head = list->nil->next;
+    list->tail = list->nil->prev;
 
     return 0;
 }
@@ -312,7 +301,7 @@ int list_free(bd_xjson_list* list)
         THROW_WARNING("LIST is not initialized");
         return -1;
     }
-    bd_xjson_node* curr = list->nil->next; /* start in head */
+    bd_xjson_node* curr = list->head; /* start in head */
     bd_xjson_node* end = list->nil; /* end */
     bd_xjson_node* next = NULL;
     for(; curr != end; curr = next)
