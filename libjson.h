@@ -22,8 +22,6 @@
  *  SOFTWARE.
  */
 
-#include <stdint.h>
-
 /* JSON Type */
 typedef enum bd_xjson_type bd_xjson_type;
 enum bd_xjson_type
