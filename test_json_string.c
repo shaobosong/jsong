@@ -1,4 +1,6 @@
-#include "lib/bd_xjson_api.h"
+#include "libjson.h"
+#include <assert.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -6,7 +8,7 @@
 do \
 { \
     if(__val == __cmpr) {;} \
-    else { MY_ASSERT(__val == __cmpr); } \
+    else { assert(__val == __cmpr); } \
 } while (0)
 
 /* this method only for test */
@@ -24,17 +26,17 @@ bd_xjson_type get_json_type(bd_xjson* json)
 void test_json_string_create_and_remove(void)
 {
     /* create a json string */
-    JSON_STRING(json, "2022,i love you");
+    JSONString* json = JSON_STRING("2022,i love you");
     TEST_EXPECT(strcmp(get_json_data(json), "2022,i love you"), 0);
     TEST_EXPECT(get_json_type((bd_xjson*)json), BD_XJSON_STRING);
     /* remove a json string */
-    FREE_JSON(json);
+    JSON_FREE(json);
 }
 
 void test_json_string_set_and_get(void)
 {
     char* get = NULL;
-    JSON_STRING(json, "some characters");
+    JSONString* json = JSON_STRING("some characters");
 
     /* set */
     json->set(json, "another characters");
@@ -54,14 +56,14 @@ void test_json_string_set_and_get(void)
     TEST_EXPECT(strcmp(get, ""), 0);
     free(get);
 
-    FREE_JSON(json);
+    JSON_FREE(json);
 }
 
 void test_json_string_stringify()
 {
     char* str = NULL;
     int len;
-    JSON_STRING(json, "some characters");
+    JSONString* json = JSON_STRING("some characters");
 
     /* stringify a json string */
     bd_xjson_stringify(json, &str, &len);
@@ -74,7 +76,7 @@ void test_json_string_stringify()
     TEST_EXPECT(strcmp(str, "\"\""), 0);
     free(str);
 
-    FREE_JSON(json);
+    JSON_FREE(json);
 }
 
 void test_parse_json_string()
@@ -82,7 +84,7 @@ void test_parse_json_string()
     int res;
     char* str = NULL;
     char* get = NULL;
-    JSON_STRING(json, "");
+    JSONString* json = JSON_STRING("");
 
     str = "\"some characters\"";
     res = bd_xjson_parse(str, json);
@@ -136,6 +138,6 @@ int main(int argc, char* argv[])
     test_json_string_set_and_get();
     test_json_string_stringify();
     test_parse_json_string();
-    THROW_WARNING("All tests pass");
+    printf("All tests pass\n");
     return 0;
 }

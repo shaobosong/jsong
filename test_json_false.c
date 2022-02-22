@@ -1,4 +1,6 @@
-#include "lib/bd_xjson_api.h"
+#include "libjson.h"
+#include <assert.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -6,7 +8,7 @@
 do \
 { \
     if(__val == __cmpr) {;} \
-    else { MY_ASSERT(__val == __cmpr); } \
+    else { assert(__val == __cmpr); } \
 } while (0)
 
 /* this method only for test */
@@ -24,32 +26,32 @@ bd_xjson_type get_json_type(bd_xjson_false* json)
 void test_json_false_create_and_remove(void)
 {
     /* create a json false */
-    JSON_FALSE(json);
+    JSONFalse* json = JSON_FALSE();
     TEST_EXPECT(get_json_data(json), 0);
     TEST_EXPECT(get_json_type(json), BD_XJSON_FALSE);
     /* remove a json false */
-    FREE_JSON(json);
+    JSON_FREE(json);
 }
 
 void test_json_false_stringify()
 {
     char* str = NULL;
     int len;
-    JSON_FALSE(json);
+    JSONFalse* json = JSON_FALSE();
 
     /* stringify a json false */
     bd_xjson_stringify(json, &str, &len);
     TEST_EXPECT(strcmp(str, "false"), 0);
     free(str);
 
-    FREE_JSON(json);
+    JSON_FREE(json);
 }
 
 void test_parse_json_false()
 {
     int res;
     char* str = NULL;
-    JSON_FALSE(json);
+    JSONFalse* json = JSON_FALSE();
 
     /* parse a json false */
     str = "false";
@@ -86,6 +88,6 @@ int main(int argc, char* argv[])
     test_json_false_create_and_remove();
     test_json_false_stringify();
     test_parse_json_false();
-    THROW_WARNING("All tests pass");
+    printf("All tests pass\n");
     return 0;
 }

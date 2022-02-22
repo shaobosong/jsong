@@ -1,24 +1,17 @@
-# bd_xjson
-A simple json library for c language
-# compile
-make
-# todo
-recode some functions to get better implementation
-# usage
-```
 #include "libjson.h"
 #include <stdlib.h>
+#include <stdio.h>
 int main()
 {
     /* create a empty json OBJECT */
-    JSON_OBJECT(json_obj);
+    JSONObject* json_obj = JSON_OBJECT();
     /* create a empty json ARRAY */
-    JSON_ARRAY(json_arr);
+    JSONArray* json_arr = JSON_ARRAY();
     /* create a json NUMBER */
-    JSON_NUMBER(json_num, 2022);
-    JSON_NUMBER(json_max, 2147483647);
+    JSONNumber* json_num =  JSON_NUMBER(2022);
+    JSONNumber* json_max = JSON_NUMBER(2147483647);
     /* create a json STRING */
-    JSON_STRING(json_str, "");
+    JSONString* json_str = JSON_STRING("");
 
     /* add a key-value in json OBJECT */
     json_obj->add(json_obj, "key0", json_num);
@@ -37,10 +30,12 @@ int main()
     /* get a key-value in json OBJECT */
     json_obj->get(json_obj, "key2", json_str);
     int num = json_obj->get_num(json_obj, "key1");
+    printf("key1: %d\n", num);
     char* chars = json_obj->get_str(json_obj, "key2");
+    printf("key2: %s\n", chars);
     free(chars);
     /* delete a key-value in json OBJECT */
-    json_obj->delete(json_obj, "key0");
+    json_obj->del(json_obj, "key0");
 
     /* add a value in tail end of json ARRAY */
     json_arr->add(json_arr, -1, json_num);
@@ -62,12 +57,13 @@ int main()
     chars = json_arr->get_str(json_arr, 2);
     free(chars);
     /* delete a value in json ARRAY */
-    json_arr->delete(json_arr, -1);
+    json_arr->del(json_arr, -1);
 
     /* stringify a json */
     char* str;
     int len;
-    bd_xjson_stringify(json_obj, &str, &len);
+    JSON_STRINGIFY(json_obj, &str, &len);
+    printf("%s\n", str);
     free(str);
 
     /* parse json string to a json object */
@@ -85,15 +81,20 @@ int main()
         "\"null\":null,"
         "\"number\":2022"
     "}";
-    int res = bd_xjson_parse(str, json_obj);
+    printf("%s\n", str);
+    if(JSON_PARSE(str, json_obj))
+    {
+        printf("json parse failed\n");
+    }
+    JSON_STRINGIFY(json_obj, &str, &len);
+    printf("%s\n", str);
 
     /* free json obejct */
-    FREE_JSON(json_obj);
-    FREE_JSON(json_arr);
-    FREE_JSON(json_num);
-    FREE_JSON(json_str);
-    FREE_JSON(json_max);
+    JSON_FREE(json_obj);
+    JSON_FREE(json_arr);
+    JSON_FREE(json_num);
+    JSON_FREE(json_str);
+    JSON_FREE(json_max);
 
     return 0;
 }
-```

@@ -1,7 +1,8 @@
-#ifndef lib_error_h
-#define lib_error_h
+#ifndef LIB_ERROR_H
+#define LIB_ERROR_H
 
 #include <errno.h>
+#include "lib/config.h"
 
 #define L_RED      "\e[1;31m"
 #define L_GREEN    "\e[1;32m"
@@ -24,10 +25,10 @@ do \
 } while(0)
 
 /* error related to system call*/
-void err_dump(const char *, ...);
+void err_dump(const char *, ...) __attribute__((noreturn));
 void err_msg(const char *, ...);
-void err_quit(const char *, ...);
+void err_quit(const char *, ...) __attribute__((noreturn));
 void err_ret(const char *, ...);
-void err_sys(const char *, ...);
+void err_sys(const char *, ...)  __attribute__((noreturn));
 
 #endif

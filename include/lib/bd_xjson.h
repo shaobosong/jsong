@@ -1,5 +1,5 @@
-#ifndef bd_xjson_base_h
-#define bd_xjson_base_h
+#ifndef BD_XJSON_H
+#define BD_XJSON_H
 
 #include "lib/bd_xjson_type.h"
 
@@ -7,7 +7,7 @@ typedef struct bd_xjson bd_xjson;
 
 /*
  *  bd_xjson class
- *      All classes in bd_xjson.h are based on it and can be cast to it.
+ *      All classes in bd_xjson_impl.h are based on it.
  *
  *  @data: data of json
  *      object:    bd_xjson_htab*
@@ -34,8 +34,10 @@ struct __class            \
 }
 bd_xjson(bd_xjson);
 
-int bd_xjson_copy(bd_xjson* dest, const bd_xjson* src);
-int bd_xjson_free(bd_xjson* json);
+int bd_xjson_reassign(void* dst, const void* src);
+int bd_xjson_copy(void* dst, const void* src);
+int bd_xjson_free_data(bd_xjson* json);
+int bd_xjson_free(void* json);
 
 void bd_xjson_stringify(const void* json, char** pstr, int* plen);
 int bd_xjson_parse(const char* str, void* json);

@@ -1,6 +1,7 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
+#include <assert.h>
 
 #include "lib/bd_xjson_impl.h"
 #include "lib/bd_xjson_list.h"
@@ -8,990 +9,584 @@
 #include "lib/alloc.h"
 #include "lib/error.h"
 
-void obj_default_cstr(bd_xjson_object* this)
+bd_xjson_object* obj_default_cstr()
 {
-    if(NULL == this)
-    {
-        THROW_EXCEPTION("uninitialized object class try to construct");
-    }
-    if(htab_create((bd_xjson_htab**)&(this->data), 1))
-    {
-        THROW_EXCEPTION("constructor error");
-    }
+    bd_xjson_object *d;
+    bd_xjson_htab **pdd;
 
-}
-void obj_copy_cstr(bd_xjson_object* this, const bd_xjson_object* obj)
-{
-    if(NULL == this)
-    {
-        THROW_EXCEPTION("uninitialized object class try to construct");
-    }
-    if(NULL == obj)
-    {
-        THROW_EXCEPTION("uninitialized object class try to be the copied");
-    }
-    /* create */
-    if(htab_create((bd_xjson_htab**)&(this->data),
-        ((bd_xjson_htab*)(obj->data))->capacity))
-    {
-        THROW_EXCEPTION("create constructor error");
-    }
-    /* copy */
-    if(htab_copy(this->data, obj->data))
-    {
-        THROW_EXCEPTION("copy constructor error");
-    }
+    d = xzmalloc(sizeof *d);
+    BD_XJSON_OBJECT_CLASS(d);
+    pdd = (bd_xjson_htab**) &d->data;
 
+    htab_create(pdd, 1);
+
+    return d;
 }
-void obj_default_dstr(bd_xjson_object* this)
+
+/* TYPE of VAL maybe bd_xjson or bd_xjson_object */
+bd_xjson_object* obj_copy_cstr(void* val)
 {
-    if(NULL == this)
-    {
-        THROW_EXCEPTION("uninitialized object class try to desctruct");
-    }
-    if(NULL == this->data)
-    {
-        THROW_EXCEPTION("uninitialized data of object class try to clear");
-    }
-    if(htab_free(this->data))
-    {
-        THROW_EXCEPTION("destructor error");
-    }
+    bd_xjson_object *d, *s;
+    bd_xjson_htab **pdd;
+    bd_xjson_htab *sd;
+
+    d = xzmalloc(sizeof *d);
+    BD_XJSON_OBJECT_CLASS(d);
+    pdd = (bd_xjson_htab**) &d->data;
+
+    s = val;
+    sd = s->data;
+
+    assert(sd->capacity != 0);
+    htab_create(pdd, sd->capacity);
+
+    assert(s->data);
+    assert(s->type == d->type);
+    htab_copy(d->data, s->data);
+
+    return d;
 }
 
 void obj_add(bd_xjson_object* obj, const char* key, const void* val)
 {
-    if(NULL == obj)
-    {
-        THROW_EXCEPTION("uninitialized object try to add");
-    }
-    if(NULL == obj->data)
-    {
-        THROW_EXCEPTION("uninitialized data of object class try to insert");
-    }
-    if(htab_insert(obj->data, key, val)) /* cast to parent class */
-    {
-        THROW_EXCEPTION("add error");
-    }
+    assert(obj->data && val);
+    htab_insert(obj->data, key, val);
 }
 
 void obj_add_str(bd_xjson_object* obj, const char* key, const char* val)
 {
-    if(NULL == obj)
-    {
-        THROW_EXCEPTION("uninitialized object try to add");
-    }
-    if(NULL == obj->data)
-    {
-        THROW_EXCEPTION("uninitialized data of object class try to insert");
-    }
-    bd_xjson json = {.type = BD_XJSON_STRING, .data = (char*)val};
-    if(htab_insert(obj->data, key, &json)) /* cast to parent class */
-    {
-        THROW_EXCEPTION("add error");
-    }
+    bd_xjson json = {
+        .type = BD_XJSON_STRING,
+        .data = (char*)val
+    };
+
+    assert(obj->data);
+    htab_insert(obj->data, key, &json);
 }
 
 void obj_add_num(bd_xjson_object* obj, const char* key, int val)
 {
-    if(NULL == obj)
-    {
-        THROW_EXCEPTION("uninitialized object try to add");
-    }
-    if(NULL == obj->data)
-    {
-        THROW_EXCEPTION("uninitialized data of object class try to insert");
-    }
-    bd_xjson json = {.type = BD_XJSON_NUMBER, .data = &val};
-    if(htab_insert(obj->data, key, &json)) /* cast to parent class */
-    {
-        THROW_EXCEPTION("add error");
-    }
+    bd_xjson json = {
+        .type = BD_XJSON_NUMBER,
+        .data = &val
+    };
+
+    assert(obj->data);
+    htab_insert(obj->data, key, &json);
 }
 
 void obj_add_true(bd_xjson_object* obj, const char* key)
 {
-    if(NULL == obj)
-    {
-        THROW_EXCEPTION("uninitialized object try to add");
-    }
-    if(NULL == obj->data)
-    {
-        THROW_EXCEPTION("uninitialized data of object class try to insert");
-    }
-    bd_xjson json = {.type = BD_XJSON_TRUE, .data = NULL};
-    if(htab_insert(obj->data, key, &json)) /* cast to parent class */
-    {
-        THROW_EXCEPTION("add error");
-    }
-}
-void obj_add_false(bd_xjson_object* obj, const char* key)
-{
-    if(NULL == obj)
-    {
-        THROW_EXCEPTION("uninitialized object try to add");
-    }
-    if(NULL == obj->data)
-    {
-        THROW_EXCEPTION("uninitialized data of object class try to insert");
-    }
-    bd_xjson json = {.type = BD_XJSON_FALSE, .data = NULL};
-    if(htab_insert(obj->data, key, &json)) /* cast to parent class */
-    {
-        THROW_EXCEPTION("add error");
-    }
-}
-void obj_add_null(bd_xjson_object* obj, const char* key)
-{
-    if(NULL == obj)
-    {
-        THROW_EXCEPTION("uninitialized object try to add");
-    }
-    if(NULL == obj->data)
-    {
-        THROW_EXCEPTION("uninitialized data of object class try to insert");
-    }
-    bd_xjson json = {.type = BD_XJSON_NULL, .data = NULL};
-    if(htab_insert(obj->data, key, &json)) /* cast to parent class */
-    {
-        THROW_EXCEPTION("add error");
-    }
+    bd_xjson json = {
+        .type = BD_XJSON_TRUE,
+        .data = NULL
+    };
+
+    assert(obj->data);
+    htab_insert(obj->data, key, &json);
 }
 
-void obj_delete(bd_xjson_object* obj, const char* key)
+void obj_add_false(bd_xjson_object* obj, const char* key)
 {
-    if(NULL == obj)
-    {
-        THROW_EXCEPTION("uninitialized object class try to delete");
-    }
-    if(NULL == obj->data)
-    {
-        THROW_EXCEPTION("uninitialized data of object class try to erase");
-    }
-    if(htab_erase(obj->data, key))
-    {
-        THROW_EXCEPTION("delete error");
-    }
+    bd_xjson json = {
+        .type = BD_XJSON_FALSE,
+        .data = NULL
+    };
+
+    assert(obj->data);
+    htab_insert(obj->data, key, &json);
 }
-void obj_search(bd_xjson_object* obj, const char* key, void* val)
+
+void obj_add_null(bd_xjson_object* obj, const char* key)
 {
-    if(NULL == obj)
-    {
-        THROW_EXCEPTION("uninitialized object class try to search");
-    }
-    if(NULL == obj->data)
-    {
-        THROW_EXCEPTION("uninitialized data of object class try to find");
-    }
-    if(htab_find(obj->data, key, val))
-    {
-        THROW_EXCEPTION("search error");
-    }
+    bd_xjson json = {
+        .type = BD_XJSON_NULL,
+        .data = NULL
+    };
+
+    assert(obj->data);
+    htab_insert(obj->data, key, &json);
 }
-void obj_update(bd_xjson_object* obj, const char* key, const void* val)
+
+void obj_del(bd_xjson_object* obj, const char* key)
 {
-    if(NULL == obj)
-    {
-        THROW_EXCEPTION("uninitialized object class try to update");
-    }
-    if(NULL == obj->data)
-    {
-        THROW_EXCEPTION("uninitialized data of object class try to update");
-    }
-    if(htab_update(obj->data, key, val))
-    {
-        THROW_EXCEPTION("update error");
-    }
+    assert(obj->data);
+    htab_erase(obj->data, key);
 }
+
 void obj_set(bd_xjson_object* obj, const char* key, const void* val)
 {
-    if(NULL == obj)
-    {
-        THROW_EXCEPTION("uninitialized object class try to set");
-    }
-    if(NULL == obj->data)
-    {
-        THROW_EXCEPTION("uninitialized data of object class try to set");
-    }
-    if(htab_set(obj->data, key, val))
-    {
-        THROW_EXCEPTION("set error");
-    }
+    assert(obj->data && val);
+    htab_set(obj->data, key, val);
 }
 
 void obj_set_str(bd_xjson_object* obj, const char* key, const char* val)
 {
-    if(NULL == obj)
-    {
-        THROW_EXCEPTION("uninitialized object class try to set");
-    }
-    if(NULL == obj->data)
-    {
-        THROW_EXCEPTION("uninitialized data of object class try to set");
-    }
-    bd_xjson json = {.type = BD_XJSON_STRING, .data = (char*)val};
-    if(htab_set(obj->data, key, &json))
-    {
-        THROW_EXCEPTION("set error");
-    }
+    bd_xjson json = {
+        .type = BD_XJSON_STRING,
+        .data = (char*)val
+    };
+
+    assert(obj->data);
+    htab_set(obj->data, key, &json);
 }
 
 void obj_set_num(bd_xjson_object* obj, const char* key, int val)
 {
-    if(NULL == obj)
-    {
-        THROW_EXCEPTION("uninitialized object class try to set");
-    }
-    if(NULL == obj->data)
-    {
-        THROW_EXCEPTION("uninitialized data of object class try to set");
-    }
-    bd_xjson json = {.type = BD_XJSON_NUMBER, .data = &val};
-    if(htab_set(obj->data, key, &json))
-    {
-        THROW_EXCEPTION("set error");
-    }
+    bd_xjson json = {
+        .type = BD_XJSON_NUMBER,
+        .data = &val
+    };
+
+    assert(obj->data);
+    htab_set(obj->data, key, &json);
 }
 
 void obj_set_true(bd_xjson_object* obj, const char* key)
 {
-    if(NULL == obj)
-    {
-        THROW_EXCEPTION("uninitialized object class try to set");
-    }
-    if(NULL == obj->data)
-    {
-        THROW_EXCEPTION("uninitialized data of object class try to set");
-    }
-    bd_xjson json = {.type = BD_XJSON_TRUE, .data = NULL};
-    if(htab_set(obj->data, key, &json))
-    {
-        THROW_EXCEPTION("set error");
-    }
+    bd_xjson json = {
+        .type = BD_XJSON_TRUE,
+        .data = NULL
+    };
+
+    assert(obj->data);
+    htab_set(obj->data, key, &json);
 }
 
 void obj_set_false(bd_xjson_object* obj, const char* key)
 {
-    if(NULL == obj)
-    {
-        THROW_EXCEPTION("uninitialized object class try to set");
-    }
-    if(NULL == obj->data)
-    {
-        THROW_EXCEPTION("uninitialized data of object class try to set");
-    }
-    bd_xjson json = {.type = BD_XJSON_FALSE, .data = NULL};
-    if(htab_set(obj->data, key, &json))
-    {
-        THROW_EXCEPTION("set error");
-    }
+    bd_xjson json = {
+        .type = BD_XJSON_FALSE,
+        .data = NULL
+    };
+
+    assert(obj->data);
+    htab_set(obj->data, key, &json);
 }
 
 void obj_set_null(bd_xjson_object* obj, const char* key)
 {
-    if(NULL == obj)
-    {
-        THROW_EXCEPTION("uninitialized object class try to set");
-    }
-    if(NULL == obj->data)
-    {
-        THROW_EXCEPTION("uninitialized data of object class try to set");
-    }
-    bd_xjson json = {.type = BD_XJSON_NULL, .data = NULL};
-    if(htab_set(obj->data, key, &json))
-    {
-        THROW_EXCEPTION("set error");
-    }
+    bd_xjson json = {
+        .type = BD_XJSON_NULL,
+        .data = NULL
+    };
+
+    assert(obj->data);
+    htab_set(obj->data, key, &json);
 }
 
 void* obj_get(const bd_xjson_object* obj, const char* key, void* val)
 {
-    if(NULL == obj)
-    {
-        THROW_EXCEPTION("uninitialized object class try to search");
-    }
-    if(NULL == obj->data)
-    {
-        THROW_EXCEPTION("uninitialized data of object class try to find");
-    }
-    if(htab_find(obj->data, key, val))
-    {
-        THROW_EXCEPTION("search error");
-    }
+    assert(obj->data && val);
+    htab_find(obj->data, key, val);
+
     return val;
 }
 
 char* obj_get_str(const bd_xjson_object* obj, const char* key)
 {
-    if(NULL == obj)
-    {
-        THROW_EXCEPTION("uninitialized object class try to get");
-    }
-    if(NULL == obj->data)
-    {
-        THROW_EXCEPTION("uninitialized data of object class try to get");
-    }
-    bd_xjson json = {.type = BD_XJSON_STRING, .data = NULL};
-    if(htab_find(obj->data, key, &json))
-    {
-        THROW_EXCEPTION("get error");
-    }
+    bd_xjson json = {
+        .type = BD_XJSON_STRING,
+        .data = NULL
+    };
+
+    assert(obj->data);
+    htab_find(obj->data, key, &json);
+
     return json.data;
 }
 
 int obj_get_num(const bd_xjson_object* obj, const char* key)
 {
-    if(NULL == obj)
-    {
-        THROW_EXCEPTION("uninitialized object class try to get");
-    }
-    if(NULL == obj->data)
-    {
-        THROW_EXCEPTION("uninitialized data of object class try to get");
-    }
-    bd_xjson json = {.type = BD_XJSON_NUMBER, .data = NULL};
     int num;
-    if(htab_find(obj->data, key, &json))
-    {
-        THROW_EXCEPTION("get error");
-    }
+    bd_xjson json = {
+        .type = BD_XJSON_NUMBER,
+        .data = NULL
+    };
+
+    assert(obj->data);
+    htab_find(obj->data, key, &json);
     num = *(int*)json.data;
+
     xfree(json.data);
     return num;
 }
+
 bd_xjson_object_iter obj_begin(const bd_xjson_object* obj)
 {
-    if(NULL == obj)
-    {
-        THROW_EXCEPTION("uninitialized object class try to beginify");
-    }
-    if(NULL == obj->data)
-    {
-        THROW_EXCEPTION("uninitialized data of object class try to beginify");
-    }
+    assert(obj->data);
     return htab_begin(obj->data);
 }
+
 bd_xjson_object_iter obj_end(const bd_xjson_object* obj)
 {
-    if(NULL == obj)
-    {
-        THROW_EXCEPTION("uninitialized object class try to endify");
-    }
-    if(NULL == obj->data)
-    {
-        THROW_EXCEPTION("uninitialized data of object class try to endify");
-    }
+    assert(obj->data);
     return htab_end(obj->data);
 }
-void* obj_iter_get(bd_xjson_object_iter iter, void* val)
+
+bd_xjson_object_iter obj_iterate(bd_xjson_object_iter iter)
 {
-    if(htab_iter_get(iter, val))
-    {
-        THROW_EXCEPTION("iterator get json error");
-    }
-    return val;
-}
-char* obj_iter_get_str(bd_xjson_object_iter iter)
-{
-    bd_xjson json = {.type = BD_XJSON_STRING, .data = NULL};
-    if(htab_iter_get(iter, &json))
-    {
-        THROW_EXCEPTION("iterator get json error");
-    }
-    return (char*)json.data;
-}
-int obj_iter_get_num(bd_xjson_object_iter iter)
-{
-    bd_xjson json = {.type = BD_XJSON_NUMBER, .data = NULL};
-    int num;
-    if(htab_iter_get(iter, &json))
-    {
-        THROW_EXCEPTION("iterator get json error");
-    }
-    num = *(int*)json.data;
-    xfree(json.data);
-    return num;
+    return htab_iterate(iter);
 }
 
-/* constructor */
-void arr_default_cstr(bd_xjson_array* this)
+bd_xjson_array* arr_default_cstr()
 {
-    if(NULL == this)
-    {
-        THROW_EXCEPTION("uninitialized array class try to construct");
-    }
-    if(list_create((bd_xjson_list**)&(this->data)))
-    {
-        THROW_EXCEPTION("constructor error");
-    }
+    bd_xjson_array *d;
+    bd_xjson_list **pdd;
 
+    d = xzmalloc(sizeof *d);
+    BD_XJSON_ARRAY_CLASS(d);
+    pdd = (bd_xjson_list**) &d->data;
+
+    list_create(pdd);
+
+    return d;
 }
 
-void arr_copy_cstr(bd_xjson_array* this, const bd_xjson_array* arr)
+/* TYPE of VAL maybe bd_xjson or bd_xjson_array */
+bd_xjson_array* arr_copy_cstr(void* val)
 {
-    if(NULL == this)
-    {
-        THROW_EXCEPTION("uninitialized array class try to construct");
-    }
-    if(NULL == arr)
-    {
-        THROW_EXCEPTION("uninitialized array class try to be the copied");
-    }
-    /* create */
-    if(list_create((bd_xjson_list**)&(this->data)))
-    {
-        THROW_EXCEPTION("create constructor error");
-    }
-    /* copy */
-    if(list_copy(this->data, arr->data))
-    {
-        THROW_EXCEPTION("copy constructor error");
-    }
-}
+    bd_xjson_array *d, *s;
+    bd_xjson_list **pdd;
 
-/* destructor */
-void arr_default_dstr(bd_xjson_array* this)
-{
-    if(NULL == this)
-    {
-        THROW_EXCEPTION("uninitialized array class try to desctruct");
-    }
-    if(NULL == this->data)
-    {
-        THROW_EXCEPTION("uninitialized data of array class try to clear");
-    }
-    if(list_free(this->data))
-    {
-        THROW_EXCEPTION("destructor error");
-    }
+    d = xzmalloc(sizeof *d);
+    BD_XJSON_ARRAY_CLASS(d);
+    pdd = (bd_xjson_list**) &d->data;
+
+    s = val;
+
+    list_create(pdd);
+
+    assert(s->data);
+    assert(s->type == d->type);
+    list_copy(d->data, s->data);
+
+    return d;
 }
 
 void arr_add(bd_xjson_array* arr, int pos, const void* val)
 {
-    if(NULL == arr)
-    {
-        THROW_EXCEPTION("uninitialized array try to add");
-    }
-    if(NULL == arr->data)
-    {
-        THROW_EXCEPTION("uninitialized data of array class try to insert");
-    }
-    if(list_insert(arr->data, pos, val)) /* cast to parent class */
-    {
-        THROW_EXCEPTION("add error");
-    }
+    assert(arr->data && val);
+    list_insert(arr->data, pos, val);
 }
 
 void arr_add_str(bd_xjson_array* arr, int pos, const char* val)
 {
-    if(NULL == arr)
-    {
-        THROW_EXCEPTION("uninitialized array try to add");
-    }
-    if(NULL == arr->data)
-    {
-        THROW_EXCEPTION("uninitialized data of array class try to insert");
-    }
-    bd_xjson json = {.type = BD_XJSON_STRING, .data = (char*)val};
-    if(list_insert(arr->data, pos, &json)) /* cast to parent class */
-    {
-        THROW_EXCEPTION("add error");
-    }
+    bd_xjson json = {
+        .type = BD_XJSON_STRING,
+        .data = (char*)val
+    };
+
+    assert(arr->data);
+    list_insert(arr->data, pos, &json);
 }
 
 void arr_add_num(bd_xjson_array* arr, int pos, int val)
 {
-    if(NULL == arr)
-    {
-        THROW_EXCEPTION("uninitialized array try to add");
-    }
-    if(NULL == arr->data)
-    {
-        THROW_EXCEPTION("uninitialized data of array class try to insert");
-    }
-    bd_xjson json = {.type = BD_XJSON_NUMBER, .data = &val};
-    if(list_insert(arr->data, pos, &json)) /* cast to parent class */
-    {
-        THROW_EXCEPTION("add error");
-    }
-}
-void arr_add_true(bd_xjson_array* arr, int pos)
-{
-    if(NULL == arr)
-    {
-        THROW_EXCEPTION("uninitialized array try to add");
-    }
-    if(NULL == arr->data)
-    {
-        THROW_EXCEPTION("uninitialized data of array class try to insert");
-    }
-    bd_xjson json = {.type = BD_XJSON_TRUE, .data = NULL};
-    if(list_insert(arr->data, pos, &json)) /* cast to parent class */
-    {
-        THROW_EXCEPTION("add error");
-    }
-}
-void arr_add_false(bd_xjson_array* arr, int pos)
-{
-    if(NULL == arr)
-    {
-        THROW_EXCEPTION("uninitialized array try to add");
-    }
-    if(NULL == arr->data)
-    {
-        THROW_EXCEPTION("uninitialized data of array class try to insert");
-    }
-    bd_xjson json = {.type = BD_XJSON_FALSE, .data = NULL};
-    if(list_insert(arr->data, pos, &json)) /* cast to parent class */
-    {
-        THROW_EXCEPTION("add error");
-    }
-}
-void arr_add_null(bd_xjson_array* arr, int pos)
-{
-    if(NULL == arr)
-    {
-        THROW_EXCEPTION("uninitialized array try to add");
-    }
-    if(NULL == arr->data)
-    {
-        THROW_EXCEPTION("uninitialized data of array class try to insert");
-    }
-    bd_xjson json = {.type = BD_XJSON_NULL, .data = NULL};
-    if(list_insert(arr->data, pos, &json)) /* cast to parent class */
-    {
-        THROW_EXCEPTION("add error");
-    }
+    bd_xjson json = {
+        .type = BD_XJSON_NUMBER,
+        .data = &val
+    };
+
+    assert(arr->data);
+    list_insert(arr->data, pos, &json);
 }
 
-void arr_delete(bd_xjson_array* arr, int pos)
+void arr_add_true(bd_xjson_array* arr, int pos)
 {
-    if(NULL == arr)
-    {
-        THROW_EXCEPTION("uninitialized array class try to delete");
-    }
-    if(NULL == arr->data)
-    {
-        THROW_EXCEPTION("uninitialized data of array class try to remove");
-    }
-    if(list_erase(arr->data, pos))
-    {
-        THROW_EXCEPTION("delete error");
-    }
+    bd_xjson json = {
+        .type = BD_XJSON_TRUE,
+        .data = NULL
+    };
+
+    assert(arr->data);
+    list_insert(arr->data, pos, &json);
 }
-void arr_search(bd_xjson_array* arr, int pos, void* val)
+
+void arr_add_false(bd_xjson_array* arr, int pos)
 {
-    if(NULL == arr)
-    {
-        THROW_EXCEPTION("uninitialized array class try to search");
-    }
-    if(NULL == arr->data)
-    {
-        THROW_EXCEPTION("uninitialized data of array class try to find");
-    }
-    if(list_find(arr->data, pos, val))
-    {
-        THROW_EXCEPTION("search error");
-    }
+    bd_xjson json = {
+        .type = BD_XJSON_FALSE,
+        .data = NULL
+    };
+
+    assert(arr->data);
+    list_insert(arr->data, pos, &json);
 }
-void arr_update(bd_xjson_array* arr, int pos, void* val)
+
+void arr_add_null(bd_xjson_array* arr, int pos)
 {
-    if(NULL == arr)
-    {
-        THROW_EXCEPTION("uninitialized array class try to update");
-    }
-    if(NULL == arr->data)
-    {
-        THROW_EXCEPTION("uninitialized data of array class try to update");
-    }
-    if(list_update(arr->data, pos, val))
-    {
-        THROW_EXCEPTION("update error");
-    }
+    bd_xjson json = {
+        .type = BD_XJSON_NULL,
+        .data = NULL
+    };
+
+    assert(arr->data);
+    list_insert(arr->data, pos, &json);
 }
+
+void arr_del(bd_xjson_array* arr, int pos)
+{
+    assert(arr->data);
+    list_erase(arr->data, pos);
+}
+
 void arr_set(bd_xjson_array* arr, int pos, const void* val)
 {
-    if(NULL == arr)
-    {
-        THROW_EXCEPTION("unitialized array class try to set");
-    }
-    if(NULL == arr->data)
-    {
-        THROW_EXCEPTION("unitialized data of array calss try to set");
-    }
-    if(list_set(arr->data, pos, val))
-    {
-        THROW_EXCEPTION("set error");
-    }
+    assert(arr->data && val);
+    list_set(arr->data, pos, val);
 }
+
 void arr_set_str(bd_xjson_array* arr, int pos, const char* val)
 {
-    if(NULL == arr)
-    {
-        THROW_EXCEPTION("unitialized array class try to set");
-    }
-    if(NULL == arr->data)
-    {
-        THROW_EXCEPTION("unitialized data of array calss try to set");
-    }
-    bd_xjson json = {.type = BD_XJSON_STRING, .data = (char*)val};
-    if(list_set(arr->data, pos, &json))
-    {
-        THROW_EXCEPTION("set error");
-    }
+    bd_xjson json = {
+        .type = BD_XJSON_STRING,
+        .data = (char*)val
+    };
+
+    assert(arr->data);
+    list_set(arr->data, pos, &json);
 }
+
 void arr_set_num(bd_xjson_array* arr, int pos, int val)
 {
-    if(NULL == arr)
-    {
-        THROW_EXCEPTION("unitialized array class try to set");
-    }
-    if(NULL == arr->data)
-    {
-        THROW_EXCEPTION("unitialized data of array calss try to set");
-    }
-    bd_xjson json = {.type = BD_XJSON_NUMBER, .data = &val};
-    if(list_set(arr->data, pos, &json))
-    {
-        THROW_EXCEPTION("set error");
-    }
+    bd_xjson json = {
+        .type = BD_XJSON_NUMBER,
+        .data = &val
+    };
+
+    assert(arr->data);
+    list_set(arr->data, pos, &json);
 }
 void arr_set_true(bd_xjson_array* arr, int pos)
 {
-    if(NULL == arr)
-    {
-        THROW_EXCEPTION("unitialized array class try to set");
-    }
-    if(NULL == arr->data)
-    {
-        THROW_EXCEPTION("unitialized data of array calss try to set");
-    }
-    bd_xjson json = {.type = BD_XJSON_TRUE, .data = NULL};
-    if(list_set(arr->data, pos, &json))
-    {
-        THROW_EXCEPTION("set error");
-    }
+    bd_xjson json = {
+        .type = BD_XJSON_TRUE,
+        .data = NULL
+    };
+
+    assert(arr->data);
+    list_set(arr->data, pos, &json);
 }
+
 void arr_set_false(bd_xjson_array* arr, int pos)
 {
-    if(NULL == arr)
-    {
-        THROW_EXCEPTION("unitialized array class try to set");
-    }
-    if(NULL == arr->data)
-    {
-        THROW_EXCEPTION("unitialized data of array calss try to set");
-    }
-    bd_xjson json = {.type = BD_XJSON_FALSE, .data = NULL};
-    if(list_set(arr->data, pos, &json))
-    {
-        THROW_EXCEPTION("set error");
-    }
+    bd_xjson json = {
+        .type = BD_XJSON_FALSE,
+        .data = NULL
+    };
+
+    assert(arr->data);
+    list_set(arr->data, pos, &json);
 }
+
 void arr_set_null(bd_xjson_array* arr, int pos)
 {
-    if(NULL == arr)
-    {
-        THROW_EXCEPTION("unitialized array class try to set");
-    }
-    if(NULL == arr->data)
-    {
-        THROW_EXCEPTION("unitialized data of array calss try to set");
-    }
-    bd_xjson json = {.type = BD_XJSON_NULL, .data = NULL};
-    if(list_set(arr->data, pos, &json))
-    {
-        THROW_EXCEPTION("set error");
-    }
+    bd_xjson json = {
+        .type = BD_XJSON_NULL,
+        .data = NULL
+    };
+
+    assert(arr->data);
+    list_set(arr->data, pos, &json);
 }
+
 void* arr_get(const bd_xjson_array* arr, int pos, void* val)
 {
-    if(NULL == arr)
-    {
-        THROW_EXCEPTION("uninitialized array class try to search");
-    }
-    if(NULL == arr->data)
-    {
-        THROW_EXCEPTION("uninitialized data of array class try to find");
-    }
-    if(list_find(arr->data, pos, val))
-    {
-        THROW_EXCEPTION("search error");
-    }
+    assert(arr->data && val);
+    list_find(arr->data, pos, val);
+
     return val;
 }
+
 char* arr_get_str(const bd_xjson_array* arr, int pos)
 {
-    if(NULL == arr)
-    {
-        THROW_EXCEPTION("unitialized array class try to get");
-    }
-    if(NULL == arr->data)
-    {
-        THROW_EXCEPTION("unitialized data of array calss try to get");
-    }
-    bd_xjson json = {.type = BD_XJSON_STRING, .data = NULL};
-    if(list_find(arr->data, pos, &json))
-    {
-        THROW_EXCEPTION("get error");
-    }
+    bd_xjson json = {
+        .type = BD_XJSON_STRING,
+        .data = NULL
+    };
+
+    assert(arr->data);
+    list_find(arr->data, pos, &json);
+
     return json.data;
 }
+
 int arr_get_num(const bd_xjson_array* arr, int pos)
 {
-    if(NULL == arr)
-    {
-        THROW_EXCEPTION("unitialized array class try to get");
-    }
-    if(NULL == arr->data)
-    {
-        THROW_EXCEPTION("unitialized data of array calss try to get");
-    }
-    bd_xjson json = {.type = BD_XJSON_NUMBER, .data = NULL};
     int num;
-    if(list_find(arr->data, pos, &json))
-    {
-        THROW_EXCEPTION("get error");
-    }
+    bd_xjson json = {
+        .type = BD_XJSON_NUMBER,
+        .data = NULL
+    };
+
+    assert(arr->data);
+    list_find(arr->data, pos, &json);
     num = *(int*)json.data;
-    xfree(json.data);
-    return num;
-}
-void arr_qsort(bd_xjson_array* arr, int (*compare_fn)(const void*, const void*))
-{
-    if(NULL == arr)
-    {
-        THROW_EXCEPTION("uninitialized array class try to quick sort");
-    }
-    if(NULL == arr->data)
-    {
-        THROW_EXCEPTION("uninitialized data of array class try to quick sort");
-    }
-    list_qsort(arr->data, compare_fn);
-}
-bd_xjson_array_iter arr_begin(const bd_xjson_array* arr)
-{
-    if(NULL == arr)
-    {
-        THROW_EXCEPTION("uninitialized array class try to beginify");
-    }
-    if(NULL == arr->data)
-    {
-        THROW_EXCEPTION("uninitialized data of array class try to beginify");
-    }
-    return list_begin(arr->data);
-}
-bd_xjson_array_iter arr_end(const bd_xjson_array* arr)
-{
-    if(NULL == arr)
-    {
-        THROW_EXCEPTION("uninitialized array class try to endify");
-    }
-    if(NULL == arr->data)
-    {
-        THROW_EXCEPTION("uninitialized data of array class try to endify");
-    }
-    return list_end(arr->data);
-}
-bd_xjson_array_iter arr_rbegin(const bd_xjson_array* arr)
-{
-    if(NULL == arr)
-    {
-        THROW_EXCEPTION("uninitialized array class try to rbeginify");
-    }
-    if(NULL == arr->data)
-    {
-        THROW_EXCEPTION("uninitialized data of array class try to rbeginify");
-    }
-    return list_rbegin(arr->data);
-}
-bd_xjson_array_iter arr_rend(const bd_xjson_array* arr)
-{
-    if(NULL == arr)
-    {
-        THROW_EXCEPTION("uninitialized array class try to rendify");
-    }
-    if(NULL == arr->data)
-    {
-        THROW_EXCEPTION("uninitialized data of array class try to rendify");
-    }
-    return list_rend(arr->data);
-}
-void* arr_iter_get(bd_xjson_array_iter iter, void* val)
-{
-    if(list_iter_get(iter, val))
-    {
-        THROW_EXCEPTION("iterator get json error");
-    }
-    return val;
-}
-char* arr_iter_get_str(bd_xjson_array_iter iter)
-{
-    bd_xjson json = {.type = BD_XJSON_STRING, .data = NULL};
-    if(list_iter_get(iter, &json))
-    {
-        THROW_EXCEPTION("iterator get json error");
-    }
-    return (char*)json.data;
-}
-int arr_iter_get_num(bd_xjson_array_iter iter)
-{
-    bd_xjson json = {.type = BD_XJSON_NUMBER, .data = NULL};
-    int num;
-    if(list_iter_get(iter, &json))
-    {
-        THROW_EXCEPTION("iterator get json error");
-    }
-    num = *(int*)json.data;
+
     xfree(json.data);
     return num;
 }
 
-void str_default_cstr(bd_xjson_string* this)
+void arr_qsort(bd_xjson_array* arr, int (*compare_fn)(const void*, const void*))
 {
-    if(NULL == this)
-    {
-        THROW_EXCEPTION("uninitialized string class try to construct");
-    }
-    this->data = xzmalloc(1);
+    assert(arr->data);
+    list_qsort(arr->data, compare_fn);
 }
-void str_copy_cstr(bd_xjson_string* this, bd_xjson_string* str)
+
+bd_xjson_array_iter arr_begin(const bd_xjson_array* arr)
 {
-    if(NULL == this)
-    {
-        THROW_EXCEPTION("uninitialized string class try to construct");
-    }
-    if(NULL == str)
-    {
-        THROW_EXCEPTION("uninitialized string class try to be the copied");
-    }
-    if(NULL == str->data)
-    {
-        THROW_EXCEPTION("uninitialized data of string class try to be the copied");
-    }
-    unsigned s = strlen(str->data) + 1;
-    this->data = xzmalloc(s);
-    strcat(this->data, str->data);
+    assert(arr->data);
+    return list_begin(arr->data);
 }
-void str_assign_cstr(bd_xjson_string* this, const char* val)
+
+bd_xjson_array_iter arr_end(const bd_xjson_array* arr)
 {
-    if(NULL == this)
-    {
-        THROW_EXCEPTION("uninitialized string class try to construct");
-    }
-    if(NULL == val)
-    {
-        THROW_EXCEPTION("uninitialized characters try to be the assigned");
-    }
-    unsigned s = strlen(val) + 1;
-    this->data = xzmalloc(s);
-    strcat(this->data, val);
+    assert(arr->data);
+    return list_end(arr->data);
 }
-void str_default_dstr(bd_xjson_string* this)
+
+bd_xjson_array_iter arr_iterate(bd_xjson_array_iter iter)
 {
-    if(NULL == this)
-    {
-        THROW_EXCEPTION("uninitialized string class try to desctruct");
-    }
-    if(NULL == this->data)
-    {
-        THROW_EXCEPTION("uninitialized data of string class try to desctruct");
-    }
-    xfree(this->data);
+    return list_iterate(iter);
 }
+
+bd_xjson_array_iter arr_rbegin(const bd_xjson_array* arr)
+{
+    assert(arr->data);
+    return list_rbegin(arr->data);
+}
+
+bd_xjson_array_iter arr_rend(const bd_xjson_array* arr)
+{
+    assert(arr->data);
+    return list_rend(arr->data);
+}
+
+bd_xjson_array_iter arr_riterate(bd_xjson_array_iter iter)
+{
+    return list_riterate(iter);
+}
+
+bd_xjson_string* str_assign_cstr(char* val)
+{
+    bd_xjson_string *d;
+
+    d = xzmalloc(sizeof *d);
+    BD_XJSON_STRING_CLASS(d);
+
+    d->data = xzmalloc(strlen(val) + 1);
+    strcat(d->data, val);
+
+    return d;
+}
+
+/* TYPE of VAL maybe bd_xjson or bd_xjson_string */
+bd_xjson_string* str_copy_cstr(void* val)
+{
+    bd_xjson_string *d, *s;
+
+    d = xzmalloc(sizeof *d);
+    BD_XJSON_STRING_CLASS(d);
+
+    s = val;
+
+    d->data = xzmalloc(strlen(s->data) + 1);
+
+    assert(s->data);
+    assert(s->type == d->type);
+    strcat(d->data, s->data);
+
+    return d;
+}
+
 void str_set(bd_xjson_string* str, const char* val)
 {
-    if(NULL == str)
-    {
-        THROW_EXCEPTION("uninitialized string class try to set");
-    }
-    if(NULL == str->data)
-    {
-        THROW_EXCEPTION("uninitialized data of string class try to set");
-    }
+    assert(str->data);
     xfree(str->data);
+
     str->data = xzmalloc(strlen(val) + 1);
     strcat(str->data, val);
 }
+
 char* str_get(const bd_xjson_string* str)
 {
-    if(NULL == str)
-    {
-        THROW_EXCEPTION("uninitialized string class try to get");
-    }
-    if(NULL == str->data)
-    {
-        THROW_EXCEPTION("uninitialized data of string class try to get");
-    }
+    assert(str->data);
     char* chars = xzmalloc(strlen(str->data) + 1);
     strcat(chars, str->data);
+
     return chars;
 }
 
-void num_default_cstr(bd_xjson_number* this)
+bd_xjson_number* num_assign_cstr(int val)
 {
-    if(NULL == this)
-    {
-        THROW_EXCEPTION("uninitialized number class try to construct");
-    }
-    this->data = xzmalloc(sizeof(int));
-    *(int*)(this->data) = 0;
+    bd_xjson_number *d;
+
+    d = xzmalloc(sizeof *d);
+    BD_XJSON_NUMBER_CLASS(d);
+
+    d->data = xzmalloc(sizeof (int));
+    *(int*)d->data = val;
+
+    return d;
 }
-void num_copy_cstr(bd_xjson_number* this, bd_xjson_number* num)
+
+/* TYPE of VAL maybe bd_xjson or bd_xjson_number */
+bd_xjson_number* num_copy_cstr(void* val)
 {
-    if(NULL == this)
-    {
-        THROW_EXCEPTION("uninitialized number class try to construct");
-    }
-    if(NULL == num)
-    {
-        THROW_EXCEPTION("uninitialized number class try to be the copied");
-    }
-    this->data = xzmalloc(sizeof (int));
-    *(int*)this->data = *(int*)num->data;
+    bd_xjson_number *d, *s;
+
+    d = xzmalloc(sizeof *d);
+    BD_XJSON_NUMBER_CLASS(d);
+
+    s = val;
+
+    assert(s->data);
+    assert(s->type == d->type);
+    d->data = xzmalloc(sizeof (int));
+    *(int*)d->data = *(int*)s->data;
+
+    return d;
 }
-void num_assign_cstr(bd_xjson_number* this, int val)
-{
-    if(NULL == this)
-    {
-        THROW_EXCEPTION("uninitialized number class try to construct");
-    }
-    this->data = xzmalloc(sizeof (int));
-    *(int*)this->data = val;
-}
-void num_default_dstr(bd_xjson_number* this)
-{
-    if(NULL == this)
-    {
-        THROW_EXCEPTION("uninitialized number class try to desctruct");
-    }
-    if(NULL == this->data)
-    {
-        THROW_EXCEPTION("uninitialized data of number class try to desctruct");
-    }
-    xfree(this->data);
-}
+
 void num_set(bd_xjson_number* num, int val)
 {
-    if(NULL == num)
-    {
-        THROW_EXCEPTION("uninitialized number class try to set");
-    }
-    if(NULL == num->data)
-    {
-        THROW_EXCEPTION("uninitialized data of number class try to set");
-    }
+    assert(num->data);
     *(int*)num->data = val;
 }
+
 int num_get(const bd_xjson_number* num)
 {
-    if(NULL == num)
-    {
-        THROW_EXCEPTION("uninitialized number class try to get");
-    }
-    if(NULL == num->data)
-    {
-        THROW_EXCEPTION("uninitialized data of number class try to get");
-    }
+    assert(num->data);
     return *(int*)num->data;
+}
+
+bd_xjson_true* true_default_cstr()
+{
+    bd_xjson_true *d;
+
+    d = xzmalloc(sizeof *d);
+    BD_XJSON_TRUE_CLASS(d);
+
+    return d;
+}
+
+bd_xjson_false* false_default_cstr()
+{
+    bd_xjson_false *d;
+
+    d = xzmalloc(sizeof *d);
+    BD_XJSON_FALSE_CLASS(d);
+
+    return d;
+}
+
+bd_xjson_null* null_default_cstr()
+{
+    bd_xjson_null *d;
+
+    d = xzmalloc(sizeof *d);
+    BD_XJSON_NULL_CLASS(d);
+
+    return d;
 }

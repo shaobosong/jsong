@@ -1,4 +1,5 @@
-#include "lib/bd_xjson_api.h"
+#include "libjson.h"
+#include <assert.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -8,13 +9,29 @@
 do \
 { \
     if(__val == __cmpr) {;} \
-    else { MY_ASSERT(__val == __cmpr); } \
+    else { assert(__val == __cmpr); } \
 } while (0)
 
 static int numcmp(const void *a, const void *b)
 {
     return *(int*)a - *(int*)b;
 }
+
+/* only for test */
+typedef struct bd_xjson_node bd_xjson_node;
+typedef struct bd_xjson_list
+{
+    bd_xjson_node* head, * tail, * nil;
+    int size;
+} bd_xjson_list;
+
+/* only for test */
+typedef struct bd_xjson_entry bd_xjson_entry;
+typedef struct bd_xjson_htab
+{
+    bd_xjson_entry* entries;
+    uint64_t capacity, size, first, last;
+} bd_xjson_htab;
 
 /* this method only for test */
 bd_xjson_node* get_json_array_list_head(bd_xjson_array* arr)
@@ -55,13 +72,13 @@ bd_xjson_type get_json_type(bd_xjson* json)
 void test_json_array_create_and_remove(void)
 {
     /* create a array */
-    JSON_ARRAY(json);
+    JSONArray* json = JSON_ARRAY();
     TEST_EXPECT(get_json_array_list_head(json), get_json_array_list_nil(json));
     TEST_EXPECT(get_json_array_list_tail(json), get_json_array_list_nil(json));
     TEST_EXPECT(get_json_array_list_size(json), 0);
     TEST_EXPECT(get_json_type((bd_xjson*)json), BD_XJSON_ARRAY);
     /* remove a array */
-    FREE_JSON(json);
+    JSON_FREE(json);
 }
 
 void test_json_array_set_and_get_json_string(void)
@@ -69,11 +86,11 @@ void test_json_array_set_and_get_json_string(void)
     char *str, *str_get;
 
     /* create a json string */
-    JSON_STRING(json_str, "this is first test");
-    JSON_STRING(json_str_get, "");
+    JSONString* json_str     = JSON_STRING("this is first test");
+    JSONString* json_str_get = JSON_STRING("");
 
     /* create a json array */
-    JSON_ARRAY(json_arr);
+    JSONArray* json_arr = JSON_ARRAY();
 
     /* set a json string into json array if empty in this position */
     json_arr->set(json_arr, 0, json_str);
@@ -106,9 +123,9 @@ void test_json_array_set_and_get_json_string(void)
     TEST_EXPECT(json_str_get->type, BD_XJSON_STRING);
     free(str_get);
 
-    FREE_JSON(json_str);
-    FREE_JSON(json_str_get);
-    FREE_JSON(json_arr);
+    JSON_FREE(json_str);
+    JSON_FREE(json_str_get);
+    JSON_FREE(json_arr);
 }
 
 void test_json_array_set_and_get_json_number(void)
@@ -116,11 +133,11 @@ void test_json_array_set_and_get_json_number(void)
     int num, num_get;
 
     /* create a json number */
-    JSON_NUMBER(json_num, 2022);
-    JSON_NUMBER(json_num_get, 0);
+    JSONNumber* json_num     = JSON_NUMBER(2022);
+    JSONNumber* json_num_get = JSON_NUMBER(0);
 
     /* create a json array */
-    JSON_ARRAY(json_arr);
+    JSONArray* json_arr = JSON_ARRAY();
 
     /* set a json number into json array if empty in this position */
     json_arr->set(json_arr, 0, json_num);
@@ -148,19 +165,19 @@ void test_json_array_set_and_get_json_number(void)
     TEST_EXPECT(2099, num_get);
     TEST_EXPECT(json_num_get->type, BD_XJSON_NUMBER);
 
-    FREE_JSON(json_num);
-    FREE_JSON(json_num_get);
-    FREE_JSON(json_arr);
+    JSON_FREE(json_num);
+    JSON_FREE(json_num_get);
+    JSON_FREE(json_arr);
 }
 
 void test_json_array_set_and_get_json_true(void)
 {
     /* create a json true */
-    JSON_TRUE(json_true);
-    JSON_TRUE(json_true_get);
+    JSONTrue* json_true     = JSON_TRUE();
+    JSONTrue* json_true_get = JSON_TRUE();
 
     /* create a json array */
-    JSON_ARRAY(json_arr);
+    JSONArray* json_arr = JSON_ARRAY();
 
     /* set a json true into json array if empty in this position */
     json_arr->set(json_arr, 0, json_true);
@@ -171,19 +188,19 @@ void test_json_array_set_and_get_json_true(void)
     TEST_EXPECT(json_true_get->data, 0);
     TEST_EXPECT(json_true_get->type, BD_XJSON_TRUE);
 
-    FREE_JSON(json_true);
-    FREE_JSON(json_true_get);
-    FREE_JSON(json_arr);
+    JSON_FREE(json_true);
+    JSON_FREE(json_true_get);
+    JSON_FREE(json_arr);
 }
 
 void test_json_array_set_and_get_json_false(void)
 {
     /* create a json false */
-    JSON_FALSE(json_false);
-    JSON_FALSE(json_false_get);
+    JSONFalse* json_false     = JSON_FALSE();
+    JSONFalse* json_false_get = JSON_FALSE();
 
     /* create a json array */
-    JSON_ARRAY(json_arr);
+    JSONArray* json_arr = JSON_ARRAY();
 
     /* set a json false into json array if empty in this position */
     json_arr->set(json_arr, 0, json_false);
@@ -194,19 +211,19 @@ void test_json_array_set_and_get_json_false(void)
     TEST_EXPECT(json_false_get->data, 0);
     TEST_EXPECT(json_false_get->type, BD_XJSON_FALSE);
 
-    FREE_JSON(json_false);
-    FREE_JSON(json_false_get);
-    FREE_JSON(json_arr);
+    JSON_FREE(json_false);
+    JSON_FREE(json_false_get);
+    JSON_FREE(json_arr);
 }
 
 void test_json_array_set_and_get_json_null(void)
 {
     /* create a json null */
-    JSON_NULL(json_null);
-    JSON_NULL(json_null_get);
+    JSONNull* json_null     = JSON_NULL();
+    JSONNull* json_null_get = JSON_NULL();
 
     /* create a json array */
-    JSON_ARRAY(json_arr);
+    JSONArray* json_arr = JSON_ARRAY();
 
     /* set a json null into json array if empty in this position */
     json_arr->set(json_arr, 0, json_null);
@@ -217,9 +234,9 @@ void test_json_array_set_and_get_json_null(void)
     TEST_EXPECT(json_null_get->data, 0);
     TEST_EXPECT(json_null_get->type, BD_XJSON_NULL);
 
-    FREE_JSON(json_null);
-    FREE_JSON(json_null_get);
-    FREE_JSON(json_arr);
+    JSON_FREE(json_null);
+    JSON_FREE(json_null_get);
+    JSON_FREE(json_arr);
 }
 
 void test_json_array_set_and_get_json_object(void)
@@ -229,16 +246,16 @@ void test_json_array_set_and_get_json_object(void)
     bzero(compr, 256);
 
     /* create a json object */
-    JSON_OBJECT(json_obj);
+    JSONObject* json_obj = JSON_OBJECT();
     /* add some <key>-<value> for test in json_obj */
     json_obj->set_str(json_obj, "name", "butdraw");
     json_obj->set_str(json_obj, "age", "29");
     json_obj->set_str(json_obj, "id", "a0000001234");
-    JSON_OBJECT(json_obj_get); /* {} */
+    JSONObject* json_obj_get = JSON_OBJECT(); /* {} */
     JSON_OBJECT_ITER iter, end;
 
     /* create a json array */
-    JSON_ARRAY(json_arr);
+    JSONArray* json_arr = JSON_ARRAY();
 
     /* set(add) a json object into json array if empty in this position */
     json_arr->set(json_arr, 0, json_obj);
@@ -253,11 +270,13 @@ void test_json_array_set_and_get_json_object(void)
     JSON_OBJECT_FOREACH(iter, end)
     {
         char* get;
-        printf("key: %s, ", iter.data.key);
-        get = JSON_OBJECT_ITER_GET_STR(iter);
-        printf("value: %s\n", get);
-        strcat(stack, iter.data.key);
-        strcat(stack, get);
+        JSONString* tmp = JSON_STRING("");
+        printf("key: %s, ", iter.key);
+        JSON_REASSIGN(tmp, &iter.value);
+        printf("value: %s\n", get = tmp->get(tmp));
+        strcat(stack, iter.key);
+        strcat(stack, iter.value.data);
+        JSON_FREE(tmp);
         free(get);
     }
     /* traverse all elements in json_obj_get */
@@ -266,20 +285,22 @@ void test_json_array_set_and_get_json_object(void)
     JSON_OBJECT_FOREACH(iter, end)
     {
         char* get;
-        printf("key: %s, ", iter.data.key);
-        get = JSON_OBJECT_ITER_GET_STR(iter);
-        printf("value: %s\n", get);
-        strcat(compr, iter.data.key);
-        strcat(compr, get);
+        JSONString* tmp = JSON_STRING("");
+        printf("key: %s, ", iter.key);
+        JSON_REASSIGN(tmp, &iter.value);
+        printf("value: %s\n", get = tmp->get(tmp));
+        strcat(compr, iter.key);
+        strcat(compr, iter.value.data);
+        JSON_FREE(tmp);
         free(get);
     }
     TEST_EXPECT(strcmp(stack, compr), 0);
     TEST_EXPECT(json_obj_get->type, BD_XJSON_OBJECT);
     printf("-------------------\n");
 
-    FREE_JSON(json_obj);
-    FREE_JSON(json_obj_get);
-    FREE_JSON(json_arr);
+    JSON_FREE(json_obj);
+    JSON_FREE(json_obj_get);
+    JSON_FREE(json_arr);
 }
 
 void test_json_array_set_and_get_json_array(void)
@@ -293,16 +314,16 @@ void test_json_array_set_and_get_json_array(void)
     };
 
     /* create a sub json array */
-    JSON_ARRAY(sub_json_arr);
+    JSONArray* sub_json_arr = JSON_ARRAY();
     /* add some <value> for test in sub_json_arr */
     sub_json_arr->set_str(sub_json_arr, 0, values[0]);
     sub_json_arr->set_str(sub_json_arr, 1, values[1]);
     sub_json_arr->set_str(sub_json_arr, 2, values[2]);
-    JSON_ARRAY(json_arr_get); /* [] */
+    JSONArray* json_arr_get = JSON_ARRAY(); /* [] */
     JSON_ARRAY_ITER iter, end;
 
     /* create a json array */
-    JSON_ARRAY(json_arr);
+    JSONArray* json_arr = JSON_ARRAY();
 
     /* set a json array into json array in head */
     json_arr->set(json_arr, 0, sub_json_arr);
@@ -317,16 +338,15 @@ void test_json_array_set_and_get_json_array(void)
     JSON_ARRAY_FOREACH(iter, end)
     {
         char* get;
-        get = JSON_ARRAY_ITER_GET_STR(iter);
+        get = iter.value.data;
         TEST_EXPECT(strcmp(get, values[i]), 0);
-        free(get);
         i++;
     }
     TEST_EXPECT(json_arr_get->type, BD_XJSON_ARRAY);
 
-    FREE_JSON(json_arr);
-    FREE_JSON(sub_json_arr);
-    FREE_JSON(json_arr_get);
+    JSON_FREE(json_arr);
+    JSON_FREE(sub_json_arr);
+    JSON_FREE(json_arr_get);
 }
 
 void test_json_array_add_json_string(void)
@@ -334,11 +354,11 @@ void test_json_array_add_json_string(void)
     char *str, *str_get;
 
     /* create a json string */
-    JSON_STRING(json_str, "this is first test");
-    JSON_STRING(json_str_get, "");
+    JSONString* json_str     = JSON_STRING("this is first test");
+    JSONString* json_str_get = JSON_STRING("");
 
     /* create a json array */
-    JSON_ARRAY(json_arr);
+    JSONArray* json_arr = JSON_ARRAY();
 
     /* add a json string into json array in head */
     json_arr->add(json_arr, 0, json_str);
@@ -360,9 +380,9 @@ void test_json_array_add_json_string(void)
     free(str);
     free(str_get);
 
-    FREE_JSON(json_str);
-    FREE_JSON(json_str_get);
-    FREE_JSON(json_arr);
+    JSON_FREE(json_str);
+    JSON_FREE(json_str_get);
+    JSON_FREE(json_arr);
 }
 
 void test_json_array_add_json_number(void)
@@ -370,11 +390,11 @@ void test_json_array_add_json_number(void)
     int num, num_get;
 
     /* create a json number */
-    JSON_NUMBER(json_num, 2022);
-    JSON_NUMBER(json_num_get, 0);
+    JSONNumber* json_num = JSON_NUMBER(2022);
+    JSONNumber* json_num_get = JSON_NUMBER(0);
 
     /* create a json array */
-    JSON_ARRAY(json_arr);
+    JSONArray* json_arr = JSON_ARRAY();
 
     /* add a json number into json array in head */
     json_arr->add(json_arr, 0, json_num);
@@ -393,19 +413,19 @@ void test_json_array_add_json_number(void)
     num_get = json_arr->get_num(json_arr, 1);
     TEST_EXPECT(num, num_get);
 
-    FREE_JSON(json_num);
-    FREE_JSON(json_num_get);
-    FREE_JSON(json_arr);
+    JSON_FREE(json_num);
+    JSON_FREE(json_num_get);
+    JSON_FREE(json_arr);
 }
 
 void test_json_array_add_json_true(void)
 {
     /* create a json true */
-    JSON_TRUE(json_true);
-    JSON_TRUE(json_true_get);
+    JSONTrue* json_true = JSON_TRUE();
+    JSONTrue* json_true_get = JSON_TRUE();
 
     /* create a json array */
-    JSON_ARRAY(json_arr);
+    JSONArray* json_arr = JSON_ARRAY();
 
     /* add a json true into json array in head */
     json_arr->add(json_arr, 0, json_true);
@@ -425,19 +445,19 @@ void test_json_array_add_json_true(void)
     TEST_EXPECT(json_true_get->data, 0);
     TEST_EXPECT(json_true_get->type, BD_XJSON_TRUE);
 
-    FREE_JSON(json_true);
-    FREE_JSON(json_true_get);
-    FREE_JSON(json_arr);
+    JSON_FREE(json_true);
+    JSON_FREE(json_true_get);
+    JSON_FREE(json_arr);
 }
 
 void test_json_array_add_json_false(void)
 {
     /* create a json false */
-    JSON_TRUE(json_false);
-    JSON_TRUE(json_false_get);
+    JSONTrue* json_false = JSON_TRUE();
+    JSONTrue* json_false_get = JSON_TRUE();
 
     /* create a json array */
-    JSON_ARRAY(json_arr);
+    JSONArray* json_arr = JSON_ARRAY();
 
     /* add a json false into json array in head */
     json_arr->add(json_arr, 0, json_false);
@@ -457,41 +477,41 @@ void test_json_array_add_json_false(void)
     TEST_EXPECT(json_false_get->data, 0);
     TEST_EXPECT(json_false_get->type, BD_XJSON_TRUE);
 
-    FREE_JSON(json_false);
-    FREE_JSON(json_false_get);
-    FREE_JSON(json_arr);
+    JSON_FREE(json_false);
+    JSON_FREE(json_false_get);
+    JSON_FREE(json_arr);
 }
 
 void test_json_array_add_json_null(void)
 {
     /* create a json null */
-    JSON_TRUE(json_null);
-    JSON_TRUE(json_null_get);
+    JSONNull* json_null =  JSON_NULL();
+    JSONNull* json_null_get =  JSON_NULL();
 
     /* create a json array */
-    JSON_ARRAY(json_arr);
+    JSONArray* json_arr = JSON_ARRAY();
 
     /* add a json null into json array in head */
     json_arr->add(json_arr, 0, json_null);
     TEST_EXPECT(get_json_array_list_size(json_arr), 1);
 
     /* add a null directly into json array in head */
-    json_arr->add_true(json_arr, 0);
+    json_arr->add_null(json_arr, 0);
     TEST_EXPECT(get_json_array_list_size(json_arr), 2);
 
     /* get a json null in [0] */
     json_null_get = json_arr->get(json_arr, 0, json_null_get);
     TEST_EXPECT(json_null_get->data, 0);
-    TEST_EXPECT(json_null_get->type, BD_XJSON_TRUE);
+    TEST_EXPECT(json_null_get->type, BD_XJSON_NULL);
 
     /* get a json null in [1] */
     json_null_get = json_arr->get(json_arr, 1, json_null_get);
     TEST_EXPECT(json_null_get->data, 0);
-    TEST_EXPECT(json_null_get->type, BD_XJSON_TRUE);
+    TEST_EXPECT(json_null_get->type, BD_XJSON_NULL);
 
-    FREE_JSON(json_null);
-    FREE_JSON(json_null_get);
-    FREE_JSON(json_arr);
+    JSON_FREE(json_null);
+    JSON_FREE(json_null_get);
+    JSON_FREE(json_arr);
 }
 
 void test_json_array_add_json_object(void)
@@ -501,18 +521,18 @@ void test_json_array_add_json_object(void)
     bzero(compr, 256);
 
     /* create a json object */
-    JSON_OBJECT(json_obj);
+    JSONObject* json_obj = JSON_OBJECT();
     /* add some <key>-<value> for test in json_obj */
     json_obj->set_str(json_obj, "name", "butdraw");
     json_obj->set_str(json_obj, "age", "29");
     json_obj->set_str(json_obj, "id", "a0000001234");
-    JSON_OBJECT_COPY(json_obj_copy, json_obj);
+    JSONObject* json_obj_copy = JSON_OBJECT_COPY(json_obj);
     json_obj_copy->set_str(json_obj_copy, "height", "181");
-    JSON_OBJECT(json_obj_get); /* {} */
+    JSONObject* json_obj_get = JSON_OBJECT(); /* {} */
     JSON_OBJECT_ITER iter, end;
 
     /* create a json array */
-    JSON_ARRAY(json_arr);
+    JSONArray* json_arr = JSON_ARRAY();
 
     /* add a json object into json array in head */
     json_arr->add(json_arr, 0, json_obj);
@@ -530,11 +550,13 @@ void test_json_array_add_json_object(void)
     JSON_OBJECT_FOREACH(iter, end)
     {
         char* get;
-        printf("key: %s, ", iter.data.key);
-        get = JSON_OBJECT_ITER_GET_STR(iter);
-        printf("value: %s\n", get);
-        strcat(stack, iter.data.key);
-        strcat(stack, get);
+        JSONString* tmp = JSON_STRING("");
+        printf("key: %s, ", iter.key);
+        JSON_REASSIGN(tmp, &iter.value);
+        printf("value: %s\n", get = tmp->get(tmp));
+        strcat(stack, iter.key);
+        strcat(stack, iter.value.data);
+        JSON_FREE(tmp);
         free(get);
     }
     /* traverse all elements in json_obj_get */
@@ -543,11 +565,13 @@ void test_json_array_add_json_object(void)
     JSON_OBJECT_FOREACH(iter, end)
     {
         char* get;
-        printf("key: %s, ", iter.data.key);
-        get = JSON_OBJECT_ITER_GET_STR(iter);
-        printf("value: %s\n", get);
-        strcat(compr, iter.data.key);
-        strcat(compr, get);
+        JSONString* tmp = JSON_STRING("");
+        printf("key: %s, ", iter.key);
+        JSON_REASSIGN(tmp, &iter.value);
+        printf("value: %s\n", get = tmp->get(tmp));
+        strcat(compr, iter.key);
+        strcat(compr, iter.value.data);
+        JSON_FREE(tmp);
         free(get);
     }
     TEST_EXPECT(strcmp(stack, compr), 0);
@@ -564,11 +588,13 @@ void test_json_array_add_json_object(void)
     JSON_OBJECT_FOREACH(iter, end)
     {
         char* get;
-        printf("key: %s, ", iter.data.key);
-        get = JSON_OBJECT_ITER_GET_STR(iter);
-        printf("value: %s\n", get);
-        strcat(stack, iter.data.key);
-        strcat(stack, get);
+        JSONString* tmp = JSON_STRING("");
+        printf("key: %s, ", iter.key);
+        JSON_REASSIGN(tmp, &iter.value);
+        printf("value: %s\n", get = tmp->get(tmp));
+        strcat(stack, iter.key);
+        strcat(stack, iter.value.data);
+        JSON_FREE(tmp);
         free(get);
     }
     /* traverse all elements in json_obj_get */
@@ -577,11 +603,13 @@ void test_json_array_add_json_object(void)
     JSON_OBJECT_FOREACH(iter, end)
     {
         char* get;
-        printf("key: %s, ", iter.data.key);
-        get = JSON_OBJECT_ITER_GET_STR(iter);
-        printf("value: %s\n", get);
-        strcat(compr, iter.data.key);
-        strcat(compr, get);
+        JSONString* tmp = JSON_STRING("");
+        printf("key: %s, ", iter.key);
+        JSON_REASSIGN(tmp, &iter.value);
+        printf("value: %s\n", get = tmp->get(tmp));
+        strcat(compr, iter.key);
+        strcat(compr, iter.value.data);
+        JSON_FREE(tmp);
         free(get);
     }
     TEST_EXPECT(strcmp(stack, compr), 0);
@@ -590,10 +618,10 @@ void test_json_array_add_json_object(void)
     TEST_EXPECT(json_obj_get->type, BD_XJSON_OBJECT);
     printf("-------------------\n");
 
-    FREE_JSON(json_obj);
-    FREE_JSON(json_obj_get);
-    FREE_JSON(json_obj_copy);
-    FREE_JSON(json_arr);
+    JSON_FREE(json_obj);
+    JSON_FREE(json_obj_get);
+    JSON_FREE(json_obj_copy);
+    JSON_FREE(json_arr);
 }
 
 void test_json_array_add_json_array(void)
@@ -608,18 +636,18 @@ void test_json_array_add_json_array(void)
     };
 
     /* create a sub json array */
-    JSON_ARRAY(sub_json_arr);
+    JSONArray* sub_json_arr = JSON_ARRAY();
     /* add some <value> for test in sub_json_arr */
     sub_json_arr->set_str(sub_json_arr, 0, values[0]);
     sub_json_arr->set_str(sub_json_arr, 1, values[1]);
     sub_json_arr->set_str(sub_json_arr, 2, values[2]);
-    JSON_ARRAY_COPY(sub_json_arr_copy, sub_json_arr);
+    JSONArray* sub_json_arr_copy = JSON_ARRAY_COPY(sub_json_arr);
     sub_json_arr_copy->set_str(sub_json_arr_copy, 3, values[3]);
-    JSON_ARRAY(json_arr_get); /* [] */
+    JSONArray* json_arr_get = JSON_ARRAY(); /* [] */
     JSON_ARRAY_ITER iter, end;
 
     /* create a json array */
-    JSON_ARRAY(json_arr);
+    JSONArray* json_arr = JSON_ARRAY();
 
     /* add a json array into json array in head */
     json_arr->add(json_arr, 0, sub_json_arr);
@@ -638,9 +666,8 @@ void test_json_array_add_json_array(void)
     JSON_ARRAY_FOREACH(iter, end)
     {
         char* get;
-        get = JSON_ARRAY_ITER_GET_STR(iter);
+        get = iter.value.data;
         TEST_EXPECT(strcmp(get, values[i]), 0);
-        free(get);
         i++;
     }
     TEST_EXPECT(json_arr_get->type, BD_XJSON_ARRAY);
@@ -655,17 +682,16 @@ void test_json_array_add_json_array(void)
     JSON_ARRAY_FOREACH(iter, end)
     {
         char* get;
-        get = JSON_ARRAY_ITER_GET_STR(iter);
+        get = iter.value.data;
         TEST_EXPECT(strcmp(get, values[i]), 0);
-        free(get);
         i++;
     }
     TEST_EXPECT(json_arr_get->type, BD_XJSON_ARRAY);
 
-    FREE_JSON(json_arr);
-    FREE_JSON(sub_json_arr);
-    FREE_JSON(sub_json_arr_copy);
-    FREE_JSON(json_arr_get);
+    JSON_FREE(json_arr);
+    JSON_FREE(sub_json_arr);
+    JSON_FREE(sub_json_arr_copy);
+    JSON_FREE(json_arr_get);
 }
 
 void test_json_array_delete_json(void)
@@ -686,24 +712,24 @@ void test_json_array_delete_json(void)
     };
 
     /* create a json object */
-    JSON_OBJECT(json_obj);
+    JSONObject* json_obj = JSON_OBJECT();
     /* add some <key>-<value> for test in json_obj */
     json_obj->set_str(json_obj, "name", values[0]);
     json_obj->set_str(json_obj, "age", values[1]);
     json_obj->set_str(json_obj, "id", values[2]);
-    JSON_OBJECT(json_obj_get); /* {} */
+    JSONObject* json_obj_get = JSON_OBJECT(); /* {} */
     JSON_OBJECT_ITER oiter, oend;
 
     /* create a sub json array */
-    JSON_ARRAY(sub_json_arr);
+    JSONArray* sub_json_arr = JSON_ARRAY();
     sub_json_arr->add_str(sub_json_arr, -1, values[0]);
     sub_json_arr->add_str(sub_json_arr, -1, values[1]);
     sub_json_arr->add_str(sub_json_arr, -1, values[2]);
-    JSON_ARRAY(sub_json_arr_get); /* [] */
+    JSONArray* sub_json_arr_get = JSON_ARRAY(); /* [] */
     JSON_ARRAY_ITER aiter, aend;
 
     /* create a json array */
-    JSON_ARRAY(json_arr);
+    JSONArray* json_arr = JSON_ARRAY();
 
     /* add some strings directly into json array in head */
     json_arr->add_str(json_arr, 0, "this is first test");
@@ -721,7 +747,7 @@ void test_json_array_delete_json(void)
     free(str);
 
     /* delete a element in [-1] */
-    json_arr->delete(json_arr, -1);
+    json_arr->del(json_arr, -1);
     TEST_EXPECT(get_json_array_list_size(json_arr), 6);
 
     /* get a number directly in [-1] */
@@ -729,19 +755,19 @@ void test_json_array_delete_json(void)
     TEST_EXPECT(num, 2022);
 
     /* delete a element in [-1] */
-    json_arr->delete(json_arr, -1);
+    json_arr->del(json_arr, -1);
     TEST_EXPECT(get_json_array_list_size(json_arr), 5);
 
     /* delete a element in [-1] */
-    json_arr->delete(json_arr, -1);
+    json_arr->del(json_arr, -1);
     TEST_EXPECT(get_json_array_list_size(json_arr), 4);
 
     /* delete a element in [-1] */
-    json_arr->delete(json_arr, -1);
+    json_arr->del(json_arr, -1);
     TEST_EXPECT(get_json_array_list_size(json_arr), 3);
 
     /* delete a element in [-1] */
-    json_arr->delete(json_arr, -1);
+    json_arr->del(json_arr, -1);
     TEST_EXPECT(get_json_array_list_size(json_arr), 2);
 
     /* get a json object in [-1] */
@@ -752,11 +778,13 @@ void test_json_array_delete_json(void)
     JSON_OBJECT_FOREACH(oiter, oend)
     {
         char* get;
-        printf("key: %s, ", oiter.data.key);
-        get = JSON_OBJECT_ITER_GET_STR(oiter);
-        printf("value: %s\n", get);
-        strcat(stack, oiter.data.key);
-        strcat(stack, get);
+        JSONString* tmp = JSON_STRING("");
+        printf("key: %s, ", oiter.key);
+        JSON_REASSIGN(tmp, &oiter.value);
+        printf("value: %s\n", get = tmp->get(tmp));
+        strcat(stack, oiter.key);
+        strcat(stack, oiter.value.data);
+        JSON_FREE(tmp);
         free(get);
         i++;
     }
@@ -766,11 +794,13 @@ void test_json_array_delete_json(void)
     JSON_OBJECT_FOREACH(oiter, oend)
     {
         char* get;
-        printf("key: %s, ", oiter.data.key);
-        get = JSON_OBJECT_ITER_GET_STR(oiter);
-        printf("value: %s\n", get);
-        strcat(compr, oiter.data.key);
-        strcat(compr, get);
+        JSONString* tmp = JSON_STRING("");
+        printf("key: %s, ", oiter.key);
+        JSON_REASSIGN(tmp, &oiter.value);
+        printf("value: %s\n", get = tmp->get(tmp));
+        strcat(compr, oiter.key);
+        strcat(compr, oiter.value.data);
+        JSON_FREE(tmp);
         free(get);
     }
     TEST_EXPECT(strcmp(stack, compr), 0);
@@ -780,7 +810,7 @@ void test_json_array_delete_json(void)
     printf("-------------------\n");
 
     /* delete a element in [-1] */
-    json_arr->delete(json_arr, -1);
+    json_arr->del(json_arr, -1);
     TEST_EXPECT(get_json_array_list_size(json_arr), 1);
 
     /* get a json array in [-1] */
@@ -793,31 +823,30 @@ void test_json_array_delete_json(void)
     JSON_ARRAY_FOREACH(aiter, aend)
     {
         char* get;
-        get = JSON_ARRAY_ITER_GET_STR(aiter);
+        get = aiter.value.data;
         TEST_EXPECT(strcmp(get, values[i]), 0);
-        free(get);
         i++;
     }
     TEST_EXPECT(sub_json_arr_get->type, BD_XJSON_ARRAY);
 
     /* delete a array in [-1] */
-    json_arr->delete(json_arr, -1);
+    json_arr->del(json_arr, -1);
     TEST_EXPECT(get_json_array_list_size(json_arr), 0);
     TEST_EXPECT(get_json_array_list_head(json_arr), get_json_array_list_nil(json_arr));
     TEST_EXPECT(get_json_array_list_tail(json_arr), get_json_array_list_nil(json_arr));
 
-    FREE_JSON(json_arr);
-    FREE_JSON(sub_json_arr);
-    FREE_JSON(sub_json_arr_get);
-    FREE_JSON(json_obj);
-    FREE_JSON(json_obj_get);
+    JSON_FREE(json_arr);
+    JSON_FREE(sub_json_arr);
+    JSON_FREE(sub_json_arr_get);
+    JSON_FREE(json_obj);
+    JSON_FREE(json_obj_get);
 }
 
 void test_json_array_quick_sort(void)
 {
     int num;
     int arr[COUNT];
-    JSON_ARRAY(json);
+    JSONArray* json = JSON_ARRAY();
 
     /* add elements into json array in loop */
     for(int i = 0; i < COUNT; i++)
@@ -837,7 +866,7 @@ void test_json_array_quick_sort(void)
         TEST_EXPECT(json->get_num(json, i), arr[i]);
     }
 
-    FREE_JSON(json);
+    JSON_FREE(json);
 }
 
 void test_json_array_traverse_all_elements(void)
@@ -851,7 +880,7 @@ void test_json_array_traverse_all_elements(void)
     };
 
     /* create a json array */
-    JSON_ARRAY(json_arr);
+    JSONArray* json_arr = JSON_ARRAY();
 
     /* add some elements into json array */
     json_arr->add_str(json_arr, -1, pchars[0]);
@@ -865,9 +894,8 @@ void test_json_array_traverse_all_elements(void)
     JSON_ARRAY_FOREACH(iter, end)
     {
         char* get;
-        get = JSON_ARRAY_ITER_GET_STR(iter);
+        get = iter.value.data;
         TEST_EXPECT(strcmp(pchars[i], get), 0);
-        free(get);
         i++;
     }
 
@@ -878,13 +906,12 @@ void test_json_array_traverse_all_elements(void)
     JSON_ARRAY_REVERSE_FOREACH(iter, end)
     {
         char* get;
-        get = JSON_ARRAY_ITER_GET_STR(iter);
+        get = iter.value.data;
         TEST_EXPECT(strcmp(pchars[i], get), 0);
-        free(get);
         i--;
     }
 
-    FREE_JSON(json_arr);
+    JSON_FREE(json_arr);
 }
 
 void test_json_array_stringify(void)
@@ -896,10 +923,10 @@ void test_json_array_stringify(void)
     printf("%s\n", str);
 
     /* create a json array */
-    JSON_ARRAY(json_arr);
+    JSONArray* json_arr = JSON_ARRAY();
 
     /* create a sub json object */
-    JSON_OBJECT(json_obj);
+    JSONObject* json_obj = JSON_OBJECT();
     json_obj->add_str(json_obj, "key", "value");
 
     /* add some elements into json array */
@@ -917,8 +944,8 @@ void test_json_array_stringify(void)
     TEST_EXPECT(strcmp(str_json, str), 0 );
     free(str_json);
 
-    FREE_JSON(json_arr);
-    FREE_JSON(json_obj);
+    JSON_FREE(json_arr);
+    JSON_FREE(json_obj);
 }
 
 void test_parse_json_array(void )
@@ -936,15 +963,15 @@ void test_parse_json_array(void )
     };
     char* str = "[\"this is a test\",2022,true,false,null,{\"key\":\"value\"},"
         "[\"this is a test\",2022,true,false,null,{\"key\":\"value\"}]]";
-    JSON_STRING(json_str, "");
-    JSON_NUMBER(json_num, 0);
-    JSON_OBJECT(sub_json_obj);
-    JSON_ARRAY(sub_json_arr);
+    JSONString* json_str = JSON_STRING("");
+    JSONNumber* json_num = JSON_NUMBER(0);
+    JSONObject* sub_json_obj = JSON_OBJECT();
+    JSONArray* sub_json_arr = JSON_ARRAY();
     JSON_ARRAY_ITER aiter, aend;
     JSON_OBJECT_ITER oiter, oend;
 
     /* create a json array */
-    JSON_ARRAY(json_arr);
+    JSONArray* json_arr = JSON_ARRAY();
 
     bd_xjson_parse(str, json_arr);
     /* check types */
@@ -953,7 +980,7 @@ void test_parse_json_array(void )
     i = 0;
     JSON_ARRAY_FOREACH(aiter, aend)
     {
-        TEST_EXPECT(types[i], aiter.data.value.type);
+        TEST_EXPECT(types[i], aiter.value.type);
         i++;
     }
     /* check data */
@@ -972,11 +999,14 @@ void test_parse_json_array(void )
     oend = sub_json_obj->end(sub_json_obj);
     JSON_OBJECT_FOREACH(oiter, oend)
     {
-        printf("key: %s, ", oiter.data.key);
-        strcat(stack, oiter.data.key);
-        char* get = JSON_OBJECT_ITER_GET_STR(oiter);
+        JSONString* tmp = JSON_STRING("");
+        JSON_REASSIGN(tmp, &oiter.value);
+        printf("key: %s, ", oiter.key);
+        strcat(stack, oiter.key);
+        char* get = tmp->get(tmp);
         printf("value: %s\n", get);
         strcat(stack, get);
+        JSON_FREE(tmp);
         free(get);
     }
     TEST_EXPECT(strcmp(stack, "keyvalue"), 0);
@@ -989,7 +1019,7 @@ void test_parse_json_array(void )
     /* check sub json array types */
     JSON_ARRAY_FOREACH(aiter, aend)
     {
-        TEST_EXPECT(types[i], aiter.data.value.type);
+        TEST_EXPECT(types[i], aiter.value.type);
         i++;
     }
     /* check sub json array data */
@@ -1007,21 +1037,24 @@ void test_parse_json_array(void )
     oend = sub_json_obj->end(sub_json_obj);
     JSON_OBJECT_FOREACH(oiter, oend)
     {
-        printf("key: %s, ", oiter.data.key);
-        strcat(stack, oiter.data.key);
-        char* get = JSON_OBJECT_ITER_GET_STR(oiter);
+        JSONString* tmp = JSON_STRING("");
+        JSON_REASSIGN(tmp, &oiter.value);
+        printf("key: %s, ", oiter.key);
+        strcat(stack, oiter.key);
+        char* get = tmp->get(tmp);
         printf("value: %s\n", get);
         strcat(stack, get);
+        JSON_FREE(tmp);
         free(get);
     }
     TEST_EXPECT(strcmp(stack, "keyvalue"), 0);
     printf("-------------------\n");
 
-    FREE_JSON(json_arr);
-    FREE_JSON(json_str);
-    FREE_JSON(json_num);
-    FREE_JSON(sub_json_arr);
-    FREE_JSON(sub_json_obj);
+    JSON_FREE(json_arr);
+    JSON_FREE(json_str);
+    JSON_FREE(json_num);
+    JSON_FREE(sub_json_arr);
+    JSON_FREE(sub_json_obj);
 }
 
 int main(int argc, char* argv[])
@@ -1046,6 +1079,6 @@ int main(int argc, char* argv[])
     test_json_array_traverse_all_elements();
     test_json_array_stringify();
     test_parse_json_array();
-    THROW_WARNING("All tests pass");
+    printf("All tests pass\n");
     return 0;
 }

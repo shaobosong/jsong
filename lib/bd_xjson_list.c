@@ -27,7 +27,7 @@ static int node_free(bd_xjson_node* node)
         THROW_WARNING("NODE is not initialized");
         return -1;
     }
-    if(bd_xjson_free(&(node->value)))
+    if(bd_xjson_free_data(&(node->value)))
     {
         THROW_WARNING("data of NODE free failed");
         return -1;
@@ -363,7 +363,7 @@ int list_find(const bd_xjson_list* list, int pos, bd_xjson* val)
     /* free exist data */
     if(val->data)
     {
-        if(bd_xjson_free(val))
+        if(bd_xjson_free_data(val))
         {
             THROW_WARNING("VAL free failed");
             return -1;
@@ -418,7 +418,7 @@ int list_update(bd_xjson_list* list, int pos, const bd_xjson* val)
     }
 
     /* free old node data */
-    if(bd_xjson_free(&node->value))
+    if(bd_xjson_free_data(&node->value))
     {
         THROW_WARNING("data of node free failed");
         return -1;
@@ -521,7 +521,7 @@ bd_xjson_list_iter list_begin(const bd_xjson_list* list)
     bd_xjson_list_iter iter =
     {
         .index = list->head,
-        .data = *(iter.index)
+        .value = list->head->value
     };
     return iter;
 }
@@ -535,8 +535,8 @@ bd_xjson_list_iter list_end(const bd_xjson_list* list)
 }
 bd_xjson_list_iter list_iterate(bd_xjson_list_iter iter)
 {
-    iter.index = iter.data.next;
-    iter.data = *(iter.index);
+    iter.index = ((bd_xjson_node*)iter.index)->next;
+    iter.value = ((bd_xjson_node*)iter.index)->value;
     return iter;
 }
 bd_xjson_list_iter list_rbegin(const bd_xjson_list* list)
@@ -544,7 +544,7 @@ bd_xjson_list_iter list_rbegin(const bd_xjson_list* list)
     bd_xjson_list_iter iter =
     {
         .index = list->tail,
-        .data = *(iter.index)
+        .value = list->tail->value
     };
     return iter;
 }
@@ -558,13 +558,13 @@ bd_xjson_list_iter list_rend(const bd_xjson_list* list)
 }
 bd_xjson_list_iter list_riterate(bd_xjson_list_iter iter)
 {
-    iter.index = iter.data.prev;
-    iter.data = *(iter.index);
+    iter.index = ((bd_xjson_node*)iter.index)->prev;
+    iter.value = ((bd_xjson_node*)iter.index)->value;
     return iter;
 }
 int list_iter_get(bd_xjson_list_iter iter, bd_xjson* val)
 {
-    if(val->type != iter.data.value.type)
+    if(val->type != iter.value.type)
     {
         THROW_WARNING("unmatched JSON type to get value in iterator");
         return -1;
@@ -572,14 +572,14 @@ int list_iter_get(bd_xjson_list_iter iter, bd_xjson* val)
     /* free old val data if exist */
     if(val->data)
     {
-        if(bd_xjson_free(val))
+        if(bd_xjson_free_data(val))
         {
             THROW_WARNING("value free failed");
             return -1;
         }
     }
     /* copy from iter data */
-    if(bd_xjson_copy(val, &iter.data.value))
+    if(bd_xjson_copy(val, &iter.value))
     {
         THROW_WARNING("copy failed");
         return -1;

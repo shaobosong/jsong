@@ -1,39 +1,59 @@
-SRCDIR := $(CURDIR)
-INCLUDE = $(SRCDIR)/include
+#
+# bd_xjson
+#
+#
 
-CC = gcc
-CFLAGS = -I$(INCLUDE) -g3 -O0 -D_REENTRANT -Wall -static
-RANLIB = ranlib
+# generate some simple cases for test
+CONFIG_TEST=y
+# riscv32 build
+CONFIG_RISCV32=
+# riscv64 build
+CONFIG_RISCV64=
 
-# Following is the main library, built from all the object files
-# in the lib/ and directories.
-LIBS = $(SRCDIR)/libsimp.a
+ifdef CONFIG_RISCV32
+CROSS_PREFIX=riscv32-unknown-elf-
+endif
+ifdef CONFIG_RISCV64
+CROSS_PREFIX=riscv64-unknown-elf-
+endif
 
-PROGS = test_json_array test_json_object test_json_number test_json_string \
-		test_json_true test_json_false test_json_null
+CC=$(CROSS_PREFIX)gcc
+AR=$(CROSS_PREFIX)ar
+RANLIB=$(CROSS_PREFIX)ranlib
 
-all:	$(PROGS)
+CFLAGS=-O0 -g3 -D_REENTRANT -Wall -static
+TFLAGS:=$(CFLAGS)
+CFLAGS+=-I$(CURDIR)/include
+LDFLAGS=
 
-test_json_array:
-		$(CC) $(CFLAGS) -o $@ test_json_array.c $(LIBS)
+OBJS:=$(addprefix lib/, alloc.o bd_xjson_htab.o bd_xjson_impl.o bd_xjson_list.o bd_xjson.o error.o utils.o)
+LIB:=libjson.a
+USAGE:=usage
+TESTS:=test_json_array \
+	test_json_object \
+	test_json_number \
+	test_json_string \
+	test_json_true \
+	test_json_false \
+	test_json_null
 
-test_json_object:
-		$(CC) $(CFLAGS) -o $@ test_json_object.c $(LIBS)
+PROGS:=$(LIB)
+PROGS+=$(USAGE)
+ifdef CONFIG_TEST
+PROGS+=$(TESTS)
+endif
 
-test_json_number:
-		$(CC) $(CFLAGS) -o $@ test_json_number.c $(LIBS)
+all: $(PROGS)
 
-test_json_string:
-		$(CC) $(CFLAGS) -o $@ test_json_string.c $(LIBS)
+$(LIB): $(OBJS)
+	$(AR) rv $@ $?
+	$(RANLIB) $@
 
-test_json_true:
-		$(CC) $(CFLAGS) -o $@ test_json_true.c $(LIBS)
+%: %.c
+	$(CC) $(TFLAGS) -o $@ $< $(LIB)
 
-test_json_false:
-		$(CC) $(CFLAGS) -o $@ test_json_false.c $(LIBS)
-
-test_json_null:
-		$(CC) $(CFLAGS) -o $@ test_json_null.c $(LIBS)
+%.o: %.c
+	$(CC) $(CFLAGS) -c -o $@ $<
 
 clean:
-		rm -rf $(PROGS) *.a lib/*.o lib/*.a
+	rm -rf $(TESTS) $(USAGE) *.a lib/*.o

@@ -1,8 +1,7 @@
-#ifndef bd_xjson_list_h
-#define bd_xjson_list_h
+#ifndef BD_XJSON_LIST_H
+#define BD_XJSON_LIST_H
 
 #include "lib/bd_xjson.h"
-#include "lib/bd_xjson_iter.h"
 
 typedef struct bd_xjson_node bd_xjson_node;
 typedef struct bd_xjson_list bd_xjson_list;
@@ -13,7 +12,6 @@ struct bd_xjson_node
     bd_xjson_node *next;
     bd_xjson_node *prev;
 };
-
 
 struct bd_xjson_list
 {
@@ -32,8 +30,8 @@ int list_set(bd_xjson_list* list, int pos, const bd_xjson* val);
 void list_qsort(bd_xjson_list* list, int (*compare_fn)(const void*, const void*));
 typedef struct bd_xjson_list_iter
 {
-/* parent class */
-    bd_xjson_iter(, bd_xjson_node*, bd_xjson_node);
+    void* index;
+    bd_xjson value;
 } bd_xjson_list_iter;
 bd_xjson_list_iter list_begin(const bd_xjson_list* list);
 bd_xjson_list_iter list_end(const bd_xjson_list* list);

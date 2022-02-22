@@ -1,5 +1,5 @@
-#ifndef bd_xjson_type_h
-#define bd_xjson_type_h
+#ifndef BD_XJSON_TYPE_H
+#define BD_XJSON_TYPE_H
 
 typedef enum bd_xjson_type bd_xjson_type;
 enum bd_xjson_type

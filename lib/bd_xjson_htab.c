@@ -29,7 +29,7 @@ static int entry_clear(bd_xjson_entry* entry)
         return -1;
     }
     xfree(entry->key);
-    if(bd_xjson_free(&entry->value))
+    if(bd_xjson_free_data(&entry->value))
     {
         THROW_WARNING("VALUE of ENTRY free failed");
         return -1;
@@ -166,11 +166,13 @@ int htab_free(bd_xjson_htab* htab)
         return -1;
     }
     /* entries clear */
-    bd_xjson_htab_iter iter = htab_begin(htab);
-    bd_xjson_htab_iter end = htab_end(htab);
-    bd_xjson_htab_foreach(iter, end)
+    bd_xjson_entry* curr = &htab->entries[htab->first];
+    bd_xjson_entry* end = &htab->entries[htab->capacity];
+    bd_xjson_entry* next = NULL;
+    for(; curr != end; curr = next)
     {
-        if(entry_clear(&htab->entries[iter.index]))
+        next = &htab->entries[curr->next];
+        if(entry_clear(curr))
         {
             THROW_WARNING("one of ENTRIES free failed");
             return -1;
@@ -211,13 +213,13 @@ static int htab_grow(bd_xjson_htab* htab, uint64_t new_capacity)
     bd_xjson_htab_iter end = htab_end(&old_htab);
     bd_xjson_htab_foreach(iter, end)
     {
-        uint64_t index = (uint64_t)(hash_key(iter.data.key) & (new_capacity - 1));
+        uint64_t index = (uint64_t)(hash_key(iter.key) & (new_capacity - 1));
         /* unsafe */
         while(htab->entries[index].key)
         {
             index = (index + 1) & (new_capacity - 1);
         }
-        htab->entries[index] = iter.data;
+        htab->entries[index] = *(bd_xjson_entry*)iter.index;
         entry_placed_in(htab, index);
     }
     /* free old entries */
@@ -246,9 +248,11 @@ int htab_copy(bd_xjson_htab* dest, const bd_xjson_htab* src)
     /* copy entries from src */
     bd_xjson_htab_iter iter = htab_begin(src);
     bd_xjson_htab_iter end = htab_end(src);
+    uint64_t i;
     bd_xjson_htab_foreach(iter, end)
     {
-        if(entry_copy(&dest->entries[iter.index], &src->entries[iter.index]))
+        i = (iter.index - iter.__entries) / sizeof(bd_xjson_entry);
+        if(entry_copy(&dest->entries[i], &src->entries[i]))
         {
             THROW_WARNING("copy data of SRC to data field of DEST failed");
             return -1;
@@ -488,7 +492,7 @@ int htab_find(const bd_xjson_htab* htab, const char* key, bd_xjson* val)
     /* free exist data */
     if(val->data)
     {
-        if(bd_xjson_free(val))
+        if(bd_xjson_free_data(val))
         {
             THROW_WARNING("VAL free failed");
             return -1;
@@ -529,7 +533,7 @@ int htab_update(bd_xjson_htab* htab, const char* key, const bd_xjson* val)
     }
 
     /* free old entry data */
-    if(bd_xjson_free(&(htab->entries[i].value)))
+    if(bd_xjson_free_data(&(htab->entries[i].value)))
     {
         THROW_WARNING("value of entry free failed");
         return -1;
@@ -589,9 +593,10 @@ bd_xjson_htab_iter htab_begin(const bd_xjson_htab* htab)
 {
     bd_xjson_htab_iter iter =
     {
-        .index = htab->first,
-        .data = htab->entries[htab->first],
-        .entries = htab->entries
+        .index = &htab->entries[htab->first],
+        .key = htab->entries[htab->first].key,
+        .value = htab->entries[htab->first].value,
+        .__entries = htab->entries
     };
     return iter;
 }
@@ -600,22 +605,26 @@ bd_xjson_htab_iter htab_end(const bd_xjson_htab* htab)
 {
     bd_xjson_htab_iter iter =
     {
-        .index = htab->capacity
+        .index = &htab->entries[htab->capacity]
     };
     return iter;
 }
 
-bd_xjson_htab_iter
-htab_iterate(bd_xjson_htab_iter iter)
+bd_xjson_htab_iter htab_iterate(bd_xjson_htab_iter iter)
 {
-    iter.index = iter.data.next;
-    iter.data = iter.entries[iter.index];
+    bd_xjson_entry* index = iter.index;
+    bd_xjson_entry* entries = iter.__entries;
+
+    iter.index = &entries[index->next];
+    iter.key = entries[index->next].key;
+    iter.value = entries[index->next].value;
+
     return iter;
 }
 
 int htab_iter_get(bd_xjson_htab_iter iter, bd_xjson* val)
 {
-    if(val->type != iter.data.value.type)
+    if(val->type != iter.value.type)
     {
         THROW_WARNING("unmatched JSON type to get value in iterator");
         return -1;
@@ -623,14 +632,14 @@ int htab_iter_get(bd_xjson_htab_iter iter, bd_xjson* val)
     /* free old val data if exist */
     if(val->data)
     {
-        if(bd_xjson_free(val))
+        if(bd_xjson_free_data(val))
         {
             THROW_WARNING("value free failed");
             return -1;
         }
     }
     /* copy from iter data */
-    if(bd_xjson_copy(val, &(iter.data.value)))
+    if(bd_xjson_copy(val, &(iter.value)))
     {
         THROW_WARNING("copy failed");
         return -1;

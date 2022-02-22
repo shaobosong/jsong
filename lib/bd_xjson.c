@@ -2,15 +2,16 @@
 #include <stdarg.h>
 #include <stddef.h>
 #include <limits.h>
+#include <assert.h>
+
 #include "lib/bd_xjson_impl.h"
 #include "lib/bd_xjson.h"
 #include "lib/bd_xjson_list.h"
 #include "lib/bd_xjson_htab.h"
 #include "lib/bd_xjson_stack.h"
-#include "lib/bd_xjson_iter.h"
 #include "lib/error.h"
 #include "lib/alloc.h"
-#include "lib/util.h"
+#include "lib/utils.h"
 
 #define EXPECT_IF_NOT(__ptr, __char, __act) \
 do \
@@ -49,68 +50,59 @@ int bd_xjson_parse_number(const char** const pstr, bd_xjson* json);
 int bd_xjson_parse_array(const char** const pstr, bd_xjson* json);
 int bd_xjson_parse_literal(const char** const pstr, bd_xjson* json);
 
-int bd_xjson_copy(bd_xjson* dest, const bd_xjson* src)
+int bd_xjson_copy(void* dst, const void* src)
 {
-    if(NULL == dest)
-    {
-        THROW_WARNING("uninitialized bd_xjson try to copy");
-        return -1;
-    }
-    if(NULL == src)
-    {
-        THROW_WARNING("uninitialized bd_xjson try to be the copied");
-        return -1;
-    }
-    dest->type = src->type;
-    switch(src->type)
-    {
+    bd_xjson *d;
+    const bd_xjson *s;
+    bd_xjson_htab *sh;
+    bd_xjson_htab **pdh;
+    bd_xjson_list **pdl;
+
+    d = dst;
+    s = src;
+    assert(s && d);
+
+    d->type = s->type;
+    switch(s->type) {
         case BD_XJSON_OBJECT:
-            if(htab_create(
-                (bd_xjson_htab**)&(dest->data),
-                ((bd_xjson_htab*)src->data)->capacity
-            ))
-            {
-                THROW_WARNING("hash table initializaition failed");
-                return -1;
-            }
-            if(htab_copy(dest->data, src->data))
-            {
-                THROW_WARNING("hash table copy failed");
-                return -1;
-            }
+            pdh = (bd_xjson_htab**) &(d->data);
+            sh = s->data;
+            assert(NULL == *pdh);
+            assert(sh->capacity != 0);
+            htab_create(pdh, sh->capacity);
+            assert(d->data && s->data);
+            htab_copy(d->data, s->data);
             break;
+
         case BD_XJSON_STRING:
-            dest->data = xzmalloc(strlen(src->data) + 1);
-            strcat(dest->data, src->data);
+            d->data = xzmalloc(strlen(s->data) + 1);
+            strcat(d->data, s->data);
             break;
+
         case BD_XJSON_NUMBER:
-            dest->data = xzmalloc(sizeof (int));
-            *(int*)(dest->data) = *(int*)(src->data);
+            d->data = xzmalloc(sizeof (int));
+            *(int*)(d->data) = *(int*)(s->data);
             break;
+
         case BD_XJSON_ARRAY:
-            if(list_create((bd_xjson_list**)&dest->data))
-            {
-                THROW_WARNING("list initializaition failed");
-                return -1;
-            }
-            if(list_copy(dest->data, src->data))
-            {
-                THROW_WARNING("list copy failed");
-                return -1;
-            }
+            pdl = (bd_xjson_list**) &d->data;
+            assert(NULL == *pdl);
+            list_create(pdl);
+            assert(d->data && s->data);
+            list_copy(d->data, s->data);
             break;
+
         case BD_XJSON_TRUE:
         case BD_XJSON_FALSE:
         case BD_XJSON_NULL:
             break;
         default:
-            THROW_WARNING("illegal type from the copied");
-            return -1;
+            assert(0);
     }
     return 0;
 }
 
-int bd_xjson_free(bd_xjson* json)
+int bd_xjson_free_data(bd_xjson* json)
 {
     switch(json->type)
     {
@@ -141,6 +133,51 @@ int bd_xjson_free(bd_xjson* json)
             return -1;
     }
     json->data = NULL;
+
+    return 0;
+}
+
+int bd_xjson_free(void* json)
+{
+    if(bd_xjson_free_data(json))
+    {
+        THROW_WARNING("json data free failed");
+        return -1;
+    }
+    xfree(json);
+    return 0;
+}
+
+int bd_xjson_reassign(void* dst, const void* src)
+{
+    bd_xjson *d;
+    const bd_xjson *s;
+    d = dst;
+    s = src;
+
+    if(!d) {
+        THROW_WARNING("null");
+        return -1;
+    }
+    if(!s) {
+        THROW_WARNING("null");
+        return -1;
+    }
+    if(d->type != s->type) {
+        THROW_WARNING("type error");
+        return -1;
+    }
+
+    if(bd_xjson_free_data(d)) {
+        THROW_WARNING("hash table free failed");
+        return -1;
+    }
+
+    if(bd_xjson_copy(d, s)) {
+        THROW_WARNING("hash table copy failed");
+        return -1;
+    }
+
     return 0;
 }
 
@@ -206,22 +243,22 @@ void bd_xjson_stringify_object(const bd_xjson_htab* htab, char** pstr, int* plen
     {
         int vl = 0;
         char* v = NULL;
-        switch(iter.data.value.type)
+        switch(iter.value.type)
         {
             case BD_XJSON_OBJECT:
-                bd_xjson_stringify_object((bd_xjson_htab*)iter.data.value.data, &v, &vl);
+                bd_xjson_stringify_object((bd_xjson_htab*)iter.value.data, &v, &vl);
                 bd_xjson_stack_push(g_chars_stk, v);
                 break;
             case BD_XJSON_STRING:
-                bd_xjson_stringify_string((char*)iter.data.value.data, &v, &vl);
+                bd_xjson_stringify_string((char*)iter.value.data, &v, &vl);
                 bd_xjson_stack_push(g_chars_stk, v);
                 break;
             case BD_XJSON_NUMBER:
-                bd_xjson_stringify_number(*(int*)iter.data.value.data, &v, &vl);
+                bd_xjson_stringify_number(*(int*)iter.value.data, &v, &vl);
                 bd_xjson_stack_push(g_chars_stk, v);
                 break;
             case BD_XJSON_ARRAY:
-                bd_xjson_stringify_array((bd_xjson_list*)iter.data.value.data, &v, &vl);
+                bd_xjson_stringify_array((bd_xjson_list*)iter.value.data, &v, &vl);
                 bd_xjson_stack_push(g_chars_stk, v);
                 break;
             case BD_XJSON_TRUE:
@@ -237,12 +274,12 @@ void bd_xjson_stringify_object(const bd_xjson_htab* htab, char** pstr, int* plen
                 vl = 5;
                 break;
             default:
-                MY_ASSERT(bd_xjson_type_is_valid(iter.data.value.type));
+                MY_ASSERT(bd_xjson_type_is_valid(iter.value.type));
                 return ;
         }
-        bd_xjson_stack_push(kstk, iter.data.key);
+        bd_xjson_stack_push(kstk, iter.key);
         bd_xjson_stack_push(vstk, v);
-        *plen += (vl + strlen(iter.data.key) + 3);
+        *plen += (vl + strlen(iter.key) + 3);
     }
     if(htab->size == 0)
     {
@@ -255,7 +292,7 @@ void bd_xjson_stringify_object(const bd_xjson_htab* htab, char** pstr, int* plen
     {
         strcat(*pstr, "\"");
         strcat(*pstr, bd_xjson_stack_top(kstk));
-        mstrcat(*pstr,
+        m_strcat(*pstr,
             "\":",
             bd_xjson_stack_top(vstk),
             ",",
@@ -329,7 +366,7 @@ void bd_xjson_stringify_array(const bd_xjson_list* list, char** pstr, int* plen)
     (*pstr)[0] = '[';
     while(!bd_xjson_stack_empty(stk))
     {
-        mstrcat(*pstr, bd_xjson_stack_top(stk), ",", "\0");
+        m_strcat(*pstr, bd_xjson_stack_top(stk), ",", "\0");
         bd_xjson_stack_pop(stk);
     }
     (*pstr)[*plen-2] = ']';
@@ -403,6 +440,8 @@ int bd_xjson_parse_object(const char** const pstr, bd_xjson* json)
     const char* str = *pstr;
     int64_t save_stack_top;
     bd_xjson sub;
+    bd_xjson_htab **pdh;
+    bd_xjson_list **pdl;
 
     MY_ASSERT(json->type == BD_XJSON_OBJECT);
     EXPECT_IF_NOT(str, '{', THROW_WARNING("illegal character"); return -1);
@@ -438,7 +477,8 @@ int bd_xjson_parse_object(const char** const pstr, bd_xjson* json)
         {
             case '{':
                 sub.type = BD_XJSON_OBJECT;
-                MY_ASSERT(htab_create((bd_xjson_htab**)&(sub.data), 1) == 0);
+                pdh = (bd_xjson_htab**) &sub.data;
+                htab_create(pdh, 1);
                 if(bd_xjson_parse_object(&str, &sub))
                 {
                     THROW_WARNING("JSON OBJECT parsing failed");
@@ -446,6 +486,7 @@ int bd_xjson_parse_object(const char** const pstr, bd_xjson* json)
                     return -1;
                 }
                 break;
+
             case '\"':
                 sub.type = BD_XJSON_STRING;
                 if(bd_xjson_parse_string(&str, &sub))
@@ -474,7 +515,8 @@ int bd_xjson_parse_object(const char** const pstr, bd_xjson* json)
                 break;
             case '[':
                 sub.type = BD_XJSON_ARRAY;
-                MY_ASSERT(list_create((bd_xjson_list**)&(sub.data)) == 0);
+                pdl = (bd_xjson_list**) &sub.data;
+                list_create(pdl);
                 if(bd_xjson_parse_array(&str, &sub))
                 {
                     THROW_WARNING("JSON ARRAY parsing failed");
@@ -533,6 +575,8 @@ int bd_xjson_parse_array(const char** const pstr, bd_xjson* json)
 {
     const char* str = *pstr;
     bd_xjson sub;
+    bd_xjson_htab **pdh;
+    bd_xjson_list **pdl;
 
     MY_ASSERT(json->type == BD_XJSON_ARRAY);
     EXPECT_IF_NOT(str, '[', THROW_WARNING("illegal character"); return -1);
@@ -546,7 +590,8 @@ int bd_xjson_parse_array(const char** const pstr, bd_xjson* json)
         {
             case '{':
                 sub.type = BD_XJSON_OBJECT;
-                MY_ASSERT(htab_create((bd_xjson_htab**)&(sub.data), 1) == 0);
+                pdh = (bd_xjson_htab**) &sub.data;
+                htab_create(pdh, 1);
                 if(bd_xjson_parse_object(&str, &sub))
                 {
                     htab_free((bd_xjson_htab*)sub.data);
@@ -582,11 +627,12 @@ int bd_xjson_parse_array(const char** const pstr, bd_xjson* json)
                 break;
             case '[':
                 sub.type = BD_XJSON_ARRAY;
-                MY_ASSERT(list_create((bd_xjson_list**)&(sub.data)) == 0);
+                pdl = (bd_xjson_list**) &sub.data;
+                list_create(pdl);
                 if(bd_xjson_parse_array(&str, &sub))
                 {
-                    list_free((bd_xjson_list*)sub.data);
                     THROW_WARNING("JSON ARRAY parsing failed");
+                    list_free((bd_xjson_list*)sub.data);
                     return -1;
                 }
                 break;
@@ -750,11 +796,15 @@ int bd_xjson_parse_literal(const char** const pstr, bd_xjson* json)
 
 int bd_xjson_parse_entry(const char* str, bd_xjson* json)
 {
+    bd_xjson_htab **pdh;
+    bd_xjson_list **pdl;
     bypass_white_space(&str);
     switch(*str)
     {
         case '{':
-            MY_ASSERT(htab_create((bd_xjson_htab**)&(json->data), 1) == 0);
+            pdh = (bd_xjson_htab**) &json->data;
+            assert(NULL == *pdh);
+            htab_create(pdh, 1);
             if(bd_xjson_parse_object(&str, json))
             {
                 THROW_WARNING("JSON OBJECT parsing failed");
@@ -787,7 +837,9 @@ int bd_xjson_parse_entry(const char* str, bd_xjson* json)
             }
             break;
         case '[':
-            MY_ASSERT(list_create((bd_xjson_list**)&(json->data)) == 0);
+            pdl = (bd_xjson_list**) &json->data;
+            assert(NULL == *pdl);
+            list_create(pdl);
             if(bd_xjson_parse_array(&str, json))
             {
                 THROW_WARNING("JSON ARRAY parsing failed");
@@ -809,7 +861,7 @@ int bd_xjson_parse_entry(const char* str, bd_xjson* json)
             return -1;
     }
     bypass_white_space(&str);
-    EXPECT_IF_NOT(str, '\0', THROW_WARNING("illegal character"); FREE_JSON_DATA(json); return -1);
+    EXPECT_IF_NOT(str, '\0', THROW_WARNING("illegal character"); bd_xjson_free_data(json); return -1);
     return 0;
 }
 
@@ -826,7 +878,7 @@ int bd_xjson_parse(const char* str, void* raw)
         bd_xjson_stack_clear(g_char_stk);
         return -1;
     }
-    FREE_JSON_DATA(&old);
+    bd_xjson_free_data(&old);
     bd_xjson_stack_clear(g_char_stk);
     return 0;
 }

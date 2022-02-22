@@ -1,4 +1,6 @@
-#include "lib/bd_xjson_api.h"
+#include "libjson.h"
+#include <assert.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -6,7 +8,7 @@
 do \
 { \
     if(__val == __cmpr) {;} \
-    else { MY_ASSERT(__val == __cmpr); } \
+    else { assert(__val == __cmpr); } \
 } while (0)
 
 /* this method only for test */
@@ -24,16 +26,16 @@ bd_xjson_type get_json_type(bd_xjson* json)
 void test_json_number_create_and_remove(void)
 {
     /* create a json number */
-    JSON_NUMBER(json, 2022);
+    JSONNumber* json = JSON_NUMBER(2022);
     TEST_EXPECT(get_json_data(json), 2022);
     TEST_EXPECT(get_json_type((bd_xjson*)json), BD_XJSON_NUMBER);
     /* remove a json number */
-    FREE_JSON(json);
+    JSON_FREE(json);
 }
 
 void test_json_number_set_and_get(void)
 {
-    JSON_NUMBER(json, 2022);
+    JSONNumber* json = JSON_NUMBER(2022);
 
     /* set */
     json->set(json, 1993);
@@ -49,14 +51,14 @@ void test_json_number_set_and_get(void)
     /* get this threshold */
     TEST_EXPECT(json->get(json), -2147483648);
 
-    FREE_JSON(json);
+    JSON_FREE(json);
 }
 
 void test_json_number_stringify()
 {
     char* str = NULL;
     int len;
-    JSON_NUMBER(json, 2022);
+    JSONNumber* json = JSON_NUMBER(2022);
 
     /* stringify a json number */
     bd_xjson_stringify(json, &str, &len);
@@ -69,14 +71,14 @@ void test_json_number_stringify()
     TEST_EXPECT(strcmp(str, "-2147483648"), 0);
     free(str);
 
-    FREE_JSON(json);
+    JSON_FREE(json);
 }
 
 void test_parse_json_number()
 {
     int res;
     char* str = NULL;
-    JSON_NUMBER(json, 0);
+    JSONNumber* json = JSON_NUMBER(0);
 
     /* parse a json number */
     str = "2022";
@@ -114,6 +116,6 @@ int main(int argc, char* argv[])
     test_json_number_set_and_get();
     test_json_number_stringify();
     test_parse_json_number();
-    THROW_WARNING("All tests pass");
+    printf("All tests pass\n");
     return 0;
 }
