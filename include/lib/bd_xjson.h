@@ -26,19 +26,22 @@ typedef struct bd_xjson bd_xjson;
  *      false:     BD_XJSON_FALSE
  *      null:      BD_XJSON_NULL
  */
-#define bd_xjson(__class) \
-struct __class            \
+#define bd_xjson(klass)   \
+struct klass              \
 {                         \
     void* data;           \
     bd_xjson_type type;   \
 }
 bd_xjson(bd_xjson);
 
-int bd_xjson_reassign(void* dst, const void* src);
-int bd_xjson_copy(void* dst, const void* src);
-int bd_xjson_free_data(bd_xjson* json);
-int bd_xjson_free(void* json);
+/* private */
+void bd_xjson_copy(bd_xjson* dst, const bd_xjson* src);
+void bd_xjson_free_data(bd_xjson* json);
 
-void bd_xjson_stringify(const void* json, char** pstr, int* plen);
+/* public */
+int bd_xjson_reassign(void* dst, const void* src);
+int bd_xjson_free(void* json);
+int bd_xjson_stringify(const void* json, char** pstr, int* plen);
 int bd_xjson_parse(const char* str, void* json);
+
 #endif

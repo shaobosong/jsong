@@ -939,13 +939,16 @@ void test_json_array_stringify(void)
     json_arr->add(json_arr, -1, json_obj);
     json_arr->add(json_arr, -1, json_arr);
 
+    JSONArray *json_arr_copy = JSON_ARRAY_COPY(json_arr);
+
     /* stringify a json array */
-    bd_xjson_stringify(json_arr, &str_json, &len);
+    bd_xjson_stringify(json_arr_copy, &str_json, &len);
     printf("%s\n", str_json);
     TEST_EXPECT(strcmp(str_json, str), 0 );
     free(str_json);
 
     JSON_FREE(json_arr);
+    JSON_FREE(json_arr_copy);
     JSON_FREE(json_obj);
 }
 

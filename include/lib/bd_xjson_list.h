@@ -18,12 +18,12 @@ struct bd_xjson_list
     bd_xjson_node* head, * tail, * nil;
     int size;
 };
-int list_create(bd_xjson_list** list);
-int list_copy(bd_xjson_list* dest, const bd_xjson_list* src);
-int list_insert_direct(bd_xjson_list* list, int pos, const bd_xjson* val);
+bd_xjson_list* list_create();
+bd_xjson_list* list_create_copy(const bd_xjson_list* src);
+void list_free(bd_xjson_list* list);
+int list_insert_tail(bd_xjson_list* list, const bd_xjson* val);
 int list_insert(bd_xjson_list* list, int pos, const bd_xjson* val);
 int list_erase(bd_xjson_list* list, int pos);
-int list_free(bd_xjson_list* list);
 int list_find(const bd_xjson_list* list, int pos, bd_xjson* val);
 int list_update(bd_xjson_list* list, int pos, const bd_xjson* val);
 int list_set(bd_xjson_list* list, int pos, const bd_xjson* val);

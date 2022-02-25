@@ -24,11 +24,11 @@ struct bd_xjson_htab
     uint64_t first, last;
 };
 
-int htab_create(bd_xjson_htab** htab, uint64_t capacity);
-int htab_copy(bd_xjson_htab* dest, const bd_xjson_htab* src);
-int htab_free(bd_xjson_htab* htab);
-int htab_insert_direct(bd_xjson_htab* htab, const char* key, const bd_xjson* val);
+bd_xjson_htab* htab_create(uint64_t capacity);
+bd_xjson_htab* htab_create_copy(const bd_xjson_htab* src);
+void htab_free(bd_xjson_htab* htab);
 int htab_insert(bd_xjson_htab* htab, const char* key, const bd_xjson* val);
+int htab_insert2(bd_xjson_htab* htab, const char* key, const bd_xjson* val);
 int htab_erase(bd_xjson_htab* htab, const char* key);
 int htab_find(const bd_xjson_htab* htab, const char* key, bd_xjson* val);
 int htab_update(bd_xjson_htab* htab, const char* key, const bd_xjson* val);

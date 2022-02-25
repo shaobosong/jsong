@@ -77,8 +77,8 @@ typedef struct bd_xjson_array_iter JSON_ARRAY_ITER;
  *      false:     BD_XJSON_FALSE
  *      null:      BD_XJSON_NULL
  */
-#define bd_xjson(__class)                                                            \
-struct __class                                                                       \
+#define bd_xjson(klass)                                                              \
+struct klass                                                                         \
 {                                                                                    \
     void* data;                                                                      \
     bd_xjson_type type;                                                              \
@@ -97,8 +97,8 @@ bd_xjson(bd_xjson);
  *  @end: return a past-the-end iterator that points to the element
  *        following the last element of the bd_xjson_object
  */
-#define bd_xjson_object(__class)                                                     \
-struct __class                                                                       \
+#define bd_xjson_object(klass)                                                       \
+struct klass                                                                         \
 {                                                                                    \
     /* parent class */                                                               \
     bd_xjson();                                                                      \
@@ -130,8 +130,8 @@ bd_xjson_object(bd_xjson_object);
  *  @set: set
  *  @get: get
  */
-#define bd_xjson_string(__class)                                                     \
-struct __class                                                                       \
+#define bd_xjson_string(klass)                                                       \
+struct klass                                                                         \
 {                                                                                    \
     /* parent class */                                                               \
     bd_xjson();                                                                      \
@@ -147,14 +147,14 @@ bd_xjson_string(bd_xjson_string);
  *  @set: set
  *  @get: get
  */
-#define bd_xjson_number(__class)                                                     \
-struct __class                                                                       \
+#define bd_xjson_number(klass)                                                       \
+struct klass                                                                         \
 {                                                                                    \
     /* parent class */                                                               \
     bd_xjson();                                                                      \
     /* member functions */                                                           \
     void (*set)(bd_xjson_number* this, int val);                                     \
-    int (*get)(const bd_xjson_number* this); \
+    int (*get)(const bd_xjson_number* this);                                         \
 }
 bd_xjson_number(bd_xjson_number);
 
@@ -173,8 +173,8 @@ bd_xjson_number(bd_xjson_number);
  *  @rend: return a past-the-end reverse iterator that points to the element
  *         following the last element of the reversed bd_xjson_array
  */
-#define bd_xjson_array(__class)                                                      \
-struct __class                                                                       \
+#define bd_xjson_array(klass)                                                        \
+struct klass                                                                         \
 {                                                                                    \
     /* parent class */                                                               \
     bd_xjson();                                                                      \
@@ -221,13 +221,13 @@ struct bd_xjson_array_iter
 
 /* the following functions are not called directly, only for MACRO */
 bd_xjson_object* obj_default_cstr();
-bd_xjson_object* obj_copy_cstr(void* val);
+bd_xjson_object* obj_copy_cstr(const void* val);
 bd_xjson_string* str_assign_cstr(char* val);
-bd_xjson_string* str_copy_cstr(void* val);
+bd_xjson_string* str_copy_cstr(const void* val);
 bd_xjson_number* num_assign_cstr(int val);
-bd_xjson_number* num_copy_cstr(void* val);
+bd_xjson_number* num_copy_cstr(const void* val);
 bd_xjson_array* arr_default_cstr();
-bd_xjson_array* arr_copy_cstr(void* val);
+bd_xjson_array* arr_copy_cstr(const void* val);
 bd_xjson_true* true_default_cstr();
 bd_xjson_false* false_default_cstr();
 bd_xjson_null* null_default_cstr();

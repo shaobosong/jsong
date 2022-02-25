@@ -44,7 +44,7 @@ TFLAGS:=$(CFLAGS)
 CFLAGS+=-I$(CURDIR)/include
 LDFLAGS=
 
-OBJS:=$(addprefix lib/, alloc.o bd_xjson_htab.o bd_xjson_impl.o bd_xjson_list.o bd_xjson.o error.o utils.o)
+OBJS:=$(addprefix lib/, bd_xjson_htab.o bd_xjson_impl.o bd_xjson_list.o bd_xjson.o utils.o)
 LIB:=libjson.a
 USAGE:=usage
 TESTS:=test_json_array \
@@ -67,8 +67,8 @@ $(LIB): $(OBJS)
 	$(AR) rv $@ $?
 	$(RANLIB) $@
 
-%: %.c
-	$(CC) $(TFLAGS) -o $@ $< $(LIB)
+%: %.c $(LIB)
+	$(CC) $(TFLAGS) -o $@ $^
 
 %.o: %.c
 	$(CC) $(CFLAGS) -c -o $@ $<

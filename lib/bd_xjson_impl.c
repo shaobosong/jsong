@@ -6,50 +6,37 @@
 #include "lib/bd_xjson_impl.h"
 #include "lib/bd_xjson_list.h"
 #include "lib/bd_xjson_htab.h"
-#include "lib/alloc.h"
-#include "lib/error.h"
+#include "lib/utils.h"
 
 bd_xjson_object* obj_default_cstr()
 {
     bd_xjson_object *d;
-    bd_xjson_htab **pdd;
 
     d = xzmalloc(sizeof *d);
-    BD_XJSON_OBJECT_CLASS(d);
-    pdd = (bd_xjson_htab**) &d->data;
-
-    htab_create(pdd, 1);
+    BD_XJSON_OBJECT_CLASS(d, htab_create(1));
 
     return d;
 }
 
 /* TYPE of VAL maybe bd_xjson or bd_xjson_object */
-bd_xjson_object* obj_copy_cstr(void* val)
+bd_xjson_object* obj_copy_cstr(const void* val)
 {
-    bd_xjson_object *d, *s;
-    bd_xjson_htab **pdd;
-    bd_xjson_htab *sd;
-
-    d = xzmalloc(sizeof *d);
-    BD_XJSON_OBJECT_CLASS(d);
-    pdd = (bd_xjson_htab**) &d->data;
+    const bd_xjson_object *s;
+    bd_xjson_object *d;
 
     s = val;
-    sd = s->data;
-
-    assert(sd->capacity != 0);
-    htab_create(pdd, sd->capacity);
-
+    assert(s->type == BD_XJSON_OBJECT);
     assert(s->data);
-    assert(s->type == d->type);
-    htab_copy(d->data, s->data);
+
+    d = xzmalloc(sizeof *d);
+    BD_XJSON_OBJECT_CLASS(d, htab_create_copy(s->data));
 
     return d;
 }
 
 void obj_add(bd_xjson_object* obj, const char* key, const void* val)
 {
-    assert(obj->data && val);
+    assert(obj->data && key && val);
     htab_insert(obj->data, key, val);
 }
 
@@ -60,7 +47,7 @@ void obj_add_str(bd_xjson_object* obj, const char* key, const char* val)
         .data = (char*)val
     };
 
-    assert(obj->data);
+    assert(obj->data && key);
     htab_insert(obj->data, key, &json);
 }
 
@@ -71,7 +58,7 @@ void obj_add_num(bd_xjson_object* obj, const char* key, int val)
         .data = &val
     };
 
-    assert(obj->data);
+    assert(obj->data && key);
     htab_insert(obj->data, key, &json);
 }
 
@@ -82,7 +69,7 @@ void obj_add_true(bd_xjson_object* obj, const char* key)
         .data = NULL
     };
 
-    assert(obj->data);
+    assert(obj->data && key);
     htab_insert(obj->data, key, &json);
 }
 
@@ -93,7 +80,7 @@ void obj_add_false(bd_xjson_object* obj, const char* key)
         .data = NULL
     };
 
-    assert(obj->data);
+    assert(obj->data && key);
     htab_insert(obj->data, key, &json);
 }
 
@@ -104,19 +91,19 @@ void obj_add_null(bd_xjson_object* obj, const char* key)
         .data = NULL
     };
 
-    assert(obj->data);
+    assert(obj->data && key);
     htab_insert(obj->data, key, &json);
 }
 
 void obj_del(bd_xjson_object* obj, const char* key)
 {
-    assert(obj->data);
+    assert(obj->data && key);
     htab_erase(obj->data, key);
 }
 
 void obj_set(bd_xjson_object* obj, const char* key, const void* val)
 {
-    assert(obj->data && val);
+    assert(obj->data && key && val);
     htab_set(obj->data, key, val);
 }
 
@@ -127,7 +114,7 @@ void obj_set_str(bd_xjson_object* obj, const char* key, const char* val)
         .data = (char*)val
     };
 
-    assert(obj->data);
+    assert(obj->data && key);
     htab_set(obj->data, key, &json);
 }
 
@@ -138,7 +125,7 @@ void obj_set_num(bd_xjson_object* obj, const char* key, int val)
         .data = &val
     };
 
-    assert(obj->data);
+    assert(obj->data && key);
     htab_set(obj->data, key, &json);
 }
 
@@ -149,7 +136,7 @@ void obj_set_true(bd_xjson_object* obj, const char* key)
         .data = NULL
     };
 
-    assert(obj->data);
+    assert(obj->data && key);
     htab_set(obj->data, key, &json);
 }
 
@@ -160,7 +147,7 @@ void obj_set_false(bd_xjson_object* obj, const char* key)
         .data = NULL
     };
 
-    assert(obj->data);
+    assert(obj->data && key);
     htab_set(obj->data, key, &json);
 }
 
@@ -171,13 +158,13 @@ void obj_set_null(bd_xjson_object* obj, const char* key)
         .data = NULL
     };
 
-    assert(obj->data);
+    assert(obj->data && key);
     htab_set(obj->data, key, &json);
 }
 
 void* obj_get(const bd_xjson_object* obj, const char* key, void* val)
 {
-    assert(obj->data && val);
+    assert(obj->data && key && val);
     htab_find(obj->data, key, val);
 
     return val;
@@ -190,7 +177,7 @@ char* obj_get_str(const bd_xjson_object* obj, const char* key)
         .data = NULL
     };
 
-    assert(obj->data);
+    assert(obj->data && key);
     htab_find(obj->data, key, &json);
 
     return json.data;
@@ -204,7 +191,7 @@ int obj_get_num(const bd_xjson_object* obj, const char* key)
         .data = NULL
     };
 
-    assert(obj->data);
+    assert(obj->data && key);
     htab_find(obj->data, key, &json);
     num = *(int*)json.data;
 
@@ -232,34 +219,25 @@ bd_xjson_object_iter obj_iterate(bd_xjson_object_iter iter)
 bd_xjson_array* arr_default_cstr()
 {
     bd_xjson_array *d;
-    bd_xjson_list **pdd;
 
     d = xzmalloc(sizeof *d);
-    BD_XJSON_ARRAY_CLASS(d);
-    pdd = (bd_xjson_list**) &d->data;
-
-    list_create(pdd);
+    BD_XJSON_ARRAY_CLASS(d, list_create());
 
     return d;
 }
 
 /* TYPE of VAL maybe bd_xjson or bd_xjson_array */
-bd_xjson_array* arr_copy_cstr(void* val)
+bd_xjson_array* arr_copy_cstr(const void* val)
 {
-    bd_xjson_array *d, *s;
-    bd_xjson_list **pdd;
-
-    d = xzmalloc(sizeof *d);
-    BD_XJSON_ARRAY_CLASS(d);
-    pdd = (bd_xjson_list**) &d->data;
+    const bd_xjson_array *s;
+    bd_xjson_array *d;
 
     s = val;
-
-    list_create(pdd);
-
+    assert(s->type == BD_XJSON_ARRAY);
     assert(s->data);
-    assert(s->type == d->type);
-    list_copy(d->data, s->data);
+
+    d = xzmalloc(sizeof *d);
+    BD_XJSON_ARRAY_CLASS(d, list_create_copy(s->data));
 
     return d;
 }
@@ -473,25 +451,22 @@ bd_xjson_string* str_assign_cstr(char* val)
     bd_xjson_string *d;
 
     d = xzmalloc(sizeof *d);
-    BD_XJSON_STRING_CLASS(d);
+    BD_XJSON_STRING_CLASS(d, xzmalloc(strlen(val) + 1));
 
-    d->data = xzmalloc(strlen(val) + 1);
     strcat(d->data, val);
 
     return d;
 }
 
 /* TYPE of VAL maybe bd_xjson or bd_xjson_string */
-bd_xjson_string* str_copy_cstr(void* val)
+bd_xjson_string* str_copy_cstr(const void* val)
 {
-    bd_xjson_string *d, *s;
-
-    d = xzmalloc(sizeof *d);
-    BD_XJSON_STRING_CLASS(d);
+    const bd_xjson_string *s;
+    bd_xjson_string *d;
 
     s = val;
-
-    d->data = xzmalloc(strlen(s->data) + 1);
+    d = xzmalloc(sizeof *d);
+    BD_XJSON_STRING_CLASS(d, xzmalloc(strlen(s->data) + 1));
 
     assert(s->data);
     assert(s->type == d->type);
@@ -523,27 +498,25 @@ bd_xjson_number* num_assign_cstr(int val)
     bd_xjson_number *d;
 
     d = xzmalloc(sizeof *d);
-    BD_XJSON_NUMBER_CLASS(d);
+    BD_XJSON_NUMBER_CLASS(d, xzmalloc(sizeof (int)));
 
-    d->data = xzmalloc(sizeof (int));
     *(int*)d->data = val;
 
     return d;
 }
 
 /* TYPE of VAL maybe bd_xjson or bd_xjson_number */
-bd_xjson_number* num_copy_cstr(void* val)
+bd_xjson_number* num_copy_cstr(const void* val)
 {
-    bd_xjson_number *d, *s;
-
-    d = xzmalloc(sizeof *d);
-    BD_XJSON_NUMBER_CLASS(d);
+    const bd_xjson_number *s;
+    bd_xjson_number *d;
 
     s = val;
+    d = xzmalloc(sizeof *d);
+    BD_XJSON_NUMBER_CLASS(d, xzmalloc(sizeof (int)));
 
     assert(s->data);
     assert(s->type == d->type);
-    d->data = xzmalloc(sizeof (int));
     *(int*)d->data = *(int*)s->data;
 
     return d;

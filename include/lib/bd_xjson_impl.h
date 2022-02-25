@@ -2,12 +2,10 @@
 #define BD_XJSON_IMPL_H
 
 #include <stddef.h>
-#include <stdint.h>
 
 #include "lib/bd_xjson.h"
 #include "lib/bd_xjson_htab.h"
 #include "lib/bd_xjson_list.h"
-#include "lib/alloc.h"
 
 typedef struct bd_xjson_object bd_xjson_object;
 typedef struct bd_xjson_string bd_xjson_string;
@@ -33,7 +31,7 @@ typedef bd_xjson_list_iter bd_xjson_array_iter;
  */
 /* constructor */
 bd_xjson_object* obj_default_cstr();
-bd_xjson_object* obj_copy_cstr(void* src);
+bd_xjson_object* obj_copy_cstr(const void* src);
 /* member functions */
 void obj_add(bd_xjson_object* obj, const char* key, const void* val);
 void obj_add_str(bd_xjson_object* obj, const char* key, const char* val);
@@ -54,8 +52,8 @@ int obj_get_num(const bd_xjson_object* obj, const char* key);
 bd_xjson_object_iter obj_begin(const bd_xjson_object* obj);
 bd_xjson_object_iter obj_end(const bd_xjson_object* obj);
 bd_xjson_object_iter obj_iterate(bd_xjson_object_iter iter);
-#define bd_xjson_object(__class) \
-struct __class \
+#define bd_xjson_object(klass) \
+struct klass \
 { \
 /* parent class */ \
     bd_xjson(); \
@@ -81,29 +79,29 @@ struct __class \
     bd_xjson_object_iter (*end)(const bd_xjson_object* this); \
 }
 bd_xjson_object(bd_xjson_object);
-#define BD_XJSON_OBJECT_CLASS(__ptr)    \
-do                                      \
-{                                       \
-    (__ptr)->type = BD_XJSON_OBJECT;    \
-    (__ptr)->data = NULL;               \
-    (__ptr)->add = obj_add;             \
-    (__ptr)->add_str = obj_add_str;     \
-    (__ptr)->add_num = obj_add_num;     \
-    (__ptr)->add_true = obj_add_true;   \
-    (__ptr)->add_false = obj_add_false; \
-    (__ptr)->add_null = obj_add_null;   \
-    (__ptr)->del = obj_del;             \
-    (__ptr)->set = obj_set;             \
-    (__ptr)->set_str = obj_set_str;     \
-    (__ptr)->set_num = obj_set_num;     \
-    (__ptr)->set_true = obj_set_true;   \
-    (__ptr)->set_false = obj_set_false; \
-    (__ptr)->set_null = obj_set_null;   \
-    (__ptr)->get = obj_get;             \
-    (__ptr)->get_str = obj_get_str;     \
-    (__ptr)->get_num = obj_get_num;     \
-    (__ptr)->begin = obj_begin;         \
-    (__ptr)->end = obj_end;             \
+#define BD_XJSON_OBJECT_CLASS(__ptr, __data) \
+do                                           \
+{                                            \
+    (__ptr)->type = BD_XJSON_OBJECT;         \
+    (__ptr)->data = __data;                  \
+    (__ptr)->add = obj_add;                  \
+    (__ptr)->add_str = obj_add_str;          \
+    (__ptr)->add_num = obj_add_num;          \
+    (__ptr)->add_true = obj_add_true;        \
+    (__ptr)->add_false = obj_add_false;      \
+    (__ptr)->add_null = obj_add_null;        \
+    (__ptr)->del = obj_del;                  \
+    (__ptr)->set = obj_set;                  \
+    (__ptr)->set_str = obj_set_str;          \
+    (__ptr)->set_num = obj_set_num;          \
+    (__ptr)->set_true = obj_set_true;        \
+    (__ptr)->set_false = obj_set_false;      \
+    (__ptr)->set_null = obj_set_null;        \
+    (__ptr)->get = obj_get;                  \
+    (__ptr)->get_str = obj_get_str;          \
+    (__ptr)->get_num = obj_get_num;          \
+    (__ptr)->begin = obj_begin;              \
+    (__ptr)->end = obj_end;                  \
 } while(0)
 
 
@@ -115,12 +113,12 @@ do                                      \
  */
 /* constructor */
 bd_xjson_string* str_assign_cstr(char* val);
-bd_xjson_string* str_copy_cstr(void* val);
+bd_xjson_string* str_copy_cstr(const void* val);
 /* member functions */
 void str_set(bd_xjson_string* str, const char* val);
 char* str_get(const bd_xjson_string* str);
-#define bd_xjson_string(__class) \
-struct __class \
+#define bd_xjson_string(klass) \
+struct klass \
 { \
 /* parent class */ \
     bd_xjson(); \
@@ -128,13 +126,13 @@ struct __class \
     char* (*get)(const bd_xjson_string* this); \
 }
 bd_xjson_string(bd_xjson_string);
-#define BD_XJSON_STRING_CLASS(__ptr) \
-do                                   \
-{                                    \
-    (__ptr)->type = BD_XJSON_STRING; \
-    (__ptr)->data = NULL;            \
-    (__ptr)->set = str_set;          \
-    (__ptr)->get = str_get;          \
+#define BD_XJSON_STRING_CLASS(__ptr, __data) \
+do                                           \
+{                                            \
+    (__ptr)->type = BD_XJSON_STRING;         \
+    (__ptr)->data = __data;                  \
+    (__ptr)->set = str_set;                  \
+    (__ptr)->get = str_get;                  \
 } while(0)
 
 
@@ -146,12 +144,12 @@ do                                   \
  */
 /* constructor */
 bd_xjson_number* num_assign_cstr(int val);
-bd_xjson_number* num_copy_cstr(void* val);
+bd_xjson_number* num_copy_cstr(const void* val);
 /* member functions */
 void num_set(bd_xjson_number* num, int val);
 int num_get(const bd_xjson_number* num);
-#define bd_xjson_number(__class) \
-struct __class \
+#define bd_xjson_number(klass) \
+struct klass \
 { \
 /* parent class */ \
     bd_xjson(); \
@@ -159,13 +157,13 @@ struct __class \
     int (*get)(const bd_xjson_number* this); \
 }
 bd_xjson_number(bd_xjson_number);
-#define BD_XJSON_NUMBER_CLASS(__ptr) \
-do                                   \
-{                                    \
-    (__ptr)->type = BD_XJSON_NUMBER; \
-    (__ptr)->data = NULL;            \
-    (__ptr)->set = num_set;          \
-    (__ptr)->get = num_get;          \
+#define BD_XJSON_NUMBER_CLASS(__ptr, __data) \
+do                                           \
+{                                            \
+    (__ptr)->type = BD_XJSON_NUMBER;         \
+    (__ptr)->data = __data;                  \
+    (__ptr)->set = num_set;                  \
+    (__ptr)->get = num_get;                  \
 } while(0)
 
 
@@ -186,7 +184,7 @@ do                                   \
  */
 /* constructor */
 bd_xjson_array* arr_default_cstr();
-bd_xjson_array* arr_copy_cstr(void* val);
+bd_xjson_array* arr_copy_cstr(const void* val);
 /* member functions */
 void arr_add(bd_xjson_array* arr, int pos, const void* val);
 void arr_add_str(bd_xjson_array* arr, int pos, const char* val);
@@ -211,8 +209,8 @@ bd_xjson_array_iter arr_iterate(bd_xjson_array_iter iter);
 bd_xjson_array_iter arr_rbegin(const bd_xjson_array* arr);
 bd_xjson_array_iter arr_rend(const bd_xjson_array* arr);
 bd_xjson_array_iter arr_riterate(bd_xjson_array_iter iter);
-#define bd_xjson_array(__class) \
-struct __class \
+#define bd_xjson_array(klass) \
+struct klass \
 { \
 /* parent class */ \
     bd_xjson(); /* a linked list */ \
@@ -241,32 +239,32 @@ struct __class \
     bd_xjson_array_iter (*rend)(const bd_xjson_array* this); \
 }
 bd_xjson_array(bd_xjson_array);
-#define BD_XJSON_ARRAY_CLASS(__ptr)      \
-do                                       \
-{                                        \
-    (__ptr)->type = BD_XJSON_ARRAY;      \
-    (__ptr)->data = NULL;                \
-    (__ptr)->add = arr_add;              \
-    (__ptr)->add_str = arr_add_str;      \
-    (__ptr)->add_num = arr_add_num;      \
-    (__ptr)->add_true = arr_add_true;    \
-    (__ptr)->add_false = arr_add_false;  \
-    (__ptr)->add_null = arr_add_null;    \
-    (__ptr)->del = arr_del;              \
-    (__ptr)->set = arr_set;              \
-    (__ptr)->set_str = arr_set_str;      \
-    (__ptr)->set_num = arr_set_num;      \
-    (__ptr)->set_true = arr_set_true;    \
-    (__ptr)->set_false = arr_set_false;  \
-    (__ptr)->set_null = arr_set_null;    \
-    (__ptr)->get = arr_get;              \
-    (__ptr)->get_str = arr_get_str;      \
-    (__ptr)->get_num = arr_get_num;      \
-    (__ptr)->sort = arr_qsort;           \
-    (__ptr)->begin = arr_begin;          \
-    (__ptr)->end = arr_end;              \
-    (__ptr)->rbegin = arr_rbegin;        \
-    (__ptr)->rend = arr_rend;            \
+#define BD_XJSON_ARRAY_CLASS(__ptr, __data) \
+do                                          \
+{                                           \
+    (__ptr)->type = BD_XJSON_ARRAY;         \
+    (__ptr)->data = __data;                 \
+    (__ptr)->add = arr_add;                 \
+    (__ptr)->add_str = arr_add_str;         \
+    (__ptr)->add_num = arr_add_num;         \
+    (__ptr)->add_true = arr_add_true;       \
+    (__ptr)->add_false = arr_add_false;     \
+    (__ptr)->add_null = arr_add_null;       \
+    (__ptr)->del = arr_del;                 \
+    (__ptr)->set = arr_set;                 \
+    (__ptr)->set_str = arr_set_str;         \
+    (__ptr)->set_num = arr_set_num;         \
+    (__ptr)->set_true = arr_set_true;       \
+    (__ptr)->set_false = arr_set_false;     \
+    (__ptr)->set_null = arr_set_null;       \
+    (__ptr)->get = arr_get;                 \
+    (__ptr)->get_str = arr_get_str;         \
+    (__ptr)->get_num = arr_get_num;         \
+    (__ptr)->sort = arr_qsort;              \
+    (__ptr)->begin = arr_begin;             \
+    (__ptr)->end = arr_end;                 \
+    (__ptr)->rbegin = arr_rbegin;           \
+    (__ptr)->rend = arr_rend;               \
 } while(0)
 
 
