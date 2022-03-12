@@ -5,9 +5,9 @@
 #define bd_xjson_stack(__type) \
 struct \
 { \
-    int64_t top; \
-    int64_t capacity; \
-    int64_t size; \
+    int top; \
+    int capacity; \
+    int size; \
     __type* data; \
 }
 
@@ -16,7 +16,7 @@ do{ \
     (__stk).capacity = __capacity; \
     (__stk).top = -1; \
     (__stk).size = 0; \
-    (__stk).data = xzmalloc((__capacity)*sizeof(*((__stk).data))); \
+    (__stk).data = xmallocz((__capacity)*sizeof(*((__stk).data))); \
 } while(0)
 
 #define bd_xjson_stack_top(__stk) \
@@ -27,8 +27,11 @@ do{ \
     (__stk).top += 1; \
     if((__stk).top > (__stk).capacity >> 1) \
     { \
-        (__stk).data = xrealloc((__stk).data, ((__stk).capacity<<1)*sizeof(*((__stk).data))); \
-        memset(&((__stk).data[(__stk).capacity]), 0, ((__stk).capacity)*sizeof(*((__stk).data))); \
+        (__stk).data = xreallocz( \
+            (__stk).data, \
+            ((__stk).capacity)*sizeof(*((__stk).data)), \
+            ((__stk).capacity<<1)*sizeof(*((__stk).data)) \
+        ); \
         (__stk).capacity = (__stk).capacity<<1; \
     } \
     (__stk).data[(__stk).top] = (__ele); \
@@ -91,7 +94,7 @@ do{ \
     (__stk).top = __capacity; \
     (__stk).capacity = __capacity; \
     (__stk).size = 0; \
-    (__stk).data = xzmalloc((__capacity + 1)*sizeof(*((__stk).data))); \
+    (__stk).data = xmallocz((__capacity + 1)*sizeof(*((__stk).data))); \
 } while(0)
 
 #define bd_xjson_stack_top(__stk) \

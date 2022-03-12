@@ -1,9 +1,19 @@
 #ifndef BD_XJSON_H
 #define BD_XJSON_H
 
-#include "lib/bd_xjson_type.h"
-
+typedef enum bd_xjson_type bd_xjson_type;
 typedef struct bd_xjson bd_xjson;
+
+enum bd_xjson_type
+{
+    BD_XJSON_OBJECT = 1,
+    BD_XJSON_STRING,
+    BD_XJSON_NUMBER,
+    BD_XJSON_ARRAY,
+    BD_XJSON_TRUE,
+    BD_XJSON_FALSE,
+    BD_XJSON_NULL
+};
 
 /*
  *  bd_xjson class
@@ -36,11 +46,11 @@ bd_xjson(bd_xjson);
 
 /* private */
 void bd_xjson_copy(bd_xjson* dst, const bd_xjson* src);
-void bd_xjson_free_data(bd_xjson* json);
 
 /* public */
 int bd_xjson_reassign(void* dst, const void* src);
 int bd_xjson_free(void* json);
+void bd_xjson_free_data(bd_xjson* json);
 int bd_xjson_stringify(const void* json, char** pstr, int* plen);
 int bd_xjson_parse(const char* str, void* json);
 

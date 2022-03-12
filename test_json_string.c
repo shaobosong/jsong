@@ -11,13 +11,13 @@ do \
     else { assert(__val == __cmpr); } \
 } while (0)
 
-/* this method only for test */
+/* only for test */
 char* get_json_data(bd_xjson_string* json)
 {
     return (char*)json->data;
 }
 
-/* this method only for test */
+/* only for test */
 bd_xjson_type get_json_type(bd_xjson* json)
 {
     return json->type;
@@ -26,17 +26,17 @@ bd_xjson_type get_json_type(bd_xjson* json)
 void test_json_string_create_and_remove(void)
 {
     /* create a json string */
-    JSONString* json = JSON_STRING("2022,i love you");
+    JSONString* json = JSON_STRING_PTR("2022,i love you");
     TEST_EXPECT(strcmp(get_json_data(json), "2022,i love you"), 0);
     TEST_EXPECT(get_json_type((bd_xjson*)json), BD_XJSON_STRING);
     /* remove a json string */
-    JSON_FREE(json);
+    FREE_JSON(json);
 }
 
 void test_json_string_set_and_get(void)
 {
     char* get = NULL;
-    JSONString* json = JSON_STRING("some characters");
+    JSONString* json = JSON_STRING_PTR("some characters");
 
     /* set */
     json->set(json, "another characters");
@@ -56,14 +56,14 @@ void test_json_string_set_and_get(void)
     TEST_EXPECT(strcmp(get, ""), 0);
     free(get);
 
-    JSON_FREE(json);
+    FREE_JSON(json);
 }
 
 void test_json_string_stringify()
 {
     char* str = NULL;
     int len;
-    JSONString* json = JSON_STRING("some characters");
+    JSONString* json = JSON_STRING_PTR("some characters");
 
     /* stringify a json string */
     bd_xjson_stringify(json, &str, &len);
@@ -76,7 +76,7 @@ void test_json_string_stringify()
     TEST_EXPECT(strcmp(str, "\"\""), 0);
     free(str);
 
-    JSON_FREE(json);
+    FREE_JSON(json);
 }
 
 void test_parse_json_string()
@@ -84,7 +84,7 @@ void test_parse_json_string()
     int res;
     char* str = NULL;
     char* get = NULL;
-    JSONString* json = JSON_STRING("");
+    JSONString* json = JSON_STRING_PTR("");
 
     str = "\"some characters\"";
     res = bd_xjson_parse(str, json);
@@ -130,6 +130,8 @@ void test_parse_json_string()
     str = "butdraw \"some characters\"";
     res = bd_xjson_parse(str, json);
     TEST_EXPECT(res, -1);
+
+    FREE_JSON(json);
 }
 
 int main(int argc, char* argv[])

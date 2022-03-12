@@ -4,14 +4,14 @@
 int main()
 {
     /* create a empty json OBJECT */
-    JSONObject* json_obj = JSON_OBJECT();
+    JSONObject* json_obj = JSON_OBJECT_PTR();
     /* create a empty json ARRAY */
-    JSONArray* json_arr = JSON_ARRAY();
+    JSONArray* json_arr = JSON_ARRAY_PTR();
     /* create a json NUMBER */
-    JSONNumber* json_num =  JSON_NUMBER(2022);
-    JSONNumber* json_max = JSON_NUMBER(2147483647);
+    JSONNumber* json_num =  JSON_NUMBER_PTR(2022);
+    JSONNumber* json_max = JSON_NUMBER_PTR(2147483647);
     /* create a json STRING */
-    JSONString* json_str = JSON_STRING("");
+    JSONString* json_str = JSON_STRING_PTR("");
 
     /* add a key-value in json OBJECT */
     json_obj->add(json_obj, "key0", json_num);
@@ -90,11 +90,11 @@ int main()
     printf("%s\n", str);
 
     /* free json obejct */
-    JSON_FREE(json_obj);
-    JSON_FREE(json_arr);
-    JSON_FREE(json_num);
-    JSON_FREE(json_str);
-    JSON_FREE(json_max);
+    FREE_JSON(json_obj);
+    FREE_JSON(json_arr);
+    FREE_JSON(json_num);
+    FREE_JSON(json_str);
+    FREE_JSON(json_max);
 
     return 0;
 }

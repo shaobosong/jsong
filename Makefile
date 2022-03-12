@@ -27,19 +27,22 @@ CONFIG_TEST=y
 CONFIG_RISCV32=
 # riscv64 build
 CONFIG_RISCV64=
+# strip debug information
+CONFIG_STRIP=
 
 ifdef CONFIG_RISCV32
-CROSS_PREFIX=riscv32-unknown-elf-
+CROSS_PREFIX=riscv32-unknown-linux-gnu-
 endif
 ifdef CONFIG_RISCV64
-CROSS_PREFIX=riscv64-unknown-elf-
+CROSS_PREFIX=riscv64-unknown-linux-gnu-
 endif
 
 CC=$(CROSS_PREFIX)gcc
+STRIP=$(CROSS_PREFIX)strip
 AR=$(CROSS_PREFIX)ar
 RANLIB=$(CROSS_PREFIX)ranlib
 
-CFLAGS=-O0 -g3 -D_REENTRANT -Wall -static
+CFLAGS=-std=c99 -O2 -g -D_REENTRANT -Wall -static
 TFLAGS:=$(CFLAGS)
 CFLAGS+=-I$(CURDIR)/include
 LDFLAGS=
@@ -64,11 +67,17 @@ endif
 all: $(PROGS)
 
 $(LIB): $(OBJS)
+ifdef CONFIG_STRIP
+	$(STRIP) --strip-debug $^
+endif
 	$(AR) rv $@ $?
 	$(RANLIB) $@
 
 %: %.c $(LIB)
 	$(CC) $(TFLAGS) -o $@ $^
+ifdef CONFIG_STRIP
+	$(STRIP) -s $@
+endif
 
 %.o: %.c
 	$(CC) $(CFLAGS) -c -o $@ $<

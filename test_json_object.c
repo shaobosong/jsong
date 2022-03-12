@@ -29,31 +29,31 @@ typedef struct bd_xjson_htab
     uint64_t capacity, size, first, last;
 } bd_xjson_htab;
 
-/* this method only for test */
+/* only for test */
 bd_xjson_node* get_json_array_list_head(bd_xjson_array* arr)
 {
     return ((bd_xjson_list*)(arr->data))->head;
 }
 
-/* this method only for test */
+/* only for test */
 bd_xjson_node* get_json_array_list_tail(bd_xjson_array* arr)
 {
     return ((bd_xjson_list*)(arr->data))->tail;
 }
 
-/* this method only for test */
+/* only for test */
 int get_json_array_list_size(bd_xjson_array* arr)
 {
     return ((bd_xjson_list*)(arr->data))->size;
 }
 
-/* this method only for test */
+/* for test */
 int get_json_object_htab_size(bd_xjson_object* obj)
 {
     return ((bd_xjson_htab*)(obj->data))->size;
 }
 
-/* this method only for test */
+/* only for test */
 bd_xjson_type get_json_type(bd_xjson* json)
 {
     return json->type;
@@ -62,11 +62,11 @@ bd_xjson_type get_json_type(bd_xjson* json)
 void test_json_object_create_and_remove(void)
 {
      /* create a object */
-    JSONObject* json = JSON_OBJECT();
+    JSONObject* json = JSON_OBJECT_PTR();
     TEST_EXPECT(get_json_object_htab_size(json), 0);
     TEST_EXPECT(get_json_type((bd_xjson*)json), BD_XJSON_OBJECT);
     /* remove a object */
-    JSON_FREE(json);
+    FREE_JSON(json);
 }
 
 void test_json_object_set_and_get_json_string(void)
@@ -74,11 +74,11 @@ void test_json_object_set_and_get_json_string(void)
     char *str, *str_get;
 
     /* create a json string */
-    JSONString* json_str = JSON_STRING("butdraw");
-    JSONString* json_str_get = JSON_STRING("");
+    JSONString* json_str = JSON_STRING_PTR("butdraw");
+    JSONString* json_str_get = JSON_STRING_PTR("");
 
     /* create a json object */
-    JSONObject* json_obj = JSON_OBJECT();
+    JSONObject* json_obj = JSON_OBJECT_PTR();
 
     /* set a json string into json object */
     json_obj->set(json_obj, "name", json_str);
@@ -111,9 +111,9 @@ void test_json_object_set_and_get_json_string(void)
     TEST_EXPECT(json_str_get->type, BD_XJSON_STRING);
     free(str_get);
 
-    JSON_FREE(json_str);
-    JSON_FREE(json_str_get);
-    JSON_FREE(json_obj);
+    FREE_JSON(json_str);
+    FREE_JSON(json_str_get);
+    FREE_JSON(json_obj);
 }
 
 void test_json_object_set_and_get_json_number(void)
@@ -121,11 +121,11 @@ void test_json_object_set_and_get_json_number(void)
     int num, num_get;
 
     /* create a json number */
-    JSONNumber* json_num = JSON_NUMBER(2022);
-    JSONNumber* json_num_get = JSON_NUMBER(0);
+    JSONNumber* json_num = JSON_NUMBER_PTR(2022);
+    JSONNumber* json_num_get = JSON_NUMBER_PTR(0);
 
     /* create a json object */
-    JSONObject* json_obj = JSON_OBJECT();
+    JSONObject* json_obj = JSON_OBJECT_PTR();
 
     /* set a json number into json object */
     json_obj->set(json_obj, "age", json_num);
@@ -153,19 +153,19 @@ void test_json_object_set_and_get_json_number(void)
     TEST_EXPECT(2099, num_get);
     TEST_EXPECT(json_num_get->type, BD_XJSON_NUMBER);
 
-    JSON_FREE(json_num);
-    JSON_FREE(json_num_get);
-    JSON_FREE(json_obj);
+    FREE_JSON(json_num);
+    FREE_JSON(json_num_get);
+    FREE_JSON(json_obj);
 }
 
 void test_json_object_set_and_get_json_true(void)
 {
     /* create a json true */
-    JSONTrue* json_true = JSON_TRUE();
-    JSONTrue* json_true_get = JSON_TRUE();
+    JSONTrue* json_true = JSON_TRUE_PTR();
+    JSONTrue* json_true_get = JSON_TRUE_PTR();
 
     /* create a json object */
-    JSONObject* json_obj = JSON_OBJECT();
+    JSONObject* json_obj = JSON_OBJECT_PTR();
 
     /* set a json true into json object */
     json_obj->set(json_obj, "isadult", json_true);
@@ -176,19 +176,19 @@ void test_json_object_set_and_get_json_true(void)
     TEST_EXPECT(json_true_get->data, 0);
     TEST_EXPECT(json_true_get->type, BD_XJSON_TRUE);
 
-    JSON_FREE(json_true);
-    JSON_FREE(json_true_get);
-    JSON_FREE(json_obj);
+    FREE_JSON(json_true);
+    FREE_JSON(json_true_get);
+    FREE_JSON(json_obj);
 }
 
 void test_json_object_set_and_get_json_false(void)
 {
     /* create a json false */
-    JSONFalse* json_false = JSON_FALSE();
-    JSONFalse* json_false_get = JSON_FALSE();
+    JSONFalse* json_false = JSON_FALSE_PTR();
+    JSONFalse* json_false_get = JSON_FALSE_PTR();
 
     /* create a json object */
-    JSONObject* json_obj = JSON_OBJECT();
+    JSONObject* json_obj = JSON_OBJECT_PTR();
 
     /* set a json false into json object */
     json_obj->set(json_obj, "isadult", json_false);
@@ -199,19 +199,19 @@ void test_json_object_set_and_get_json_false(void)
     TEST_EXPECT(json_false_get->data, 0);
     TEST_EXPECT(json_false_get->type, BD_XJSON_FALSE);
 
-    JSON_FREE(json_false);
-    JSON_FREE(json_false_get);
-    JSON_FREE(json_obj);
+    FREE_JSON(json_false);
+    FREE_JSON(json_false_get);
+    FREE_JSON(json_obj);
 }
 
 void test_json_object_set_and_get_json_null(void)
 {
     /* create a json null */
-    JSONNull* json_null = JSON_NULL();
-    JSONNull* json_null_get = JSON_NULL();
+    JSONNull* json_null = JSON_NULL_PTR();
+    JSONNull* json_null_get = JSON_NULL_PTR();
 
     /* create a json object */
-    JSONObject* json_obj = JSON_OBJECT();
+    JSONObject* json_obj = JSON_OBJECT_PTR();
 
     /* set a json null into json object */
     json_obj->set(json_obj, "other information", json_null);
@@ -222,28 +222,28 @@ void test_json_object_set_and_get_json_null(void)
     TEST_EXPECT(json_null_get->data, 0);
     TEST_EXPECT(json_null_get->type, BD_XJSON_NULL);
 
-    JSON_FREE(json_null);
-    JSON_FREE(json_null_get);
-    JSON_FREE(json_obj);
+    FREE_JSON(json_null);
+    FREE_JSON(json_null_get);
+    FREE_JSON(json_obj);
 }
 
 void test_json_object_set_and_get_json_object(void)
 {
     char stack[256], compr[256];
-    bzero(stack, 256);
-    bzero(compr, 256);
+    memset(stack, 0, 256);
+    memset(compr, 0, 256);
 
     /* create a sub json object */
-    JSONObject* sub_json_obj = JSON_OBJECT();
+    JSONObject* sub_json_obj = JSON_OBJECT_PTR();
     /* add some <key>-<value> for test in sub_json_obj */
     sub_json_obj->set_str(sub_json_obj, "name", "butdraw");
     sub_json_obj->set_str(sub_json_obj, "age", "29");
     sub_json_obj->set_str(sub_json_obj, "id", "a0000001234");
-    JSONObject* sub_json_obj_get = JSON_OBJECT(); /* {} */
-    JSON_OBJECT_ITER iter, end;
+    JSONObject* sub_json_obj_get = JSON_OBJECT_PTR(); /* {} */
+    JSONObjectIter iter, end;
 
     /* create a json object */
-    JSONObject* json_obj = JSON_OBJECT();
+    JSONObject* json_obj = JSON_OBJECT_PTR();
 
     /* set a sub json object into json object */
     json_obj->set(json_obj, "student01", sub_json_obj);
@@ -319,28 +319,28 @@ void test_json_object_set_and_get_json_object(void)
     TEST_EXPECT(sub_json_obj_get->type, BD_XJSON_OBJECT);
     printf("-------------------\n");
 
-    JSON_FREE(json_obj);
-    JSON_FREE(sub_json_obj);
-    JSON_FREE(sub_json_obj_get);
+    FREE_JSON(json_obj);
+    FREE_JSON(sub_json_obj);
+    FREE_JSON(sub_json_obj_get);
 }
 
 void test_json_object_set_and_get_json_array(void)
 {
     char stack[256], compr[256];
-    bzero(stack, 256);
-    bzero(compr, 256);
+    memset(stack, 0, 256);
+    memset(compr, 0, 256);
 
     /* create a sub json array */
-    JSONArray* sub_json_arr = JSON_ARRAY();
+    JSONArray* sub_json_arr = JSON_ARRAY_PTR();
     /* add some <value> for test in sub_json_arr */
     sub_json_arr->add_str(sub_json_arr, -1, "apple");
     sub_json_arr->add_str(sub_json_arr, -1, "watermelon");
     sub_json_arr->add_str(sub_json_arr, -1, "grape");
-    JSONArray* sub_json_arr_get = JSON_ARRAY(); /* [] */
-    JSON_ARRAY_ITER iter, end;
+    JSONArray* sub_json_arr_get = JSON_ARRAY_PTR(); /* [] */
+    JSONArrayIter iter, end;
 
     /* create a json object */
-    JSONObject* json_obj = JSON_OBJECT();
+    JSONObject* json_obj = JSON_OBJECT_PTR();
 
     /* set a sub json array into json object */
     json_obj->set(json_obj, "fruit", sub_json_arr);
@@ -410,9 +410,9 @@ void test_json_object_set_and_get_json_array(void)
     TEST_EXPECT(sub_json_arr_get->type, BD_XJSON_ARRAY);
     printf("-------------------\n");
 
-    JSON_FREE(json_obj);
-    JSON_FREE(sub_json_arr);
-    JSON_FREE(sub_json_arr_get);
+    FREE_JSON(json_obj);
+    FREE_JSON(sub_json_arr);
+    FREE_JSON(sub_json_arr_get);
 }
 
 void test_json_object_add_json_string(void)
@@ -420,11 +420,11 @@ void test_json_object_add_json_string(void)
     char *str, *str_get;
 
     /* create a json string */
-    JSONString* json_str = JSON_STRING("butdraw");
-    JSONString* json_str_get = JSON_STRING("");
+    JSONString* json_str = JSON_STRING_PTR("butdraw");
+    JSONString* json_str_get = JSON_STRING_PTR("");
 
     /* create a json object */
-    JSONObject* json_obj = JSON_OBJECT();
+    JSONObject* json_obj = JSON_OBJECT_PTR();
 
     /* add a json string into json object */
     json_obj->add(json_obj, "name", json_str);
@@ -457,9 +457,9 @@ void test_json_object_add_json_string(void)
     TEST_EXPECT(json_str_get->type, BD_XJSON_STRING);
     free(str_get);
 
-    JSON_FREE(json_str);
-    JSON_FREE(json_str_get);
-    JSON_FREE(json_obj);
+    FREE_JSON(json_str);
+    FREE_JSON(json_str_get);
+    FREE_JSON(json_obj);
 }
 
 void test_json_object_add_json_number(void)
@@ -467,11 +467,11 @@ void test_json_object_add_json_number(void)
     int num, num_get;
 
     /* create a json number */
-    JSONNumber* json_num = JSON_NUMBER(2022);
-    JSONNumber* json_num_get = JSON_NUMBER(0);
+    JSONNumber* json_num = JSON_NUMBER_PTR(2022);
+    JSONNumber* json_num_get = JSON_NUMBER_PTR(0);
 
     /* create a json object */
-    JSONObject* json_obj = JSON_OBJECT();
+    JSONObject* json_obj = JSON_OBJECT_PTR();
 
     /* add a json number into json object */
     json_obj->add(json_obj, "age", json_num);
@@ -499,19 +499,19 @@ void test_json_object_add_json_number(void)
     TEST_EXPECT(2099, num_get);
     TEST_EXPECT(json_num_get->type, BD_XJSON_NUMBER);
 
-    JSON_FREE(json_num);
-    JSON_FREE(json_num_get);
-    JSON_FREE(json_obj);
+    FREE_JSON(json_num);
+    FREE_JSON(json_num_get);
+    FREE_JSON(json_obj);
 }
 
 void test_json_object_add_json_true(void)
 {
     /* create a json true */
-    JSONTrue* json_true = JSON_TRUE();
-    JSONTrue* json_true_get = JSON_TRUE();
+    JSONTrue* json_true = JSON_TRUE_PTR();
+    JSONTrue* json_true_get = JSON_TRUE_PTR();
 
     /* create a json object */
-    JSONObject* json_obj = JSON_OBJECT();
+    JSONObject* json_obj = JSON_OBJECT_PTR();
 
     /* add a json true into json object */
     json_obj->add(json_obj, "isadult", json_true);
@@ -531,19 +531,19 @@ void test_json_object_add_json_true(void)
     TEST_EXPECT(json_true_get->data, 0);
     TEST_EXPECT(json_true_get->type, BD_XJSON_TRUE);
 
-    JSON_FREE(json_true);
-    JSON_FREE(json_true_get);
-    JSON_FREE(json_obj);
+    FREE_JSON(json_true);
+    FREE_JSON(json_true_get);
+    FREE_JSON(json_obj);
 }
 
 void test_json_object_add_json_false(void)
 {
     /* create a json false */
-    JSONFalse* json_false = JSON_FALSE();
-    JSONFalse* json_false_get = JSON_FALSE();
+    JSONFalse* json_false = JSON_FALSE_PTR();
+    JSONFalse* json_false_get = JSON_FALSE_PTR();
 
     /* create a json object */
-    JSONObject* json_obj = JSON_OBJECT();
+    JSONObject* json_obj = JSON_OBJECT_PTR();
 
     /* add a json false into json object */
     json_obj->add(json_obj, "isadult", json_false);
@@ -563,19 +563,19 @@ void test_json_object_add_json_false(void)
     TEST_EXPECT(json_false_get->data, 0);
     TEST_EXPECT(json_false_get->type, BD_XJSON_FALSE);
 
-    JSON_FREE(json_false);
-    JSON_FREE(json_false_get);
-    JSON_FREE(json_obj);
+    FREE_JSON(json_false);
+    FREE_JSON(json_false_get);
+    FREE_JSON(json_obj);
 }
 
 void test_json_object_add_json_null(void)
 {
     /* create a json null */
-    JSONNull* json_null = JSON_NULL();
-    JSONNull* json_null_get = JSON_NULL();
+    JSONNull* json_null = JSON_NULL_PTR();
+    JSONNull* json_null_get = JSON_NULL_PTR();
 
     /* create a json object */
-    JSONObject* json_obj = JSON_OBJECT();
+    JSONObject* json_obj = JSON_OBJECT_PTR();
 
     /* add a json null into json object */
     json_obj->add(json_obj, "isadult", json_null);
@@ -595,28 +595,28 @@ void test_json_object_add_json_null(void)
     TEST_EXPECT(json_null_get->data, 0);
     TEST_EXPECT(json_null_get->type, BD_XJSON_NULL);
 
-    JSON_FREE(json_null);
-    JSON_FREE(json_null_get);
-    JSON_FREE(json_obj);
+    FREE_JSON(json_null);
+    FREE_JSON(json_null_get);
+    FREE_JSON(json_obj);
 }
 
 void test_json_object_add_json_object(void)
 {
     char stack[256], compr[256];
-    bzero(stack, 256);
-    bzero(compr, 256);
+    memset(stack, 0, 256);
+    memset(compr, 0, 256);
 
     /* create a sub json object */
-    JSONObject* sub_json_obj = JSON_OBJECT();
+    JSONObject* sub_json_obj = JSON_OBJECT_PTR();
     /* add some <key>-<value> for test in sub_json_obj */
     sub_json_obj->set_str(sub_json_obj, "name", "butdraw");
     sub_json_obj->set_str(sub_json_obj, "age", "29");
     sub_json_obj->set_str(sub_json_obj, "id", "a0000001234");
-    JSONObject* sub_json_obj_get = JSON_OBJECT(); /* {} */
-    JSON_OBJECT_ITER iter, end;
+    JSONObject* sub_json_obj_get = JSON_OBJECT_PTR(); /* {} */
+    JSONObjectIter iter, end;
 
     /* create a json object */
-    JSONObject* json_obj = JSON_OBJECT();
+    JSONObject* json_obj = JSON_OBJECT_PTR();
 
     /* add a sub json object into json object */
     json_obj->add(json_obj, "student01", sub_json_obj);
@@ -692,28 +692,28 @@ void test_json_object_add_json_object(void)
     TEST_EXPECT(sub_json_obj_get->type, BD_XJSON_OBJECT);
     printf("-------------------\n");
 
-    JSON_FREE(json_obj);
-    JSON_FREE(sub_json_obj);
-    JSON_FREE(sub_json_obj_get);
+    FREE_JSON(json_obj);
+    FREE_JSON(sub_json_obj);
+    FREE_JSON(sub_json_obj_get);
 }
 
 void test_json_object_add_json_array(void)
 {
     char stack[256], compr[256];
-    bzero(stack, 256);
-    bzero(compr, 256);
+    memset(stack, 0, 256);
+    memset(compr, 0, 256);
 
     /* create a sub json array */
-    JSONArray* sub_json_arr = JSON_ARRAY();
+    JSONArray* sub_json_arr = JSON_ARRAY_PTR();
     /* add some <value> for test in sub_json_arr */
     sub_json_arr->add_str(sub_json_arr, -1, "apple");
     sub_json_arr->add_str(sub_json_arr, -1, "watermelon");
     sub_json_arr->add_str(sub_json_arr, -1, "grape");
-    JSONArray* sub_json_arr_get = JSON_ARRAY(); /* [] */
-    JSON_ARRAY_ITER iter, end;
+    JSONArray* sub_json_arr_get = JSON_ARRAY_PTR(); /* [] */
+    JSONArrayIter iter, end;
 
     /* create a json object */
-    JSONObject* json_obj = JSON_OBJECT();
+    JSONObject* json_obj = JSON_OBJECT_PTR();
 
     /* add a sub json array into json object */
     json_obj->add(json_obj, "fruit", sub_json_arr);
@@ -783,9 +783,9 @@ void test_json_object_add_json_array(void)
     TEST_EXPECT(sub_json_arr_get->type, BD_XJSON_ARRAY);
     printf("-------------------\n");
 
-    JSON_FREE(json_obj);
-    JSON_FREE(sub_json_arr);
-    JSON_FREE(sub_json_arr_get);
+    FREE_JSON(json_obj);
+    FREE_JSON(sub_json_arr);
+    FREE_JSON(sub_json_arr_get);
 }
 
 void test_json_object_delete_json(void)
@@ -794,8 +794,8 @@ void test_json_object_delete_json(void)
     int num;
 
     char stack[256], compr[256];
-    bzero(stack, 256);
-    bzero(compr, 256);
+    memset(stack, 0, 256);
+    memset(compr, 0, 256);
 
     int i;
     char* values[3] =
@@ -806,24 +806,24 @@ void test_json_object_delete_json(void)
     };
 
     /* create a json object */
-    JSONObject* sub_json_obj = JSON_OBJECT();
+    JSONObject* sub_json_obj = JSON_OBJECT_PTR();
     /* add some <key>-<value> for test in json_obj */
     sub_json_obj->set_str(sub_json_obj, "name", values[0]);
     sub_json_obj->set_str(sub_json_obj, "age", values[1]);
     sub_json_obj->set_str(sub_json_obj, "id", values[2]);
-    JSONObject* sub_json_obj_get = JSON_OBJECT(); /* {} */
-    JSON_OBJECT_ITER oiter, oend;
+    JSONObject* sub_json_obj_get = JSON_OBJECT_PTR(); /* {} */
+    JSONObjectIter oiter, oend;
 
     /* create a sub json array */
-    JSONArray* sub_json_arr = JSON_ARRAY();
+    JSONArray* sub_json_arr = JSON_ARRAY_PTR();
     sub_json_arr->add_str(sub_json_arr, -1, values[0]);
     sub_json_arr->add_str(sub_json_arr, -1, values[1]);
     sub_json_arr->add_str(sub_json_arr, -1, values[2]);
-    JSONArray* sub_json_arr_get = JSON_ARRAY(); /* [] */
-    JSON_ARRAY_ITER aiter, aend;
+    JSONArray* sub_json_arr_get = JSON_ARRAY_PTR(); /* [] */
+    JSONArrayIter aiter, aend;
 
     /* create a json object */
-    JSONObject* json_obj = JSON_OBJECT();
+    JSONObject* json_obj = JSON_OBJECT_PTR();
 
     /* add some strings directly into json array in head */
     json_obj->add_str(json_obj, "string", "this is first test");
@@ -892,8 +892,8 @@ void test_json_object_delete_json(void)
         strcat(compr, get);
     }
     TEST_EXPECT(strcmp(stack, compr), 0);
-    bzero(stack, 256);
-    bzero(compr, 256);
+    memset(stack, 0, 256);
+    memset(compr, 0, 256);
     TEST_EXPECT(sub_json_obj_get->type, BD_XJSON_OBJECT);
     printf("-------------------\n");
 
@@ -921,16 +921,16 @@ void test_json_object_delete_json(void)
     json_obj->del(json_obj, "array");
     TEST_EXPECT(get_json_object_htab_size(json_obj), 0);
 
-    JSON_FREE(json_obj);
-    JSON_FREE(sub_json_arr);
-    JSON_FREE(sub_json_arr_get);
-    JSON_FREE(sub_json_obj);
-    JSON_FREE(sub_json_obj_get);
+    FREE_JSON(json_obj);
+    FREE_JSON(sub_json_arr);
+    FREE_JSON(sub_json_arr_get);
+    FREE_JSON(sub_json_obj);
+    FREE_JSON(sub_json_obj_get);
 }
 
 void test_json_object_traverse_all_elements(void)
 {
-    JSON_OBJECT_ITER iter, end;
+    JSONObjectIter iter, end;
     char* pchars[3] =
     {
         "this is a 1st test",
@@ -939,7 +939,7 @@ void test_json_object_traverse_all_elements(void)
     };
 
     /* create a json object */
-    JSONObject* json_obj = JSON_OBJECT();
+    JSONObject* json_obj = JSON_OBJECT_PTR();
 
     /* add some elements into json object */
     json_obj->add_str(json_obj, "str1", pchars[0]);
@@ -960,7 +960,7 @@ void test_json_object_traverse_all_elements(void)
         i--;
     }
 
-    JSON_FREE(json_obj);
+    FREE_JSON(json_obj);
 }
 
 void test_json_object_stringify(void)
@@ -1015,10 +1015,10 @@ void test_json_object_stringify(void)
     printf("%s\n", str);
 
     /* create a json object */
-    JSONObject* json_obj = JSON_OBJECT();
+    JSONObject* json_obj = JSON_OBJECT_PTR();
 
     /* create a sub json object */
-    JSONArray* sub_json_arr = JSON_ARRAY();
+    JSONArray* sub_json_arr = JSON_ARRAY_PTR();
     sub_json_arr->add_str(sub_json_arr, -1, "string");
     sub_json_arr->add_num(sub_json_arr, -1, 2022);
     sub_json_arr->add_true(sub_json_arr, -1);
@@ -1042,14 +1042,14 @@ void test_json_object_stringify(void)
     TEST_EXPECT(strcmp(str_json, str), 0 );
     free(str_json);
 
-    JSON_FREE(sub_json_arr);
-    JSON_FREE(json_obj);
+    FREE_JSON(sub_json_arr);
+    FREE_JSON(json_obj);
 }
 
 void test_parse_json_object(void )
 {
     char stack[256];
-    bzero(stack, 256);
+    memset(stack, 0, 256);
     int i;
     bd_xjson_type types[7] =
     {
@@ -1106,14 +1106,14 @@ void test_parse_json_object(void )
         "\"null\":null,"
         "\"number\":2022"
     "}";
-    JSONString* json_str = JSON_STRING("");
-    JSONNumber* json_num = JSON_NUMBER(0);
-    JSONObject* sub_json_obj = JSON_OBJECT();
-    JSONArray* sub_json_arr = JSON_ARRAY();
-    JSON_ARRAY_ITER aiter, aend;
+    JSONString* json_str = JSON_STRING_PTR("");
+    JSONNumber* json_num = JSON_NUMBER_PTR(0);
+    JSONObject* sub_json_obj = JSON_OBJECT_PTR();
+    JSONArray* sub_json_arr = JSON_ARRAY_PTR();
+    JSONArrayIter aiter, aend;
 
     /* create a json object */
-    JSONObject* json_obj = JSON_OBJECT();
+    JSONObject* json_obj = JSON_OBJECT_PTR();
 
     bd_xjson_parse(str, json_obj);
 
@@ -1150,11 +1150,11 @@ void test_parse_json_object(void )
     sub_json_obj = sub_json_arr->get(sub_json_arr, 5, sub_json_obj);
     TEST_EXPECT(get_json_object_htab_size(sub_json_obj), 5);
 
-    JSON_FREE(json_obj);
-    JSON_FREE(json_str);
-    JSON_FREE(json_num);
-    JSON_FREE(sub_json_arr);
-    JSON_FREE(sub_json_obj);
+    FREE_JSON(json_obj);
+    FREE_JSON(json_str);
+    FREE_JSON(json_num);
+    FREE_JSON(sub_json_arr);
+    FREE_JSON(sub_json_obj);
 }
 
 int main(int argc, char* argv[])

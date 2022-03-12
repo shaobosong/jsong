@@ -60,11 +60,11 @@ void bd_xjson_copy(bd_xjson* dst, const bd_xjson* src)
             dst->data = htab_create_copy(src->data);
             break;
         case BD_XJSON_STRING:
-            dst->data = xzmalloc(strlen(src->data) + 1);
+            dst->data = xmallocz(strlen(src->data) + 1);
             strcat(dst->data, src->data);
             break;
         case BD_XJSON_NUMBER:
-            dst->data = xzmalloc(sizeof (int));
+            dst->data = xmallocz(sizeof (int));
             *(int*)(dst->data) = *(int*)(src->data);
             break;
         case BD_XJSON_ARRAY:
@@ -140,7 +140,7 @@ bd_xjson_stringify_number(const bd_xjson* json, char** pstr, int* plen)
 
     num = *(int*)json->data;
     *plen = snprintf(NULL, 0, "%d", num) + 1;
-    *pstr = xzmalloc(*plen);
+    *pstr = xmallocz(*plen);
     snprintf(*pstr, *plen, "%d", num);
 }
 
@@ -150,7 +150,7 @@ bd_xjson_stringify_string(const bd_xjson *json, char** pstr, int* plen)
     const char* chars = json->data;
 
     *plen = strlen(chars) + 3;
-    *pstr = xzmalloc(*plen);
+    *pstr = xmallocz(*plen);
     (*pstr)[0] = '\"';
     strcat(*pstr, chars);
     (*pstr)[*plen - 2] = '\"';
@@ -220,17 +220,17 @@ bd_xjson_stringify_object(const bd_xjson* json, char** pstr, int* plen)
         *plen += 1;
     }
     /* concatenate every element and json string */
-    *pstr = xzmalloc(*plen);
+    *pstr = xmallocz(*plen);
     (*pstr)[0] = '{';
     while(!bd_xjson_stack_empty(kstk))
     {
         strcat(*pstr, "\"");
         strcat(*pstr, bd_xjson_stack_top(kstk));
-        m_strcat(*pstr,
+        xmstrcat(*pstr,
             "\":",
             bd_xjson_stack_top(vstk),
             ",",
-            "\0");
+            NULL);
         bd_xjson_stack_pop(kstk);
         bd_xjson_stack_pop(vstk);
     }
@@ -304,11 +304,11 @@ bd_xjson_stringify_array(const bd_xjson* json, char** pstr, int* plen)
         *plen += 1;
     }
     /* concatenate every element and json string */
-    *pstr = xzmalloc(*plen);
+    *pstr = xmallocz(*plen);
     (*pstr)[0] = '[';
     while(!bd_xjson_stack_empty(stk))
     {
-        m_strcat(*pstr, bd_xjson_stack_top(stk), ",", "\0");
+        xmstrcat(*pstr, bd_xjson_stack_top(stk), ",", NULL);
         bd_xjson_stack_pop(stk);
     }
     (*pstr)[*plen-2] = ']';
@@ -342,17 +342,17 @@ int bd_xjson_stringify(const void* json, char** pstr, int* plen)
             break;
         case BD_XJSON_TRUE:
             *plen = 5;
-            *pstr = xzmalloc(*plen);
+            *pstr = xmallocz(*plen);
             strcat(*pstr, "true");
             break;
         case BD_XJSON_FALSE:
             *plen = 6;
-            *pstr = xzmalloc(*plen);
+            *pstr = xmallocz(*plen);
             strcat(*pstr, "false");
             break;
         case BD_XJSON_NULL:
             *plen = 5;
-            *pstr = xzmalloc(*plen);
+            *pstr = xmallocz(*plen);
             strcat(*pstr, "null");
             break;
         default:
@@ -478,7 +478,7 @@ bd_xjson_parse_object(const char** const pstr, bd_xjson* json)
             default:
                 goto parse_obj_end;
         }
-        htab_insert2(json->data, &g_char_stk.data[tmp_stk_top + 1], &sub);
+        htab_insert_ref(json->data, &g_char_stk.data[tmp_stk_top + 1], &sub);
         bypass_white_space(&str);
         switch(*str)
         {
@@ -611,7 +611,7 @@ bd_xjson_parse_string(const char** const pstr, bd_xjson* json)
         {
             case '\"':
                 EXPECT_IF_NOT(str, '\"', assert(0));
-                json->data = xzmalloc(g_char_stk.top - old_stk_top + 1);
+                json->data = xmallocz(g_char_stk.top - old_stk_top + 1);
                 strcat(json->data, &g_char_stk.data[old_stk_top + 1]);
                 /* restore old stack top */
                 bd_xjson_stack_pop2_old_top(g_char_stk, old_stk_top);
@@ -661,7 +661,7 @@ bd_xjson_parse_number(const char** const pstr, bd_xjson* json)
                 res = 10 * res + sign * (int)(*str - '0');
                 break;
             default:
-                json->data = xzmalloc(sizeof(int));
+                json->data = xmallocz(sizeof(int));
                 *(int*)json->data = res;
                 *pstr = str;
                 return 0;
@@ -775,16 +775,15 @@ bd_xjson_parse_entry(const char* str, bd_xjson* json)
     return NULL;
 }
 
-static inline void
-parse_fail_printf(const char* str, const char* err)
+static void parse_fail_print(const char* str, const char* err)
 {
-    if(!*err) {
-        /* explicitly print `\0` */
-        log_printf("[%s] PARSE ERROR: %.*s\\0<<<< illegal NULL-Terminator\n",
-            get_time(), (int)(err - str + 1), str);
+    if(*err == '\0') {
+        /* explicitly print '\0' */
+        log_printf("PARSE FAIL: %.*s\\0<<<< illegal NULL-Terminator\n",
+            (int)(err - str + 1), str);
     } else {
-        log_printf("[%s] PARSE ERROR: %.*s<<<< illegal characters\n",
-            get_time(), (int)(err - str + 1), str);
+        log_printf("PARSE FAIL: %.*s<<<< illegal characters\n",
+            (int)(err - str + 1), str);
     }
 }
 
@@ -804,7 +803,7 @@ int bd_xjson_parse(const char* str, void* val)
      * is encountered.
      * Return incorrect character to user while parsing failed. We
      * provide a config option CONFIG_LOG to print these warnings to
-     * terminal console or generate a log file in /tmp/bd_xjson.log
+     * stderr or generate a log file in /tmp/bd_xjson.log
      *
      * But there is one exception that will also quit while parsing
      * first not whitespace valid character if you provide a bd_xjson
@@ -819,7 +818,7 @@ int bd_xjson_parse(const char* str, void* val)
 
     bd_xjson_stack_init(g_char_stk, 256);
     if(!!(err = bd_xjson_parse_entry(str, json))) {
-        parse_fail_printf(str, err);
+        parse_fail_print(str, err);
         /* parse failed and restore it */
         json->data = old.data;
         bd_xjson_stack_clear(g_char_stk);

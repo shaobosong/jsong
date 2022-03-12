@@ -12,8 +12,34 @@ bd_xjson_object* obj_default_cstr()
 {
     bd_xjson_object *d;
 
-    d = xzmalloc(sizeof *d);
+    d = xmallocz(sizeof *d);
     BD_XJSON_OBJECT_CLASS(d, htab_create(1));
+
+    return d;
+}
+
+bd_xjson_object obj_default()
+{
+    bd_xjson_object d;
+    BD_XJSON_OBJECT_CLASS(&d, htab_create(1));
+
+    return d;
+}
+
+bd_xjson_object* obj_data_cstr(void *data)
+{
+    bd_xjson_object *d;
+
+    d = xmallocz(sizeof *d);
+    BD_XJSON_OBJECT_CLASS(d, data);
+
+    return d;
+}
+
+bd_xjson_object obj_data(void *data)
+{
+    bd_xjson_object d;
+    BD_XJSON_OBJECT_CLASS(&d, data);
 
     return d;
 }
@@ -28,8 +54,22 @@ bd_xjson_object* obj_copy_cstr(const void* val)
     assert(s->type == BD_XJSON_OBJECT);
     assert(s->data);
 
-    d = xzmalloc(sizeof *d);
+    d = xmallocz(sizeof *d);
     BD_XJSON_OBJECT_CLASS(d, htab_create_copy(s->data));
+
+    return d;
+}
+
+bd_xjson_object obj_copy(const void* val)
+{
+    const bd_xjson_object *s;
+    bd_xjson_object d;
+
+    s = val;
+    assert(s->type == BD_XJSON_OBJECT);
+    assert(s->data);
+
+    BD_XJSON_OBJECT_CLASS(&d, htab_create_copy(s->data));
 
     return d;
 }
@@ -38,6 +78,12 @@ void obj_add(bd_xjson_object* obj, const char* key, const void* val)
 {
     assert(obj->data && key && val);
     htab_insert(obj->data, key, val);
+}
+
+void obj_add_ref(bd_xjson_object* obj, const char* key, const void* val)
+{
+    assert(obj->data && key && val);
+    htab_insert_ref(obj->data, key, val);
 }
 
 void obj_add_str(bd_xjson_object* obj, const char* key, const char* val)
@@ -107,6 +153,12 @@ void obj_set(bd_xjson_object* obj, const char* key, const void* val)
     htab_set(obj->data, key, val);
 }
 
+void obj_set_ref(bd_xjson_object* obj, const char* key, const void* val)
+{
+    assert(obj->data && key && val);
+    htab_set_ref(obj->data, key, val);
+}
+
 void obj_set_str(bd_xjson_object* obj, const char* key, const char* val)
 {
     bd_xjson json = {
@@ -170,6 +222,14 @@ void* obj_get(const bd_xjson_object* obj, const char* key, void* val)
     return val;
 }
 
+void* obj_get_ref(const bd_xjson_object* obj, const char* key, void* val)
+{
+    assert(obj->data && key && val);
+    htab_find_ref(obj->data, key, val);
+
+    return val;
+}
+
 char* obj_get_str(const bd_xjson_object* obj, const char* key)
 {
     bd_xjson json = {
@@ -179,6 +239,19 @@ char* obj_get_str(const bd_xjson_object* obj, const char* key)
 
     assert(obj->data && key);
     htab_find(obj->data, key, &json);
+
+    return json.data;
+}
+
+char* obj_get_str_ref(const bd_xjson_object* obj, const char* key)
+{
+    bd_xjson json = {
+        .type = BD_XJSON_STRING,
+        .data = NULL
+    };
+
+    assert(obj->data && key);
+    htab_find_ref(obj->data, key, &json);
 
     return json.data;
 }
@@ -220,8 +293,35 @@ bd_xjson_array* arr_default_cstr()
 {
     bd_xjson_array *d;
 
-    d = xzmalloc(sizeof *d);
+    d = xmallocz(sizeof *d);
     BD_XJSON_ARRAY_CLASS(d, list_create());
+
+    return d;
+}
+
+bd_xjson_array arr_default()
+{
+    bd_xjson_array d;
+
+    BD_XJSON_ARRAY_CLASS(&d, list_create());
+
+    return d;
+}
+
+bd_xjson_array* arr_data_cstr(void *data)
+{
+    bd_xjson_array *d;
+
+    d = xmallocz(sizeof *d);
+    BD_XJSON_ARRAY_CLASS(d, data);
+
+    return d;
+}
+
+bd_xjson_array arr_data(void *data)
+{
+    bd_xjson_array d;
+    BD_XJSON_ARRAY_CLASS(&d, data);
 
     return d;
 }
@@ -236,8 +336,22 @@ bd_xjson_array* arr_copy_cstr(const void* val)
     assert(s->type == BD_XJSON_ARRAY);
     assert(s->data);
 
-    d = xzmalloc(sizeof *d);
+    d = xmallocz(sizeof *d);
     BD_XJSON_ARRAY_CLASS(d, list_create_copy(s->data));
+
+    return d;
+}
+
+bd_xjson_array arr_copy(const void* val)
+{
+    const bd_xjson_array *s;
+    bd_xjson_array d;
+
+    s = val;
+    assert(s->type == BD_XJSON_ARRAY);
+    assert(s->data);
+
+    BD_XJSON_ARRAY_CLASS(&d, list_create_copy(s->data));
 
     return d;
 }
@@ -450,10 +564,38 @@ bd_xjson_string* str_assign_cstr(char* val)
 {
     bd_xjson_string *d;
 
-    d = xzmalloc(sizeof *d);
-    BD_XJSON_STRING_CLASS(d, xzmalloc(strlen(val) + 1));
+    d = xmallocz(sizeof *d);
+    BD_XJSON_STRING_CLASS(d, xmallocz(strlen(val) + 1));
 
     strcat(d->data, val);
+
+    return d;
+}
+
+bd_xjson_string str_assign(char* val)
+{
+    bd_xjson_string d;
+
+    BD_XJSON_STRING_CLASS(&d, xmallocz(strlen(val) + 1));
+    strcat(d.data, val);
+
+    return d;
+}
+
+bd_xjson_string* str_data_cstr(void* data)
+{
+    bd_xjson_string *d;
+
+    d = xmallocz(sizeof *d);
+    BD_XJSON_STRING_CLASS(d, data);
+
+    return d;
+}
+
+bd_xjson_string str_data(void* data)
+{
+    bd_xjson_string d;
+    BD_XJSON_STRING_CLASS(&d, data);
 
     return d;
 }
@@ -465,12 +607,27 @@ bd_xjson_string* str_copy_cstr(const void* val)
     bd_xjson_string *d;
 
     s = val;
-    d = xzmalloc(sizeof *d);
-    BD_XJSON_STRING_CLASS(d, xzmalloc(strlen(s->data) + 1));
+    d = xmallocz(sizeof *d);
+    BD_XJSON_STRING_CLASS(d, xmallocz(strlen(s->data) + 1));
 
     assert(s->data);
     assert(s->type == d->type);
     strcat(d->data, s->data);
+
+    return d;
+}
+
+bd_xjson_string str_copy(const void* val)
+{
+    const bd_xjson_string *s;
+    bd_xjson_string d;
+
+    s = val;
+    BD_XJSON_STRING_CLASS(&d, xmallocz(strlen(s->data) + 1));
+
+    assert(s->data);
+    assert(s->type == d.type);
+    strcat(d.data, s->data);
 
     return d;
 }
@@ -480,14 +637,14 @@ void str_set(bd_xjson_string* str, const char* val)
     assert(str->data);
     xfree(str->data);
 
-    str->data = xzmalloc(strlen(val) + 1);
+    str->data = xmallocz(strlen(val) + 1);
     strcat(str->data, val);
 }
 
 char* str_get(const bd_xjson_string* str)
 {
     assert(str->data);
-    char* chars = xzmalloc(strlen(str->data) + 1);
+    char* chars = xmallocz(strlen(str->data) + 1);
     strcat(chars, str->data);
 
     return chars;
@@ -497,10 +654,38 @@ bd_xjson_number* num_assign_cstr(int val)
 {
     bd_xjson_number *d;
 
-    d = xzmalloc(sizeof *d);
-    BD_XJSON_NUMBER_CLASS(d, xzmalloc(sizeof (int)));
+    d = xmallocz(sizeof *d);
+    BD_XJSON_NUMBER_CLASS(d, xmallocz(sizeof (int)));
 
     *(int*)d->data = val;
+
+    return d;
+}
+
+bd_xjson_number num_assign(int val)
+{
+    bd_xjson_number d;
+
+    BD_XJSON_NUMBER_CLASS(&d, xmallocz(sizeof (int)));
+    *(int*)d.data = val;
+
+    return d;
+}
+
+bd_xjson_number* num_data_cstr(void* data)
+{
+    bd_xjson_number *d;
+
+    d = xmallocz(sizeof *d);
+    BD_XJSON_NUMBER_CLASS(d, data);
+
+    return d;
+}
+
+bd_xjson_number num_data(void* data)
+{
+    bd_xjson_number d;
+    BD_XJSON_NUMBER_CLASS(&d, data);
 
     return d;
 }
@@ -512,8 +697,8 @@ bd_xjson_number* num_copy_cstr(const void* val)
     bd_xjson_number *d;
 
     s = val;
-    d = xzmalloc(sizeof *d);
-    BD_XJSON_NUMBER_CLASS(d, xzmalloc(sizeof (int)));
+    d = xmallocz(sizeof *d);
+    BD_XJSON_NUMBER_CLASS(d, xmallocz(sizeof (int)));
 
     assert(s->data);
     assert(s->type == d->type);
@@ -538,8 +723,16 @@ bd_xjson_true* true_default_cstr()
 {
     bd_xjson_true *d;
 
-    d = xzmalloc(sizeof *d);
+    d = xmallocz(sizeof *d);
     BD_XJSON_TRUE_CLASS(d);
+
+    return d;
+}
+
+bd_xjson_true true_default()
+{
+    bd_xjson_true d;
+    BD_XJSON_TRUE_CLASS(&d);
 
     return d;
 }
@@ -548,8 +741,16 @@ bd_xjson_false* false_default_cstr()
 {
     bd_xjson_false *d;
 
-    d = xzmalloc(sizeof *d);
+    d = xmallocz(sizeof *d);
     BD_XJSON_FALSE_CLASS(d);
+
+    return d;
+}
+
+bd_xjson_false false_default()
+{
+    bd_xjson_false d;
+    BD_XJSON_FALSE_CLASS(&d);
 
     return d;
 }
@@ -558,8 +759,16 @@ bd_xjson_null* null_default_cstr()
 {
     bd_xjson_null *d;
 
-    d = xzmalloc(sizeof *d);
+    d = xmallocz(sizeof *d);
     BD_XJSON_NULL_CLASS(d);
+
+    return d;
+}
+
+bd_xjson_null null_default()
+{
+    bd_xjson_null d;
+    BD_XJSON_NULL_CLASS(&d);
 
     return d;
 }

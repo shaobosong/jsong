@@ -35,7 +35,7 @@ static void entry_clear(bd_xjson_entry* e)
 static void entry_copy(bd_xjson_entry* d, const bd_xjson_entry* s)
 {
     /* copy key */
-    d->key = xzmalloc(strlen(s->key) + 1);
+    d->key = xmallocz(strlen(s->key) + 1);
     strcat(d->key, s->key);
     /* copy value */
     bd_xjson_copy(&(d->value), &(s->value));
@@ -112,8 +112,8 @@ static void entry_removed_in(bd_xjson_htab* h, uint64_t p)
 bd_xjson_htab* htab_create(uint64_t c)
 {
     bd_xjson_htab* h;
-    h = xzmalloc(sizeof *h);
-    h->entries = xzmalloc((c + 1)*sizeof(bd_xjson_entry));
+    h = xmallocz(sizeof *h);
+    h->entries = xmallocz((c + 1)*sizeof(bd_xjson_entry));
     h->size = 0;
     h->capacity = c;
     h->first = c;
@@ -183,7 +183,7 @@ static void htab_grow(bd_xjson_htab* h, uint64_t c)
     }
 
     /* set new htab properities */
-    h->entries = xzmalloc((c + 1)*sizeof(bd_xjson_entry));
+    h->entries = xmallocz((c + 1)*sizeof(bd_xjson_entry));
     h->capacity = c;
     h->first = c;
     h->last = c;
@@ -226,7 +226,7 @@ static uint64_t htab_find_id(const bd_xjson_htab* h, const char* k)
     return i;
 }
 
-int htab_insert2(bd_xjson_htab* h, const char* k, const bd_xjson* v)
+int htab_insert_ref(bd_xjson_htab* h, const char* k, const bd_xjson* v)
 {
     /* if size of hash table will exceed half of capacity, grow it */
     if(h->size > (h->capacity >> 1)) {
@@ -239,7 +239,7 @@ int htab_insert2(bd_xjson_htab* h, const char* k, const bd_xjson* v)
         return -1;
     }
     /* insert a key */
-    h->entries[i].key = xzmalloc(strlen(k) + 1);
+    h->entries[i].key = xmallocz(strlen(k) + 1);
     strcat(h->entries[i].key, k);
     /* insert a value */
     h->entries[i].value = *v;
@@ -270,7 +270,7 @@ int htab_insert(bd_xjson_htab* h, const char* k, const bd_xjson* v)
         return -1;
     }
     /* insert a key */
-    h->entries[i].key = xzmalloc(strlen(k) + 1);
+    h->entries[i].key = xmallocz(strlen(k) + 1);
     strcat(h->entries[i].key, k);
     /* insert a value */
     bd_xjson_copy(&(h->entries[i].value), v);
@@ -363,6 +363,27 @@ int htab_find(const bd_xjson_htab* htab, const char* key, bd_xjson* val)
     return 0;
 }
 
+int htab_find_ref(const bd_xjson_htab* htab, const char* key, bd_xjson* val)
+{
+    uint64_t i = htab_find_id(htab, key);
+    if(i == htab->capacity || NULL == htab->entries[i].key) {
+        THROW_WARNING("hash table try to find index by non-existent key");
+        return -1;
+    }
+
+    if(val->type != htab->entries[i].value.type) {
+        THROW_WARNING("type of VAL can't match type of found element");
+        return -1;
+    }
+    /* free exist data */
+    if(val->data) {
+        bd_xjson_free_data(val);
+    }
+    *val = htab->entries[i].value;
+
+    return 0;
+}
+
 int htab_update(bd_xjson_htab* htab, const char* key, const bd_xjson* val)
 {
     uint64_t i = htab_find_id(htab, key);
@@ -375,6 +396,22 @@ int htab_update(bd_xjson_htab* htab, const char* key, const bd_xjson* val)
     bd_xjson_free_data(&(htab->entries[i].value));
     /* update type and value */
     bd_xjson_copy(&(htab->entries[i].value), val);
+
+    return 0;
+}
+
+int htab_update_ref(bd_xjson_htab* htab, const char* key, const bd_xjson* val)
+{
+    uint64_t i = htab_find_id(htab, key);
+    if(i == htab->capacity || NULL == htab->entries[i].key) {
+        THROW_WARNING("hash table try to find index by non-existent key");
+        return -1;
+    }
+
+    /* free old entry data */
+    bd_xjson_free_data(&(htab->entries[i].value));
+    /* update type and value */
+    htab->entries[i].value = *val;
 
     return 0;
 }
@@ -392,6 +429,27 @@ int htab_set(bd_xjson_htab* htab, const char* key, const bd_xjson* val)
     }
     else {
         if(htab_insert(htab, key, val)) {
+            THROW_WARNING("HTAB set using insert method error");
+            return -1;
+        }
+    }
+
+    return 0;
+}
+
+int htab_set_ref(bd_xjson_htab* htab, const char* key, const bd_xjson* val)
+{
+    uint64_t i = htab_find_id(htab, key);
+
+    /* free old entry data if exist */
+    if(htab->entries[i].key) {
+        if(htab_update_ref(htab, key, val)) {
+            THROW_WARNING("HTAB set using update method error");
+            return -1;
+        }
+    }
+    else {
+        if(htab_insert_ref(htab, key, val)) {
             THROW_WARNING("HTAB set using insert method error");
             return -1;
         }

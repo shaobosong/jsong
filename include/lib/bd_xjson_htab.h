@@ -28,11 +28,13 @@ bd_xjson_htab* htab_create(uint64_t capacity);
 bd_xjson_htab* htab_create_copy(const bd_xjson_htab* src);
 void htab_free(bd_xjson_htab* htab);
 int htab_insert(bd_xjson_htab* htab, const char* key, const bd_xjson* val);
-int htab_insert2(bd_xjson_htab* htab, const char* key, const bd_xjson* val);
+int htab_insert_ref(bd_xjson_htab* htab, const char* key, const bd_xjson* val);
 int htab_erase(bd_xjson_htab* htab, const char* key);
 int htab_find(const bd_xjson_htab* htab, const char* key, bd_xjson* val);
+int htab_find_ref(const bd_xjson_htab* htab, const char* key, bd_xjson* val);
 int htab_update(bd_xjson_htab* htab, const char* key, const bd_xjson* val);
 int htab_set(bd_xjson_htab* htab, const char* key, const bd_xjson* val);
+int htab_set_ref(bd_xjson_htab* htab, const char* key, const bd_xjson* val);
 
 /* define struct of iterator by type and name of data */
 typedef struct bd_xjson_htab_iter

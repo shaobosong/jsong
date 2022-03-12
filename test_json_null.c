@@ -11,13 +11,13 @@ do \
     else { assert(__val == __cmpr); } \
 } while (0)
 
-/* this method only for test */
+/* only for test */
 void* get_json_data(bd_xjson_null* json)
 {
     return json->data;
 }
 
-/* this method only for test */
+/* only for test */
 bd_xjson_type get_json_type(bd_xjson_null* json)
 {
     return json->type;
@@ -26,32 +26,32 @@ bd_xjson_type get_json_type(bd_xjson_null* json)
 void test_json_null_create_and_remove(void)
 {
     /* create a json null */
-    JSONNull* json = JSON_NULL();
+    JSONNull* json = JSON_NULL_PTR();
     TEST_EXPECT(get_json_data(json), 0);
     TEST_EXPECT(get_json_type(json), BD_XJSON_NULL);
     /* remove a json null */
-    JSON_FREE(json);
+    FREE_JSON(json);
 }
 
 void test_json_null_stringify()
 {
     char* str = NULL;
     int len;
-    JSONNull* json = JSON_NULL();
+    JSONNull* json = JSON_NULL_PTR();
 
     /* stringify a json null */
     bd_xjson_stringify(json, &str, &len);
     TEST_EXPECT(strcmp(str, "null"), 0);
     free(str);
 
-    JSON_FREE(json);
+    FREE_JSON(json);
 }
 
 void test_parse_json_null()
 {
     int res;
     char* str = NULL;
-    JSONNull* json = JSON_NULL();
+    JSONNull* json = JSON_NULL_PTR();
 
     /* parse a json null */
     str = "null";

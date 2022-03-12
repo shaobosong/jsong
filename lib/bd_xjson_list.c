@@ -9,7 +9,7 @@
 
 static bd_xjson_node* node_create()
 {
-    return xzmalloc(sizeof(bd_xjson_node));
+    return xmallocz(sizeof(bd_xjson_node));
 }
 
 static void node_free(bd_xjson_node* n)
@@ -21,7 +21,7 @@ static void node_free(bd_xjson_node* n)
 
 bd_xjson_list* list_create()
 {
-    bd_xjson_list *l = xzmalloc(sizeof *l);
+    bd_xjson_list *l = xmallocz(sizeof *l);
 
     /* create a dummy node */
     bd_xjson_node* n = node_create();

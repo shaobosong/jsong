@@ -50,11 +50,9 @@ typedef struct bd_xjson bd_xjson_null;
 
 /* JSON Object Iter */
 typedef struct bd_xjson_object_iter bd_xjson_object_iter;
-typedef struct bd_xjson_object_iter JSON_OBJECT_ITER;
 
 /* JSON Array Iter */
 typedef struct bd_xjson_array_iter bd_xjson_array_iter;
-typedef struct bd_xjson_array_iter JSON_ARRAY_ITER;
 
 /*
  *  bd_xjson class
@@ -104,6 +102,7 @@ struct klass                                                                    
     bd_xjson();                                                                      \
     /* member functions */                                                           \
     void (*add)(bd_xjson_object* this, const char* key, const void* val);            \
+    void (*add_ref)(bd_xjson_object* this, const char* key, const void* val);        \
     void (*add_str)(bd_xjson_object* this, const char* key, const char* val);        \
     void (*add_num)(bd_xjson_object* this, const char* key, int val);                \
     void (*add_true)(bd_xjson_object* this, const char* key);                        \
@@ -111,13 +110,16 @@ struct klass                                                                    
     void (*add_null)(bd_xjson_object* this, const char* key);                        \
     void (*del)(bd_xjson_object* this, const char* key);                             \
     void (*set)(bd_xjson_object* this, const char* key, const void* val);            \
+    void (*set_ref)(bd_xjson_object* this, const char* key, const void* val);        \
     void (*set_str)(bd_xjson_object* this, const char* key, const char* val);        \
     void (*set_num)(bd_xjson_object* this, const char* key, int val);                \
     void (*set_true)(bd_xjson_object* this, const char* key);                        \
     void (*set_false)(bd_xjson_object* this, const char* key);                       \
     void (*set_null)(bd_xjson_object* this, const char* key);                        \
     void* (*get)(const bd_xjson_object* this, const char* key, void* val);           \
+    void* (*get_ref)(const bd_xjson_object* this, const char* key, void* val);       \
     char* (*get_str)(const bd_xjson_object* this, const char* key);                  \
+    char* (*get_str_ref)(const bd_xjson_object* this, const char* key);              \
     int (*get_num)(const bd_xjson_object* this, const char* key);                    \
     bd_xjson_object_iter (*begin)(const bd_xjson_object* this);                      \
     bd_xjson_object_iter (*end)(const bd_xjson_object* this);                        \
@@ -221,18 +223,38 @@ struct bd_xjson_array_iter
 
 /* the following functions are not called directly, only for MACRO */
 bd_xjson_object* obj_default_cstr();
-bd_xjson_object* obj_copy_cstr(const void* val);
+bd_xjson_object obj_default();
+bd_xjson_object* obj_data_cstr(void* data);
+bd_xjson_object obj_data(void* data);
+bd_xjson_object* obj_copy_cstr(const void* src);
+bd_xjson_object obj_copy(const void* src);
 bd_xjson_string* str_assign_cstr(char* val);
-bd_xjson_string* str_copy_cstr(const void* val);
+bd_xjson_string str_assign(char* val);
+bd_xjson_string* str_data_cstr(void* data);
+bd_xjson_string str_data(void* data);
+bd_xjson_string* str_copy_cstr(const void* src);
+bd_xjson_string str_copy(const void* src);
 bd_xjson_number* num_assign_cstr(int val);
-bd_xjson_number* num_copy_cstr(const void* val);
+bd_xjson_number num_assign(int val);
+bd_xjson_number* num_data_cstr(void *data);
+bd_xjson_number num_data(void *data);
+bd_xjson_number* num_copy_cstr(const void* src);
+bd_xjson_number num_copy(const void* src);
 bd_xjson_array* arr_default_cstr();
-bd_xjson_array* arr_copy_cstr(const void* val);
+bd_xjson_array arr_default();
+bd_xjson_array* arr_data_cstr(void *data);
+bd_xjson_array arr_data(void *data);
+bd_xjson_array* arr_copy_cstr(const void* src);
+bd_xjson_array arr_copy(const void* src);
 bd_xjson_true* true_default_cstr();
+bd_xjson_true true_default();
 bd_xjson_false* false_default_cstr();
+bd_xjson_false false_default();
 bd_xjson_null* null_default_cstr();
+bd_xjson_null null_default();
 int bd_xjson_reassign(void* dst, const void* src);
 int bd_xjson_free(void* val);
+void bd_xjson_free_data(bd_xjson* json);
 
 void bd_xjson_stringify(const void* json, char** pstr, int* plen);
 int bd_xjson_parse(const char* str, void* json);
@@ -245,30 +267,53 @@ bd_xjson_array_iter arr_riterate(bd_xjson_array_iter iter);
 /*
  *  User Interface
  */
+typedef bd_xjson JSON;
 typedef bd_xjson_object JSONObject;
+typedef bd_xjson_object_iter JSONObjectIter;
 typedef bd_xjson_string JSONString;
 typedef bd_xjson_number JSONNumber;
 typedef bd_xjson_array JSONArray;
+typedef bd_xjson_array_iter JSONArrayIter;
 typedef bd_xjson_true JSONTrue;
 typedef bd_xjson_false JSONFalse;
 typedef bd_xjson_null JSONNull;
 
-#define JSON_OBJECT()                         obj_default_cstr()
-#define JSON_OBJECT_COPY(obj)                 obj_copy_cstr(obj)
+#define JSON_OBJECT_PTR()                     obj_default_cstr()
+#define JSON_OBJECT()                         obj_default()
+#define JSON_OBJECT_DATA_PTR(data)            obj_data_cstr(data)
+#define JSON_OBJECT_DATA(data)                obj_data(data)
+#define JSON_OBJECT_COPY_PTR(obj)             obj_copy_cstr(obj)
+#define JSON_OBJECT_COPY(obj)                 obj_copy(obj)
 #define JSON_OBJECT_FOREACH(iter, end)        for(;iter.index != end.index;iter = obj_iterate(iter))
-#define JSON_STRING(str)                      str_assign_cstr(str)
-#define JSON_STRING_COPY(str)                 str_copy_cstr(str)
-#define JSON_NUMBER(num)                      num_assign_cstr(num)
-#define JSON_NUMBER_COPY(num)                 num_copy_cstr(num)
-#define JSON_ARRAY()                          arr_default_cstr()
-#define JSON_ARRAY_COPY(arr)                  arr_copy_cstr(arr)
+#define JSON_STRING_PTR(str)                  str_assign_cstr(str)
+#define JSON_STRING(str)                      str_assign(str)
+#define JSON_STRING_DATA_PTR(data)            str_data_cstr(data)
+#define JSON_STRING_DATA(data)                str_data(data)
+#define JSON_STRING_COPY_PTR(str)             str_copy_cstr(str)
+#define JSON_STRING_COPY(str)                 str_copy(str)
+#define JSON_NUMBER_PTR(num)                  num_assign_cstr(num)
+#define JSON_NUMBER(num)                      num_assign(num)
+#define JSON_NUMBER_DATA_PTR(data)            num_data_cstr(data)
+#define JSON_NUMBER_DATA(data)                num_data(data)
+#define JSON_NUMBER_COPY_PTR(num)             num_copy_cstr(num)
+#define JSON_NUMBER_COPY(num)                 num_copy(num)
+#define JSON_ARRAY_PTR()                      arr_default_cstr()
+#define JSON_ARRAY()                          arr_default()
+#define JSON_ARRAY_DATA_PTR(data)             arr_data_cstr(data)
+#define JSON_ARRAY_DATA(data)                 arr_data(data)
+#define JSON_ARRAY_COPY_PTR(arr)              arr_copy_cstr(arr)
+#define JSON_ARRAY_COPY(arr)                  arr_copy(arr)
 #define JSON_ARRAY_FOREACH(iter, end)         for(;iter.index != end.index;iter = arr_iterate(iter))
 #define JSON_ARRAY_REVERSE_FOREACH(iter, end) for(;iter.index != end.index;iter = arr_riterate(iter))
-#define JSON_TRUE()                           true_default_cstr()
-#define JSON_FALSE()                          false_default_cstr()
-#define JSON_NULL()                           null_default_cstr()
+#define JSON_TRUE_PTR()                       true_default_cstr()
+#define JSON_TRUE()                           true_default()
+#define JSON_FALSE_PTR()                      false_default_cstr()
+#define JSON_FALSE()                          false_default()
+#define JSON_NULL_PTR()                       null_default_cstr()
+#define JSON_NULL()                           null_default()
 #define JSON_REASSIGN(json, val)              bd_xjson_reassign(json, val)
-#define JSON_FREE(json)                       bd_xjson_free(json)
+#define FREE_JSON(json)                       bd_xjson_free(json)
+#define FREE_JSON_DATA(json)                  bd_xjson_free_data(json)
 
 #define JSON_STRINGIFY(json, pstr, plen)      bd_xjson_stringify(json, pstr, plen)
 #define JSON_PARSE(str, json)                 bd_xjson_parse(str, json)
