@@ -21,14 +21,10 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-# generate some simple cases for test
-CONFIG_TEST=y
 # riscv32 build
 CONFIG_RISCV32=
 # riscv64 build
 CONFIG_RISCV64=
-# strip debug information
-CONFIG_STRIP=
 
 ifdef CONFIG_RISCV32
 CROSS_PREFIX=riscv32-unknown-linux-gnu-
@@ -38,13 +34,10 @@ CROSS_PREFIX=riscv64-unknown-linux-gnu-
 endif
 
 CC=$(CROSS_PREFIX)gcc
-STRIP=$(CROSS_PREFIX)strip
 AR=$(CROSS_PREFIX)ar
 RANLIB=$(CROSS_PREFIX)ranlib
 
-CFLAGS=-std=c99 -O2 -g -D_REENTRANT -Wall -static
-TFLAGS:=$(CFLAGS)
-CFLAGS+=-I$(CURDIR)/include
+CFLAGS=-I$(CURDIR)/include -O2 -g -D_REENTRANT -DCONFIG_LOG_FILE=\"bd_xjson.log\" -Wall -MMD -static -std=c99
 LDFLAGS=
 
 OBJS:=$(addprefix lib/, bd_xjson_htab.o bd_xjson_impl.o bd_xjson_list.o bd_xjson.o utils.o)
@@ -60,27 +53,22 @@ TESTS:=test_json_array \
 
 PROGS:=$(LIB)
 PROGS+=$(USAGE)
-ifdef CONFIG_TEST
 PROGS+=$(TESTS)
-endif
 
 all: $(PROGS)
 
 $(LIB): $(OBJS)
-ifdef CONFIG_STRIP
-	$(STRIP) --strip-debug $^
-endif
 	$(AR) rv $@ $?
 	$(RANLIB) $@
 
 %: %.c $(LIB)
-	$(CC) $(TFLAGS) -o $@ $^
-ifdef CONFIG_STRIP
-	$(STRIP) -s $@
-endif
+	$(CC) $(LDFLAGS) -o $@ $^
 
 %.o: %.c
 	$(CC) $(CFLAGS) -c -o $@ $<
 
 clean:
-	rm -rf $(TESTS) $(USAGE) *.a lib/*.o
+	rm -rf $(PROGS) *.log *.d lib/*.o lib/*.d
+
+-include $(wildcard *.d)
+-include $(wildcard lib/*.d)

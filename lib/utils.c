@@ -22,12 +22,12 @@ char* xmstrcat(char *str, ...)
     return str;
 }
 
-#ifdef CONFIG_LOG
+#ifdef CONFIG_LOG_FILE
 static FILE *log_file;
 static void log_vprintf(const char *fmt, va_list ap)
 {
     if(!log_file)
-        log_file = fopen("/tmp/bd_xjson.log", "wb");
+        log_file = fopen(CONFIG_LOG_FILE, "wb");
     vfprintf(log_file, fmt, ap);
 }
 #else
