@@ -1,8 +1,8 @@
-#ifndef BD_XJSON_STACK_H
-#define BD_XJSON_STACK_H
+#ifndef JSONG_STACK_H
+#define JSONG_STACK_H
 
 #if 1
-#define bd_xjson_stack(__type) \
+#define jsong_stack(__type) \
 struct \
 { \
     int top; \
@@ -11,7 +11,7 @@ struct \
     __type* data; \
 }
 
-#define bd_xjson_stack_init(__stk, __capacity) \
+#define jsong_stack_init(__stk, __capacity) \
 do{ \
     (__stk).capacity = __capacity; \
     (__stk).top = -1; \
@@ -19,10 +19,10 @@ do{ \
     (__stk).data = xmallocz((__capacity)*sizeof(*((__stk).data))); \
 } while(0)
 
-#define bd_xjson_stack_top(__stk) \
+#define jsong_stack_top(__stk) \
     ((__stk).data[(__stk).top])
 
-#define bd_xjson_stack_push(__stk, __ele) \
+#define jsong_stack_push(__stk, __ele) \
 do{ \
     (__stk).top += 1; \
     if((__stk).top > (__stk).capacity >> 1) \
@@ -38,21 +38,21 @@ do{ \
     (__stk).size += 1; \
 } while(0)
 
-#define bd_xjson_stack_pop(__stk) \
+#define jsong_stack_pop(__stk) \
 do{ \
-    memset(&(bd_xjson_stack_top(__stk)), 0, sizeof(*((__stk).data))); \
+    memset(&(jsong_stack_top(__stk)), 0, sizeof(*((__stk).data))); \
     (__stk).top -= 1; \
     (__stk).size -= 1; \
 } while(0)
 
-#define bd_xjson_stack_pop_block(__stk, __count) \
+#define jsong_stack_pop_block(__stk, __count) \
 do{ \
     memset(&((__stk).data[(__stk).top + 1 - (__count)]), 0, (__count)*sizeof(*((__stk).data))); \
     (__stk).top -= (__count); \
     (__stk).size -= (__count); \
 } while(0)
 
-#define bd_xjson_stack_pop2_old_top(__stk, __old_top) \
+#define jsong_stack_pop2_old_top(__stk, __old_top) \
 do{ \
     memset(&((__stk).data[(__stk).top + 1 - ((__stk).top - (__old_top))]), \
         0, \
@@ -61,14 +61,14 @@ do{ \
     (__stk).size -= ((__stk).top - (__old_top)); \
 } while(0)
 
-#define bd_xjson_stack_pop_all(__stk) \
+#define jsong_stack_pop_all(__stk) \
 do{ \
     memset((__stk).data, 0, ((__stk).capacity)*sizeof(*((__stk).data))); \
     (__stk).top = -1; \
     (__stk).size = 0; \
 } while(0)
 
-#define bd_xjson_stack_clear(__stk) \
+#define jsong_stack_clear(__stk) \
 do{ \
     (__stk).top = -1; \
     (__stk).capacity = 0; \
@@ -76,11 +76,11 @@ do{ \
     xfree((__stk).data); \
 } while(0)
 
-#define bd_xjson_stack_empty(__stk) \
+#define jsong_stack_empty(__stk) \
     ((__stk).top == -1)
 
 #elif
-#define bd_xjson_stack(__type) \
+#define jsong_stack(__type) \
 struct \
 { \
     uint64_t top; \
@@ -89,7 +89,7 @@ struct \
     __type* data; \
 }
 
-#define bd_xjson_stack_init(__stk, __capacity) \
+#define jsong_stack_init(__stk, __capacity) \
 do{ \
     (__stk).top = __capacity; \
     (__stk).capacity = __capacity; \
@@ -97,13 +97,13 @@ do{ \
     (__stk).data = xmallocz((__capacity + 1)*sizeof(*((__stk).data))); \
 } while(0)
 
-#define bd_xjson_stack_top(__stk) \
+#define jsong_stack_top(__stk) \
     ((__stk).data[(__stk).top])
 
-#define bd_xjson_stack_next_index(__stk, __index) \
+#define jsong_stack_next_index(__stk, __index) \
     ((__index + 1)%((__stk).capacity + 1))
 
-#define bd_xjson_stack_push(__stk, __ele) \
+#define jsong_stack_push(__stk, __ele) \
 do{ \
     (__stk).top = ((__stk).top + 1) % ((__stk).capacity + 1); \
     if((__stk).top > (__stk).capacity >> 1) \
@@ -115,21 +115,21 @@ do{ \
     (__stk).size += 1; \
 } while(0)
 
-#define bd_xjson_stack_pop(__stk) \
+#define jsong_stack_pop(__stk) \
 do{ \
-    memset(&(bd_xjson_stack_top(__stk)), 0, sizeof(*((__stk).data))); \
+    memset(&(jsong_stack_top(__stk)), 0, sizeof(*((__stk).data))); \
     (__stk).top = (__stk).capacity - (((__stk).capacity - (__stk).top + 1) % ((__stk).capacity + 1)); \
     __stk.size -= 1; \
 } while(0)
 
-#define bd_xjson_stack_pop_block(__stk, __count) \
+#define jsong_stack_pop_block(__stk, __count) \
 do{ \
     memset(&((__stk).data[(__stk).top + 1 - __count]), 0, __count*sizeof(*((__stk).data))); \
     (__stk).top = (__stk).capacity - (((__stk).capacity - (__stk).top + __count) % ((__stk).capacity + 1)); \
     (__stk).size -= __count; \
 } while(0)
 
-#define bd_xjson_stack_pop_restore(__stk, __old_stk_top) \
+#define jsong_stack_pop_restore(__stk, __old_stk_top) \
 do{ \
     uint64_t __count = (__stk).top + 1 - (__old_stk_top + 1) % ((__stk).capacity + 1); \
     memset(&((__stk).data[(__stk).top + 1 - __count]), 0, __count*sizeof(*((__stk).data))); \
@@ -137,14 +137,14 @@ do{ \
     (__stk).size -= __count; \
 } while(0)
 
-#define bd_xjson_stack_pop_all(__stk) \
+#define jsong_stack_pop_all(__stk) \
 do{ \
     memset((__stk).data, 0, ((__stk).capacity)*sizeof(*((__stk).data))); \
     (__stk).top = (__stk).capacity; \
     (__stk).size = 0; \
 } while(0)
 
-#define bd_xjson_stack_clear(__stk) \
+#define jsong_stack_clear(__stk) \
 do{ \
     (__stk).top = 0; \
     (__stk).capacity = 0; \
@@ -152,7 +152,7 @@ do{ \
     xfree((__stk).data); \
 } while(0)
 
-#define bd_xjson_stack_empty(__stk) \
+#define jsong_stack_empty(__stk) \
     ((__stk).top == (__stk).capacity)
 
 #endif

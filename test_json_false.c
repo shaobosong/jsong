@@ -12,13 +12,13 @@ do \
 } while (0)
 
 /* only for test */
-void* get_json_data(bd_xjson_false* json)
+void* get_json_data(jsong_false* json)
 {
     return json->data;
 }
 
 /* only for test */
-bd_xjson_type get_json_type(bd_xjson_false* json)
+jsong_type get_json_type(jsong_false* json)
 {
     return json->type;
 }
@@ -28,7 +28,7 @@ void test_json_false_create_and_remove(void)
     /* create a json false */
     JSONFalse* json = JSON_FALSE_PTR();
     TEST_EXPECT(get_json_data(json), 0);
-    TEST_EXPECT(get_json_type(json), BD_XJSON_FALSE);
+    TEST_EXPECT(get_json_type(json), JSONG_FALSE);
     /* remove a json false */
     FREE_JSON(json);
 }
@@ -40,7 +40,7 @@ void test_json_false_stringify()
     JSONFalse* json = JSON_FALSE_PTR();
 
     /* stringify a json false */
-    bd_xjson_stringify(json, &str, &len);
+    jsong_stringify(json, &str, &len);
     TEST_EXPECT(strcmp(str, "false"), 0);
     free(str);
 
@@ -55,31 +55,31 @@ void test_parse_json_false()
 
     /* parse a json false */
     str = "false";
-    res = bd_xjson_parse(str, json);
+    res = jsong_parse(str, json);
     TEST_EXPECT(res, 0);
     TEST_EXPECT(get_json_data(json), 0);
-    TEST_EXPECT(get_json_type(json), BD_XJSON_FALSE);
+    TEST_EXPECT(get_json_type(json), JSONG_FALSE);
 
     str = " \t\n\rfalse \t\n\r";
-    res = bd_xjson_parse(str, json);
+    res = jsong_parse(str, json);
     TEST_EXPECT(res, 0);
     TEST_EXPECT(get_json_data(json), 0);
-    TEST_EXPECT(get_json_type(json), BD_XJSON_FALSE);
+    TEST_EXPECT(get_json_type(json), JSONG_FALSE);
 
     str = " f alse";
-    res = bd_xjson_parse(str, json);
+    res = jsong_parse(str, json);
     TEST_EXPECT(res, -1);
 
     str = "butdraw false";
-    res = bd_xjson_parse(str, json);
+    res = jsong_parse(str, json);
     TEST_EXPECT(res, -1);
 
     str = "fabutdrawlse";
-    res = bd_xjson_parse(str, json);
+    res = jsong_parse(str, json);
     TEST_EXPECT(res, -1);
 
     str = "false butdraw";
-    res = bd_xjson_parse(str, json);
+    res = jsong_parse(str, json);
     TEST_EXPECT(res, -1);
 }
 

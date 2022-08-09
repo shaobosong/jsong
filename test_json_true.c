@@ -12,13 +12,13 @@ do \
 } while (0)
 
 /* only for test */
-void* get_json_data(bd_xjson_true* json)
+void* get_json_data(jsong_true* json)
 {
     return json->data;
 }
 
 /* only for test */
-bd_xjson_type get_json_type(bd_xjson_true* json)
+jsong_type get_json_type(jsong_true* json)
 {
     return json->type;
 }
@@ -28,7 +28,7 @@ void test_json_true_create_and_remove(void)
     /* create a json true */
     JSONTrue* json = JSON_TRUE_PTR();
     TEST_EXPECT(get_json_data(json), 0);
-    TEST_EXPECT(get_json_type(json), BD_XJSON_TRUE);
+    TEST_EXPECT(get_json_type(json), JSONG_TRUE);
     /* remove a json true */
     FREE_JSON(json);
 }
@@ -40,7 +40,7 @@ void test_json_true_stringify()
     JSONTrue* json = JSON_TRUE_PTR();
 
     /* stringify a json true */
-    bd_xjson_stringify(json, &str, &len);
+    jsong_stringify(json, &str, &len);
     TEST_EXPECT(strcmp(str, "true"), 0);
     free(str);
 
@@ -55,31 +55,31 @@ void test_parse_json_true()
 
     /* parse a json true */
     str = "true";
-    res = bd_xjson_parse(str, json);
+    res = jsong_parse(str, json);
     TEST_EXPECT(res, 0);
     TEST_EXPECT(get_json_data(json), 0);
-    TEST_EXPECT(get_json_type(json), BD_XJSON_TRUE);
+    TEST_EXPECT(get_json_type(json), JSONG_TRUE);
 
     str = " \t\n\rtrue \t\n\r";
-    res = bd_xjson_parse(str, json);
+    res = jsong_parse(str, json);
     TEST_EXPECT(res, 0);
     TEST_EXPECT(get_json_data(json), 0);
-    TEST_EXPECT(get_json_type(json), BD_XJSON_TRUE);
+    TEST_EXPECT(get_json_type(json), JSONG_TRUE);
 
     str = " t rue";
-    res = bd_xjson_parse(str, json);
+    res = jsong_parse(str, json);
     TEST_EXPECT(res, -1);
 
     str = "butdraw true";
-    res = bd_xjson_parse(str, json);
+    res = jsong_parse(str, json);
     TEST_EXPECT(res, -1);
 
     str = "trbutdrawue";
-    res = bd_xjson_parse(str, json);
+    res = jsong_parse(str, json);
     TEST_EXPECT(res, -1);
 
     str = "true butdraw";
-    res = bd_xjson_parse(str, json);
+    res = jsong_parse(str, json);
     TEST_EXPECT(res, -1);
 }
 

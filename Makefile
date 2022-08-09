@@ -1,5 +1,5 @@
 #
-# bd_xjson
+# jsong
 #
 # Copyright (c) 2022 ShaoBo Song
 #
@@ -37,10 +37,10 @@ CC=$(CROSS_PREFIX)gcc
 AR=$(CROSS_PREFIX)ar
 RANLIB=$(CROSS_PREFIX)ranlib
 
-CFLAGS=-I$(CURDIR)/include -O2 -g -D_REENTRANT -DCONFIG_LOG_FILE=\"bd_xjson.log\" -Wall -MMD -static -std=c99
+CFLAGS=-I$(CURDIR)/include -O0 -g -D_REENTRANT -DCONFIG_LOG_FILE=\"jsong.log\" -Wall -MMD -std=c99
 LDFLAGS=
 
-OBJS:=$(addprefix lib/, bd_xjson_htab.o bd_xjson_impl.o bd_xjson_list.o bd_xjson.o utils.o)
+OBJS:=$(addprefix lib/, jsong_htab.o jsong_impl.o jsong_list.o jsong.o utils.o)
 LIB:=libjson.a
 USAGE:=usage
 TESTS:=test_json_array \
@@ -62,7 +62,7 @@ $(LIB): $(OBJS)
 	$(RANLIB) $@
 
 %: %.c $(LIB)
-	$(CC) $(LDFLAGS) -o $@ $^
+	$(CC) $(CFLAGS) -o $@ $^
 
 %.o: %.c
 	$(CC) $(CFLAGS) -c -o $@ $<

@@ -14,47 +14,47 @@ do \
 } while (0)
 
 /* only for test */
-typedef struct bd_xjson_node bd_xjson_node;
-typedef struct bd_xjson_list
+typedef struct jsong_node jsong_node;
+typedef struct jsong_list
 {
-    bd_xjson_node* head, * tail, * nil;
+    jsong_node* head, * tail, * nil;
     int size;
-} bd_xjson_list;
+} jsong_list;
 
 /* only for test */
-typedef struct bd_xjson_entry bd_xjson_entry;
-typedef struct bd_xjson_htab
+typedef struct jsong_entry jsong_entry;
+typedef struct jsong_htab
 {
-    bd_xjson_entry* entries;
+    jsong_entry* entries;
     uint64_t capacity, size, first, last;
-} bd_xjson_htab;
+} jsong_htab;
 
 /* only for test */
-bd_xjson_node* get_json_array_list_head(bd_xjson_array* arr)
+jsong_node* get_json_array_list_head(jsong_array* arr)
 {
-    return ((bd_xjson_list*)(arr->data))->head;
+    return ((jsong_list*)(arr->data))->head;
 }
 
 /* only for test */
-bd_xjson_node* get_json_array_list_tail(bd_xjson_array* arr)
+jsong_node* get_json_array_list_tail(jsong_array* arr)
 {
-    return ((bd_xjson_list*)(arr->data))->tail;
+    return ((jsong_list*)(arr->data))->tail;
 }
 
 /* only for test */
-int get_json_array_list_size(bd_xjson_array* arr)
+int get_json_array_list_size(jsong_array* arr)
 {
-    return ((bd_xjson_list*)(arr->data))->size;
+    return ((jsong_list*)(arr->data))->size;
 }
 
 /* for test */
-int get_json_object_htab_size(bd_xjson_object* obj)
+int get_json_object_htab_size(jsong_object* obj)
 {
-    return ((bd_xjson_htab*)(obj->data))->size;
+    return ((jsong_htab*)(obj->data))->size;
 }
 
 /* only for test */
-bd_xjson_type get_json_type(bd_xjson* json)
+jsong_type get_json_type(jsong* json)
 {
     return json->type;
 }
@@ -64,7 +64,7 @@ void test_json_object_create_and_remove(void)
      /* create a object */
     JSONObject* json = JSON_OBJECT_PTR();
     TEST_EXPECT(get_json_object_htab_size(json), 0);
-    TEST_EXPECT(get_json_type((bd_xjson*)json), BD_XJSON_OBJECT);
+    TEST_EXPECT(get_json_type((jsong*)json), JSONG_OBJECT);
     /* remove a object */
     FREE_JSON(json);
 }
@@ -89,7 +89,7 @@ void test_json_object_set_and_get_json_string(void)
     str = json_str->get(json_str);
     str_get = json_str_get->get(json_str_get);
     TEST_EXPECT(strcmp(str, str_get), 0);
-    TEST_EXPECT(json_str_get->type, BD_XJSON_STRING);
+    TEST_EXPECT(json_str_get->type, JSONG_STRING);
     free(str);
     free(str_get);
 
@@ -108,7 +108,7 @@ void test_json_object_set_and_get_json_string(void)
     json_str_get = json_obj->get(json_obj, "name", json_str_get);
     str_get = json_str_get->get(json_str_get);
     TEST_EXPECT(strcmp("butdraw butdraw", str_get), 0);
-    TEST_EXPECT(json_str_get->type, BD_XJSON_STRING);
+    TEST_EXPECT(json_str_get->type, JSONG_STRING);
     free(str_get);
 
     FREE_JSON(json_str);
@@ -136,7 +136,7 @@ void test_json_object_set_and_get_json_number(void)
     num = json_num->get(json_num);
     num_get = json_num_get->get(json_num_get);
     TEST_EXPECT(num, num_get);
-    TEST_EXPECT(json_num_get->type, BD_XJSON_NUMBER);
+    TEST_EXPECT(json_num_get->type, JSONG_NUMBER);
 
     /* get a number directly by key */
     num = json_num->get(json_num);
@@ -151,7 +151,7 @@ void test_json_object_set_and_get_json_number(void)
     json_num_get = json_obj->get(json_obj, "age", json_num_get);
     num_get = json_num_get->get(json_num_get);
     TEST_EXPECT(2099, num_get);
-    TEST_EXPECT(json_num_get->type, BD_XJSON_NUMBER);
+    TEST_EXPECT(json_num_get->type, JSONG_NUMBER);
 
     FREE_JSON(json_num);
     FREE_JSON(json_num_get);
@@ -174,7 +174,7 @@ void test_json_object_set_and_get_json_true(void)
     /* get a json true */
     json_true_get = json_obj->get(json_obj, "isadult", json_true_get);
     TEST_EXPECT(json_true_get->data, 0);
-    TEST_EXPECT(json_true_get->type, BD_XJSON_TRUE);
+    TEST_EXPECT(json_true_get->type, JSONG_TRUE);
 
     FREE_JSON(json_true);
     FREE_JSON(json_true_get);
@@ -197,7 +197,7 @@ void test_json_object_set_and_get_json_false(void)
     /* get a json false */
     json_false_get = json_obj->get(json_obj, "isadult", json_false_get);
     TEST_EXPECT(json_false_get->data, 0);
-    TEST_EXPECT(json_false_get->type, BD_XJSON_FALSE);
+    TEST_EXPECT(json_false_get->type, JSONG_FALSE);
 
     FREE_JSON(json_false);
     FREE_JSON(json_false_get);
@@ -220,7 +220,7 @@ void test_json_object_set_and_get_json_null(void)
     /* get a json null */
     json_null_get = json_obj->get(json_obj, "other information", json_null_get);
     TEST_EXPECT(json_null_get->data, 0);
-    TEST_EXPECT(json_null_get->type, BD_XJSON_NULL);
+    TEST_EXPECT(json_null_get->type, JSONG_NULL);
 
     FREE_JSON(json_null);
     FREE_JSON(json_null_get);
@@ -277,7 +277,7 @@ void test_json_object_set_and_get_json_object(void)
         strcat(compr, get);
     }
     TEST_EXPECT(strcmp(stack, compr), 0);
-    TEST_EXPECT(sub_json_obj_get->type, BD_XJSON_OBJECT);
+    TEST_EXPECT(sub_json_obj_get->type, JSONG_OBJECT);
     printf("-------------------\n");
 
     sub_json_obj->set_str(sub_json_obj, "name", "yoyo");
@@ -316,7 +316,7 @@ void test_json_object_set_and_get_json_object(void)
         strcat(compr, get);
     }
     TEST_EXPECT(strcmp(stack, compr), 0);
-    TEST_EXPECT(sub_json_obj_get->type, BD_XJSON_OBJECT);
+    TEST_EXPECT(sub_json_obj_get->type, JSONG_OBJECT);
     printf("-------------------\n");
 
     FREE_JSON(json_obj);
@@ -371,7 +371,7 @@ void test_json_object_set_and_get_json_array(void)
         strcat(compr, get);
     }
     TEST_EXPECT(strcmp(stack, compr), 0);
-    TEST_EXPECT(sub_json_arr_get->type, BD_XJSON_ARRAY);
+    TEST_EXPECT(sub_json_arr_get->type, JSONG_ARRAY);
     printf("-------------------\n");
 
     sub_json_arr->set_str(sub_json_arr, 0, "lemon");
@@ -407,7 +407,7 @@ void test_json_object_set_and_get_json_array(void)
         strcat(compr, get);
     }
     TEST_EXPECT(strcmp(stack, compr), 0);
-    TEST_EXPECT(sub_json_arr_get->type, BD_XJSON_ARRAY);
+    TEST_EXPECT(sub_json_arr_get->type, JSONG_ARRAY);
     printf("-------------------\n");
 
     FREE_JSON(json_obj);
@@ -435,7 +435,7 @@ void test_json_object_add_json_string(void)
     str = json_str->get(json_str);
     str_get = json_str_get->get(json_str_get);
     TEST_EXPECT(strcmp(str, str_get), 0);
-    TEST_EXPECT(json_str_get->type, BD_XJSON_STRING);
+    TEST_EXPECT(json_str_get->type, JSONG_STRING);
     free(str);
     free(str_get);
 
@@ -454,7 +454,7 @@ void test_json_object_add_json_string(void)
     json_str_get = json_obj->get(json_obj, "age", json_str_get);
     str_get = json_str_get->get(json_str_get);
     TEST_EXPECT(strcmp("29", str_get), 0);
-    TEST_EXPECT(json_str_get->type, BD_XJSON_STRING);
+    TEST_EXPECT(json_str_get->type, JSONG_STRING);
     free(str_get);
 
     FREE_JSON(json_str);
@@ -482,7 +482,7 @@ void test_json_object_add_json_number(void)
     num = json_num->get(json_num);
     num_get = json_num_get->get(json_num_get);
     TEST_EXPECT(num, num_get);
-    TEST_EXPECT(json_num_get->type, BD_XJSON_NUMBER);
+    TEST_EXPECT(json_num_get->type, JSONG_NUMBER);
 
     /* get a number directly by key */
     num = json_num->get(json_num);
@@ -497,7 +497,7 @@ void test_json_object_add_json_number(void)
     json_num_get = json_obj->get(json_obj, "level", json_num_get);
     num_get = json_num_get->get(json_num_get);
     TEST_EXPECT(2099, num_get);
-    TEST_EXPECT(json_num_get->type, BD_XJSON_NUMBER);
+    TEST_EXPECT(json_num_get->type, JSONG_NUMBER);
 
     FREE_JSON(json_num);
     FREE_JSON(json_num_get);
@@ -520,7 +520,7 @@ void test_json_object_add_json_true(void)
     /* get a json true */
     json_true_get = json_obj->get(json_obj, "isadult", json_true_get);
     TEST_EXPECT(json_true_get->data, 0);
-    TEST_EXPECT(json_true_get->type, BD_XJSON_TRUE);
+    TEST_EXPECT(json_true_get->type, JSONG_TRUE);
 
     /* add a json true into json object directly */
     json_obj->add_true(json_obj, "isstudent");
@@ -529,7 +529,7 @@ void test_json_object_add_json_true(void)
     /* get a json true */
     json_true_get = json_obj->get(json_obj, "isstudent", json_true_get);
     TEST_EXPECT(json_true_get->data, 0);
-    TEST_EXPECT(json_true_get->type, BD_XJSON_TRUE);
+    TEST_EXPECT(json_true_get->type, JSONG_TRUE);
 
     FREE_JSON(json_true);
     FREE_JSON(json_true_get);
@@ -552,7 +552,7 @@ void test_json_object_add_json_false(void)
     /* get a json false */
     json_false_get = json_obj->get(json_obj, "isadult", json_false_get);
     TEST_EXPECT(json_false_get->data, 0);
-    TEST_EXPECT(json_false_get->type, BD_XJSON_FALSE);
+    TEST_EXPECT(json_false_get->type, JSONG_FALSE);
 
     /* add a json false into json object directly */
     json_obj->add_false(json_obj, "isstudent");
@@ -561,7 +561,7 @@ void test_json_object_add_json_false(void)
     /* get a json flase */
     json_false_get = json_obj->get(json_obj, "isstudent", json_false_get);
     TEST_EXPECT(json_false_get->data, 0);
-    TEST_EXPECT(json_false_get->type, BD_XJSON_FALSE);
+    TEST_EXPECT(json_false_get->type, JSONG_FALSE);
 
     FREE_JSON(json_false);
     FREE_JSON(json_false_get);
@@ -584,7 +584,7 @@ void test_json_object_add_json_null(void)
     /* get a json null */
     json_null_get = json_obj->get(json_obj, "isadult", json_null_get);
     TEST_EXPECT(json_null_get->data, 0);
-    TEST_EXPECT(json_null_get->type, BD_XJSON_NULL);
+    TEST_EXPECT(json_null_get->type, JSONG_NULL);
 
     /* add a json null into json object directly */
     json_obj->add_null(json_obj, "isstudent");
@@ -593,7 +593,7 @@ void test_json_object_add_json_null(void)
     /* get a json null */
     json_null_get = json_obj->get(json_obj, "isstudent", json_null_get);
     TEST_EXPECT(json_null_get->data, 0);
-    TEST_EXPECT(json_null_get->type, BD_XJSON_NULL);
+    TEST_EXPECT(json_null_get->type, JSONG_NULL);
 
     FREE_JSON(json_null);
     FREE_JSON(json_null_get);
@@ -650,7 +650,7 @@ void test_json_object_add_json_object(void)
         strcat(compr, get);
     }
     TEST_EXPECT(strcmp(stack, compr), 0);
-    TEST_EXPECT(sub_json_obj_get->type, BD_XJSON_OBJECT);
+    TEST_EXPECT(sub_json_obj_get->type, JSONG_OBJECT);
     printf("-------------------\n");
 
     sub_json_obj->set_str(sub_json_obj, "name", "yoyo");
@@ -689,7 +689,7 @@ void test_json_object_add_json_object(void)
         strcat(compr, get);
     }
     TEST_EXPECT(strcmp(stack, compr), 0);
-    TEST_EXPECT(sub_json_obj_get->type, BD_XJSON_OBJECT);
+    TEST_EXPECT(sub_json_obj_get->type, JSONG_OBJECT);
     printf("-------------------\n");
 
     FREE_JSON(json_obj);
@@ -744,7 +744,7 @@ void test_json_object_add_json_array(void)
         strcat(compr, get);
     }
     TEST_EXPECT(strcmp(stack, compr), 0);
-    TEST_EXPECT(sub_json_arr_get->type, BD_XJSON_ARRAY);
+    TEST_EXPECT(sub_json_arr_get->type, JSONG_ARRAY);
     printf("-------------------\n");
 
     sub_json_arr->set_str(sub_json_arr, 0, "lemon");
@@ -780,7 +780,7 @@ void test_json_object_add_json_array(void)
         strcat(compr, get);
     }
     TEST_EXPECT(strcmp(stack, compr), 0);
-    TEST_EXPECT(sub_json_arr_get->type, BD_XJSON_ARRAY);
+    TEST_EXPECT(sub_json_arr_get->type, JSONG_ARRAY);
     printf("-------------------\n");
 
     FREE_JSON(json_obj);
@@ -894,7 +894,7 @@ void test_json_object_delete_json(void)
     TEST_EXPECT(strcmp(stack, compr), 0);
     memset(stack, 0, 256);
     memset(compr, 0, 256);
-    TEST_EXPECT(sub_json_obj_get->type, BD_XJSON_OBJECT);
+    TEST_EXPECT(sub_json_obj_get->type, JSONG_OBJECT);
     printf("-------------------\n");
 
     /* delete a element */
@@ -915,7 +915,7 @@ void test_json_object_delete_json(void)
         TEST_EXPECT(strcmp(get, values[i]), 0);
         i++;
     }
-    TEST_EXPECT(sub_json_arr_get->type, BD_XJSON_ARRAY);
+    TEST_EXPECT(sub_json_arr_get->type, JSONG_ARRAY);
 
     /* delete a array */
     json_obj->del(json_obj, "array");
@@ -1037,7 +1037,7 @@ void test_json_object_stringify(void)
     json_obj->add(json_obj, "array", sub_json_arr);
 
     /* stringify a json array */
-    bd_xjson_stringify(json_obj, &str_json, &len);
+    jsong_stringify(json_obj, &str_json, &len);
     printf("%s\n", str_json);
     TEST_EXPECT(strcmp(str_json, str), 0 );
     free(str_json);
@@ -1051,15 +1051,15 @@ void test_parse_json_object(void )
     char stack[256];
     memset(stack, 0, 256);
     int i;
-    bd_xjson_type types[7] =
+    jsong_type types[7] =
     {
-        BD_XJSON_STRING,
-        BD_XJSON_NUMBER,
-        BD_XJSON_TRUE,
-        BD_XJSON_FALSE,
-        BD_XJSON_NULL,
-        BD_XJSON_OBJECT,
-        BD_XJSON_ARRAY
+        JSONG_STRING,
+        JSONG_NUMBER,
+        JSONG_TRUE,
+        JSONG_FALSE,
+        JSONG_NULL,
+        JSONG_OBJECT,
+        JSONG_ARRAY
     };
     char* str =
     "{"
@@ -1115,7 +1115,7 @@ void test_parse_json_object(void )
     /* create a json object */
     JSONObject* json_obj = JSON_OBJECT_PTR();
 
-    bd_xjson_parse(str, json_obj);
+    jsong_parse(str, json_obj);
 
     /* check data */
     char* str_json = json_obj->get_str(json_obj, "string");

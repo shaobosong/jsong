@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <assert.h>
 
-#include "lib/bd_xjson_htab.h"
+#include "lib/jsong_htab.h"
 #include "lib/utils.h"
 
 
@@ -24,27 +24,27 @@ static uint64_t hash_key(const char* key)
     return hash;
 }
 
-static void entry_clear(bd_xjson_entry* e)
+static void entry_clear(jsong_entry* e)
 {
     assert(e);
     xfree(e->key);
-    bd_xjson_free_data(&e->value);
+    jsong_free_data(&e->value);
     memset(e, 0, sizeof(*e));
 }
 
-static void entry_copy(bd_xjson_entry* d, const bd_xjson_entry* s)
+static void entry_copy(jsong_entry* d, const jsong_entry* s)
 {
     /* copy key */
     d->key = xmallocz(strlen(s->key) + 1);
     strcat(d->key, s->key);
     /* copy value */
-    bd_xjson_copy(&(d->value), &(s->value));
+    jsong_copy(&(d->value), &(s->value));
     /* copy index */
     d->prev = s->prev;
     d->next = s->next;
 }
 
-static void entry_placed_in(bd_xjson_htab* h, uint64_t p)
+static void entry_placed_in(jsong_htab* h, uint64_t p)
 {
     uint64_t i;
 
@@ -74,8 +74,8 @@ static void entry_placed_in(bd_xjson_htab* h, uint64_t p)
     /* h->begin < p < h->end */
     i = h->first;
     for(; i < p; i = h->entries[i].next);
-    bd_xjson_entry* prev = &h->entries[h->entries[i].prev];
-    bd_xjson_entry* next = &h->entries[i];
+    jsong_entry* prev = &h->entries[h->entries[i].prev];
+    jsong_entry* next = &h->entries[i];
     h->entries[p].prev = next->prev;
     h->entries[p].next = prev->next;
     prev->next = p;
@@ -83,7 +83,7 @@ static void entry_placed_in(bd_xjson_htab* h, uint64_t p)
     return ;
 }
 
-static void entry_removed_in(bd_xjson_htab* h, uint64_t p)
+static void entry_removed_in(jsong_htab* h, uint64_t p)
 {
     /* removed the last in entries */
     if(h->entries[p].prev == h->entries[p].next) {
@@ -109,11 +109,11 @@ static void entry_removed_in(bd_xjson_htab* h, uint64_t p)
     return ;
 }
 
-bd_xjson_htab* htab_create(uint64_t c)
+jsong_htab* htab_create(uint64_t c)
 {
-    bd_xjson_htab* h;
+    jsong_htab* h;
     h = xmallocz(sizeof *h);
-    h->entries = xmallocz((c + 1)*sizeof(bd_xjson_entry));
+    h->entries = xmallocz((c + 1)*sizeof(jsong_entry));
     h->size = 0;
     h->capacity = c;
     h->first = c;
@@ -122,21 +122,21 @@ bd_xjson_htab* htab_create(uint64_t c)
     return h;
 }
 
-bd_xjson_htab* htab_create_copy(const bd_xjson_htab* s)
+jsong_htab* htab_create_copy(const jsong_htab* s)
 {
-    bd_xjson_htab* d;
+    jsong_htab* d;
     uint64_t i;
-    bd_xjson_htab_iter iter, end;
+    jsong_htab_iter iter, end;
 
     assert(s->capacity != 0);
     d = htab_create(s->capacity);
 
     iter = htab_begin(s);
     end = htab_end(s);
-    bd_xjson_htab_foreach(iter, end)
+    jsong_htab_foreach(iter, end)
     {
         i = (iter.index - iter.__entries) /
-            sizeof(bd_xjson_entry);
+            sizeof(jsong_entry);
         entry_copy(&d->entries[i], &s->entries[i]);
     }
 
@@ -148,9 +148,9 @@ bd_xjson_htab* htab_create_copy(const bd_xjson_htab* s)
     return d;
 }
 
-void htab_free(bd_xjson_htab* h)
+void htab_free(jsong_htab* h)
 {
-    bd_xjson_entry *curr, *end, *next;
+    jsong_entry *curr, *end, *next;
 
     assert(h);
     /* entries clear */
@@ -170,11 +170,11 @@ void htab_free(bd_xjson_htab* h)
     xfree(h);
 }
 
-static void htab_grow(bd_xjson_htab* h, uint64_t c)
+static void htab_grow(jsong_htab* h, uint64_t c)
 {
     uint64_t i;
-    bd_xjson_htab old = *h;
-    bd_xjson_htab_iter iter, end;
+    jsong_htab old = *h;
+    jsong_htab_iter iter, end;
 
     /* if capacity is up to max valid value, stop growing */
     if(c < h->capacity) {
@@ -183,7 +183,7 @@ static void htab_grow(bd_xjson_htab* h, uint64_t c)
     }
 
     /* set new htab properities */
-    h->entries = xmallocz((c + 1)*sizeof(bd_xjson_entry));
+    h->entries = xmallocz((c + 1)*sizeof(jsong_entry));
     h->capacity = c;
     h->first = c;
     h->last = c;
@@ -191,7 +191,7 @@ static void htab_grow(bd_xjson_htab* h, uint64_t c)
     /* shallow copy to improve performance */
     iter = htab_begin(&old);
     end = htab_end(&old);
-    bd_xjson_htab_foreach(iter, end)
+    jsong_htab_foreach(iter, end)
     {
         i = (uint64_t)(hash_key(iter.key) & (c - 1));
         /* unsafe */
@@ -199,7 +199,7 @@ static void htab_grow(bd_xjson_htab* h, uint64_t c)
         {
             i = (i + 1) & (c - 1);
         }
-        h->entries[i] = *(bd_xjson_entry*)iter.index;
+        h->entries[i] = *(jsong_entry*)iter.index;
         entry_placed_in(h, i);
     }
 
@@ -207,7 +207,7 @@ static void htab_grow(bd_xjson_htab* h, uint64_t c)
     xfree(old.entries);
 }
 
-static uint64_t htab_find_id(const bd_xjson_htab* h, const char* k)
+static uint64_t htab_find_id(const jsong_htab* h, const char* k)
 {
     uint64_t i = hash_key(k) & (h->capacity - 1);
     uint64_t n = 0;
@@ -226,7 +226,7 @@ static uint64_t htab_find_id(const bd_xjson_htab* h, const char* k)
     return i;
 }
 
-int htab_insert_ref(bd_xjson_htab* h, const char* k, const bd_xjson* v)
+int htab_insert_ref(jsong_htab* h, const char* k, const jsong* v)
 {
     /* if size of hash table will exceed half of capacity, grow it */
     if(h->size > (h->capacity >> 1)) {
@@ -251,7 +251,7 @@ int htab_insert_ref(bd_xjson_htab* h, const char* k, const bd_xjson* v)
     return 0;
 }
 
-int htab_insert(bd_xjson_htab* h, const char* k, const bd_xjson* v)
+int htab_insert(jsong_htab* h, const char* k, const jsong* v)
 {
     uint64_t i;
 
@@ -273,7 +273,7 @@ int htab_insert(bd_xjson_htab* h, const char* k, const bd_xjson* v)
     h->entries[i].key = xmallocz(strlen(k) + 1);
     strcat(h->entries[i].key, k);
     /* insert a value */
-    bd_xjson_copy(&(h->entries[i].value), v);
+    jsong_copy(&(h->entries[i].value), v);
     /* plus 1 in size */
     h->size += 1;
     /* alter index of begin and end iterator */
@@ -282,7 +282,7 @@ int htab_insert(bd_xjson_htab* h, const char* k, const bd_xjson* v)
     return 0;
 }
 
-static void entries_reorder(bd_xjson_htab* htab, uint64_t start, uint64_t middle, uint64_t end)
+static void entries_reorder(jsong_htab* htab, uint64_t start, uint64_t middle, uint64_t end)
 {
     uint64_t e2m, e2m_id, k;
 
@@ -311,7 +311,7 @@ static void entries_reorder(bd_xjson_htab* htab, uint64_t start, uint64_t middle
     return ;
 }
 
-int htab_erase(bd_xjson_htab* htab, const char* key)
+int htab_erase(jsong_htab* htab, const char* key)
 {
     uint64_t i, s, e;
 
@@ -342,7 +342,7 @@ int htab_erase(bd_xjson_htab* htab, const char* key)
 }
 
 /* check if type of val matches type of found element */
-int htab_find(const bd_xjson_htab* htab, const char* key, bd_xjson* val)
+int htab_find(const jsong_htab* htab, const char* key, jsong* val)
 {
     uint64_t i = htab_find_id(htab, key);
     if(i == htab->capacity || NULL == htab->entries[i].key) {
@@ -356,14 +356,14 @@ int htab_find(const bd_xjson_htab* htab, const char* key, bd_xjson* val)
     }
     /* free exist data */
     if(val->data) {
-        bd_xjson_free_data(val);
+        jsong_free_data(val);
     }
-    bd_xjson_copy(val, &(htab->entries[i].value));
+    jsong_copy(val, &(htab->entries[i].value));
 
     return 0;
 }
 
-int htab_find_ref(const bd_xjson_htab* htab, const char* key, bd_xjson* val)
+int htab_find_ref(const jsong_htab* htab, const char* key, jsong* val)
 {
     uint64_t i = htab_find_id(htab, key);
     if(i == htab->capacity || NULL == htab->entries[i].key) {
@@ -377,14 +377,14 @@ int htab_find_ref(const bd_xjson_htab* htab, const char* key, bd_xjson* val)
     }
     /* free exist data */
     if(val->data) {
-        bd_xjson_free_data(val);
+        jsong_free_data(val);
     }
     *val = htab->entries[i].value;
 
     return 0;
 }
 
-int htab_update(bd_xjson_htab* htab, const char* key, const bd_xjson* val)
+int htab_update(jsong_htab* htab, const char* key, const jsong* val)
 {
     uint64_t i = htab_find_id(htab, key);
     if(i == htab->capacity || NULL == htab->entries[i].key) {
@@ -393,14 +393,14 @@ int htab_update(bd_xjson_htab* htab, const char* key, const bd_xjson* val)
     }
 
     /* free old entry data */
-    bd_xjson_free_data(&(htab->entries[i].value));
+    jsong_free_data(&(htab->entries[i].value));
     /* update type and value */
-    bd_xjson_copy(&(htab->entries[i].value), val);
+    jsong_copy(&(htab->entries[i].value), val);
 
     return 0;
 }
 
-int htab_update_ref(bd_xjson_htab* htab, const char* key, const bd_xjson* val)
+int htab_update_ref(jsong_htab* htab, const char* key, const jsong* val)
 {
     uint64_t i = htab_find_id(htab, key);
     if(i == htab->capacity || NULL == htab->entries[i].key) {
@@ -409,14 +409,14 @@ int htab_update_ref(bd_xjson_htab* htab, const char* key, const bd_xjson* val)
     }
 
     /* free old entry data */
-    bd_xjson_free_data(&(htab->entries[i].value));
+    jsong_free_data(&(htab->entries[i].value));
     /* update type and value */
     htab->entries[i].value = *val;
 
     return 0;
 }
 
-int htab_set(bd_xjson_htab* htab, const char* key, const bd_xjson* val)
+int htab_set(jsong_htab* htab, const char* key, const jsong* val)
 {
     uint64_t i = htab_find_id(htab, key);
 
@@ -437,7 +437,7 @@ int htab_set(bd_xjson_htab* htab, const char* key, const bd_xjson* val)
     return 0;
 }
 
-int htab_set_ref(bd_xjson_htab* htab, const char* key, const bd_xjson* val)
+int htab_set_ref(jsong_htab* htab, const char* key, const jsong* val)
 {
     uint64_t i = htab_find_id(htab, key);
 
@@ -458,9 +458,9 @@ int htab_set_ref(bd_xjson_htab* htab, const char* key, const bd_xjson* val)
     return 0;
 }
 
-bd_xjson_htab_iter htab_begin(const bd_xjson_htab* h)
+jsong_htab_iter htab_begin(const jsong_htab* h)
 {
-    bd_xjson_htab_iter iter = {
+    jsong_htab_iter iter = {
         .index = &h->entries[h->first],
         .key = h->entries[h->first].key,
         .value = h->entries[h->first].value,
@@ -469,18 +469,18 @@ bd_xjson_htab_iter htab_begin(const bd_xjson_htab* h)
     return iter;
 }
 
-bd_xjson_htab_iter htab_end(const bd_xjson_htab* h)
+jsong_htab_iter htab_end(const jsong_htab* h)
 {
-    bd_xjson_htab_iter iter = {
+    jsong_htab_iter iter = {
         .index = &h->entries[h->capacity]
     };
     return iter;
 }
 
-bd_xjson_htab_iter htab_iterate(bd_xjson_htab_iter iter)
+jsong_htab_iter htab_iterate(jsong_htab_iter iter)
 {
-    bd_xjson_entry* index = iter.index;
-    bd_xjson_entry* entries = iter.__entries;
+    jsong_entry* index = iter.index;
+    jsong_entry* entries = iter.__entries;
 
     iter.index = &entries[index->next];
     iter.key = entries[index->next].key;
@@ -489,7 +489,7 @@ bd_xjson_htab_iter htab_iterate(bd_xjson_htab_iter iter)
     return iter;
 }
 
-int htab_iter_get(bd_xjson_htab_iter iter, bd_xjson* val)
+int htab_iter_get(jsong_htab_iter iter, jsong* val)
 {
     if(val->type != iter.value.type) {
         THROW_WARNING("unmatched JSON type to get value in iterator");
@@ -497,9 +497,9 @@ int htab_iter_get(bd_xjson_htab_iter iter, bd_xjson* val)
     }
     /* free old val data if exist */
     if(val->data) {
-        bd_xjson_free_data(val);
+        jsong_free_data(val);
     }
     /* copy from iter data */
-    bd_xjson_copy(val, &(iter.value));
+    jsong_copy(val, &(iter.value));
     return 0;
 }

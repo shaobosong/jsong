@@ -3,28 +3,28 @@
 #include <string.h>
 #include <assert.h>
 
-#include "lib/bd_xjson_list.h"
+#include "lib/jsong_list.h"
 #include "lib/utils.h"
 
 
-static bd_xjson_node* node_create()
+static jsong_node* node_create()
 {
-    return xmallocz(sizeof(bd_xjson_node));
+    return xmallocz(sizeof(jsong_node));
 }
 
-static void node_free(bd_xjson_node* n)
+static void node_free(jsong_node* n)
 {
     assert(n);
-    bd_xjson_free_data(&(n->value));
+    jsong_free_data(&(n->value));
     xfree(n);
 }
 
-bd_xjson_list* list_create()
+jsong_list* list_create()
 {
-    bd_xjson_list *l = xmallocz(sizeof *l);
+    jsong_list *l = xmallocz(sizeof *l);
 
     /* create a dummy node */
-    bd_xjson_node* n = node_create();
+    jsong_node* n = node_create();
     n->next =
     n->prev =
     l->nil =
@@ -35,11 +35,11 @@ bd_xjson_list* list_create()
     return l;
 }
 
-bd_xjson_list* list_create_copy(const bd_xjson_list* s)
+jsong_list* list_create_copy(const jsong_list* s)
 {
-    bd_xjson_list *d;
-    const bd_xjson_node *in, *en;
-    bd_xjson_node *nn;
+    jsong_list *d;
+    const jsong_node *in, *en;
+    jsong_node *nn;
 
     d = list_create();
 
@@ -48,7 +48,7 @@ bd_xjson_list* list_create_copy(const bd_xjson_list* s)
     for(; in != en; in = in->next)
     {
         nn = node_create();
-        bd_xjson_copy(&nn->value, &in->value);
+        jsong_copy(&nn->value, &in->value);
         /* insert */
         nn->next = d->nil;
         nn->prev = d->nil->prev;
@@ -64,9 +64,9 @@ bd_xjson_list* list_create_copy(const bd_xjson_list* s)
     return d;
 }
 
-void list_free(bd_xjson_list* l)
+void list_free(jsong_list* l)
 {
-    bd_xjson_node *curr, *end, *next;
+    jsong_node *curr, *end, *next;
 
     assert(l);
     /* nodes free */
@@ -82,9 +82,9 @@ void list_free(bd_xjson_list* l)
     xfree(l);
 }
 
-int list_insert_tail(bd_xjson_list* l, const bd_xjson* v)
+int list_insert_tail(jsong_list* l, const jsong* v)
 {
-    bd_xjson_node* n = node_create();
+    jsong_node* n = node_create();
     n->value = *v;
 
     /* insert into tail */
@@ -100,11 +100,11 @@ int list_insert_tail(bd_xjson_list* l, const bd_xjson* v)
     return 0;
 }
 
-int list_insert(bd_xjson_list* l, int pos, const bd_xjson* v)
+int list_insert(jsong_list* l, int pos, const jsong* v)
 {
     int i;
-    bd_xjson_node* n;
-    bd_xjson_node* in;
+    jsong_node* n;
+    jsong_node* in;
 
     if(pos > l->size || pos < -l->size-1) {
         THROW_WARNING("try to insert in illegal POS");
@@ -112,7 +112,7 @@ int list_insert(bd_xjson_list* l, int pos, const bd_xjson* v)
     }
 
     n = node_create();
-    bd_xjson_copy(&n->value, v);
+    jsong_copy(&n->value, v);
 
     if(pos >= 0) {
         /* head */
@@ -149,10 +149,10 @@ int list_insert(bd_xjson_list* l, int pos, const bd_xjson* v)
     return 0;
 }
 
-int list_erase(bd_xjson_list* l, int pos)
+int list_erase(jsong_list* l, int pos)
 {
     int i;
-    bd_xjson_node* in;
+    jsong_node* in;
 
     if( 0 == l->size) {
         THROW_WARNING("emptry LIST try to erase");
@@ -201,10 +201,10 @@ int list_erase(bd_xjson_list* l, int pos)
 
 /* val: deep copy */
 /* you must initialize 'val->data' in your code */
-int list_find(const bd_xjson_list* l, int pos, bd_xjson* val)
+int list_find(const jsong_list* l, int pos, jsong* val)
 {
     int i;
-    bd_xjson_node* n;
+    jsong_node* n;
 
     if( 0 == l->size) {
         THROW_WARNING("empty l try to find");
@@ -237,16 +237,16 @@ int list_find(const bd_xjson_list* l, int pos, bd_xjson* val)
     }
     /* free exist data */
     if(val->data) {
-        bd_xjson_free_data(val);
+        jsong_free_data(val);
     }
-    bd_xjson_copy(val, &n->value);
+    jsong_copy(val, &n->value);
     return 0;
 }
 
-int list_update(bd_xjson_list* l, int pos, const bd_xjson* v)
+int list_update(jsong_list* l, int pos, const jsong* v)
 {
     int i;
-    bd_xjson_node* n;
+    jsong_node* n;
 
     if( 0 == l->size) {
         THROW_WARNING("empty l try to update");
@@ -276,13 +276,13 @@ int list_update(bd_xjson_list* l, int pos, const bd_xjson* v)
     }
 
     /* free old node data */
-    bd_xjson_free_data(&n->value);
+    jsong_free_data(&n->value);
     /* update type and value */
-    bd_xjson_copy(&n->value, v);
+    jsong_copy(&n->value, v);
     return 0;
 }
 
-int list_set(bd_xjson_list* l, int pos, const bd_xjson* v)
+int list_set(jsong_list* l, int pos, const jsong* v)
 {
 
     if(pos > l->size || pos < -l->size - 1) {
@@ -306,7 +306,7 @@ int list_set(bd_xjson_list* l, int pos, const bd_xjson* v)
     return 0;
 }
 
-static void node_swap(bd_xjson_node* n1, bd_xjson_node* n2)
+static void node_swap(jsong_node* n1, jsong_node* n2)
 {
     void* tmp;
 
@@ -322,11 +322,11 @@ static void node_swap(bd_xjson_node* n1, bd_xjson_node* n2)
 
 static void list_qsort_recur(
     int (*compare_fn)(const void*, const void*),
-    bd_xjson_node* head,
-    bd_xjson_node* pivot,
-    bd_xjson_node* tail)
+    jsong_node* head,
+    jsong_node* pivot,
+    jsong_node* tail)
 {
-    bd_xjson_node *ln, *rn;
+    jsong_node *ln, *rn;
 
     if(head == tail || tail->next == head) {
         return ;
@@ -351,58 +351,58 @@ static void list_qsort_recur(
     list_qsort_recur(compare_fn, rn->next, rn->next, tail);
 }
 
-void list_qsort(bd_xjson_list* list, int (*compare_fn)(const void*, const void*))
+void list_qsort(jsong_list* list, int (*compare_fn)(const void*, const void*))
 {
     list_qsort_recur(compare_fn, list->head, list->head, list->tail);
 }
 
-bd_xjson_list_iter list_begin(const bd_xjson_list* l)
+jsong_list_iter list_begin(const jsong_list* l)
 {
-    bd_xjson_list_iter iter =
+    jsong_list_iter iter =
     {
         .index = l->head,
         .value = l->head->value
     };
     return iter;
 }
-bd_xjson_list_iter list_end(const bd_xjson_list* l)
+jsong_list_iter list_end(const jsong_list* l)
 {
-    bd_xjson_list_iter iter =
+    jsong_list_iter iter =
     {
         .index = l->nil
     };
     return iter;
 }
-bd_xjson_list_iter list_iterate(bd_xjson_list_iter iter)
+jsong_list_iter list_iterate(jsong_list_iter iter)
 {
-    iter.index = ((bd_xjson_node*)iter.index)->next;
-    iter.value = ((bd_xjson_node*)iter.index)->value;
+    iter.index = ((jsong_node*)iter.index)->next;
+    iter.value = ((jsong_node*)iter.index)->value;
     return iter;
 }
-bd_xjson_list_iter list_rbegin(const bd_xjson_list* l)
+jsong_list_iter list_rbegin(const jsong_list* l)
 {
-    bd_xjson_list_iter iter =
+    jsong_list_iter iter =
     {
         .index = l->tail,
         .value = l->tail->value
     };
     return iter;
 }
-bd_xjson_list_iter list_rend(const bd_xjson_list* l)
+jsong_list_iter list_rend(const jsong_list* l)
 {
-    bd_xjson_list_iter iter =
+    jsong_list_iter iter =
     {
         .index = l->nil
     };
     return iter;
 }
-bd_xjson_list_iter list_riterate(bd_xjson_list_iter iter)
+jsong_list_iter list_riterate(jsong_list_iter iter)
 {
-    iter.index = ((bd_xjson_node*)iter.index)->prev;
-    iter.value = ((bd_xjson_node*)iter.index)->value;
+    iter.index = ((jsong_node*)iter.index)->prev;
+    iter.value = ((jsong_node*)iter.index)->value;
     return iter;
 }
-int list_iter_get(bd_xjson_list_iter iter, bd_xjson* val)
+int list_iter_get(jsong_list_iter iter, jsong* val)
 {
     if(val->type != iter.value.type)
     {
@@ -411,9 +411,9 @@ int list_iter_get(bd_xjson_list_iter iter, bd_xjson* val)
     }
     /* free old val data if exist */
     if(val->data) {
-        bd_xjson_free_data(val);
+        jsong_free_data(val);
     }
     /* copy from iter data */
-    bd_xjson_copy(val, &iter.value);
+    jsong_copy(val, &iter.value);
     return 0;
 }
