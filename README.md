@@ -1,4 +1,4 @@
-# bd_xjson
+# jsong
 A simple json library for c language
 # compile
 make
