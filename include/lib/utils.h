@@ -4,6 +4,9 @@
 #define likely(x)   __builtin_expect(!!(x), 1)
 #define unlikely(x) __builtin_expect(!!(x), 0)
 
+#define extract32(value, start, length) \
+    (((value) >> (start)) & (~0U >> (32 - (length))))
+
 /* Apend multi strings onto dest */
 char* xmstrcat(char* str, ...);
 

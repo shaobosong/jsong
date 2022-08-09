@@ -29,6 +29,7 @@ static void log_vprintf(const char *fmt, va_list ap)
     if(!log_file)
         log_file = fopen(CONFIG_LOG_FILE, "wb");
     vfprintf(log_file, fmt, ap);
+    fflush(log_file);
 }
 #else
 static void log_vprintf(const char *fmt, va_list ap)

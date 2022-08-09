@@ -2,8 +2,6 @@
 A simple json library for c language
 # compile
 make
-# todo
-recode some functions to get better implementation
 # usage
 ```
 #include "libjson.h"
