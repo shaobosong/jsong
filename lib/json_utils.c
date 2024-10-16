@@ -5,11 +5,11 @@
 #include <stdio.h>
 #include <time.h>
 
-#include "lib/utils.h"
+#include "lib/json_utils.h"
 #include "lib/config.h"
 
 /* must place a NULL-Terminated trailing */
-char* xmstrcat(char *str, ...)
+char* json_xmstrcat(char *str, ...)
 {
     const char *el;
     va_list ap;
@@ -39,7 +39,7 @@ static void log_vprintf(const char *fmt, va_list ap)
 #endif
 
 void __attribute__((format(printf, 1, 2), unused))
-log_printf(const char *fmt, ...)
+json_log_printf(const char *fmt, ...)
 {
     va_list ap;
 
@@ -49,7 +49,7 @@ log_printf(const char *fmt, ...)
 }
 
 /* zeroing each element */
-void *xmallocz(int size)
+void *json_xmallocz(int size)
 {
     void *ptr;
     ptr = malloc(size);
@@ -62,7 +62,7 @@ void *xmallocz(int size)
 }
 
 /* zeroing new elements */
-void *xreallocz(void *ptr, int old_size, int new_size)
+void *json_xreallocz(void *ptr, int old_size, int new_size)
 {
     ptr = realloc(ptr, new_size);
     if(new_size != 0)
@@ -74,7 +74,7 @@ void *xreallocz(void *ptr, int old_size, int new_size)
     return (ptr);
 }
 
-void xfree(void *ptr)
+void json_xfree(void *ptr)
 {
     assert(ptr != NULL);
     free(ptr);

@@ -5,101 +5,94 @@
 #include <limits.h>
 #include <assert.h>
 
-#include "lib/jsong_impl.h"
-#include "lib/jsong.h"
-#include "lib/jsong_list.h"
-#include "lib/jsong_htab.h"
-#include "lib/jsong_stack.h"
-#include "lib/utils.h"
+#include "lib/json_impl.h"
+#include "lib/json.h"
+#include "lib/json_list.h"
+#include "lib/json_htab.h"
+#include "lib/json_stack.h"
+#include "lib/json_utils.h"
 
 #define EXPECT_IF_NOT(__ptr, __char, __act) \
-do \
-{ \
-    if(*(__ptr) == __char) \
-    { \
+do { \
+    if (*(__ptr) == __char) { \
         (__ptr)++; \
     } \
-    else \
-    { \
+    else { \
         __act; \
     } \
-} while(0)
+} while (0)
 
 #define MAYBE_AND_THEN(__ptr, __char, __act) \
-do \
-{ \
-    if(*(__ptr) == __char) \
-    { \
+do { \
+    if (*(__ptr) == __char) { \
         (__ptr)++; \
         __act; \
     } \
-} while(0)
+} while (0)
 
-static jsong_stack(char*) g_chars_stk;
-static jsong_stack(char) g_char_stk;
+static json_stack(char *) g_chars_stk;
+static json_stack(char) g_char_stk;
 
-static void jsong_stringify_number(const jsong *json, char** pstr, int* len);
-static void jsong_stringify_string(const jsong *json, char** pstr, int* len);
-static void jsong_stringify_array(const jsong* json, char** pstr, int* len);
-static void jsong_stringify_object(const jsong* json, char** pstr, int* len);
+static void json_stringify_number(const JSON *json, char **pstr, int *len);
+static void json_stringify_string(const JSON *json, char **pstr, int *len);
+static void json_stringify_array(const JSON *json, char **pstr, int *len);
+static void json_stringify_object(const JSON *json, char **pstr, int *len);
 
-static int jsong_parse_object(const char** const pstr, jsong* json);
-static int jsong_parse_string(const char** const pstr, jsong* json);
-static int jsong_parse_number(const char** const pstr, jsong* json);
-static int jsong_parse_array(const char** const pstr, jsong* json);
-static int jsong_parse_literal(const char** const pstr, jsong* json);
+static int json_parse_object(const char **const pstr, JSON *json);
+static int json_parse_string(const char **const pstr, JSON *json);
+static int json_parse_number(const char **const pstr, JSON *json);
+static int json_parse_array(const char **const pstr, JSON *json);
+static int json_parse_literal(const char **const pstr, JSON *json);
 
-void jsong_copy(jsong* dst, const jsong* src)
+void json_copy(JSON *dst, const JSON *src)
 {
     /* no more type checking */
     dst->type = src->type;
-    switch(src->type)
-    {
-        case JSONG_OBJECT:
+    switch(src->type) {
+        case JSON_TYPE_OBJECT:
             assert(NULL == dst->data);
             dst->data = htab_create_copy(src->data);
             break;
-        case JSONG_STRING:
-            dst->data = xmallocz(strlen(src->data) + 1);
+        case JSON_TYPE_STRING:
+            dst->data = json_xmallocz(strlen(src->data) + 1);
             strcat(dst->data, src->data);
             break;
-        case JSONG_NUMBER:
-            dst->data = xmallocz(sizeof (int));
+        case JSON_TYPE_NUMBER:
+            dst->data = json_xmallocz(sizeof (int));
             *(int*)(dst->data) = *(int*)(src->data);
             break;
-        case JSONG_ARRAY:
+        case JSON_TYPE_ARRAY:
             assert(NULL == dst->data);
             dst->data = list_create_copy(src->data);
             break;
-        case JSONG_TRUE:
-        case JSONG_FALSE:
-        case JSONG_NULL:
+        case JSON_TYPE_TRUE:
+        case JSON_TYPE_FALSE:
+        case JSON_TYPE_NULL:
             break;
         default:
             assert(0);
     }
 }
 
-void jsong_free_data(jsong* json)
+void json_free_data(JSON *json)
 {
-    switch(json->type)
-    {
-        case JSONG_OBJECT:
+    switch(json->type) {
+        case JSON_TYPE_OBJECT:
             assert(json->data);
             htab_free(json->data);
             break;
-        case JSONG_STRING:
-        case JSONG_NUMBER:
+        case JSON_TYPE_STRING:
+        case JSON_TYPE_NUMBER:
             assert(json->data);
-            xfree(json->data);
+            json_xfree(json->data);
             break;
-        case JSONG_ARRAY:
+        case JSON_TYPE_ARRAY:
             assert(json->data);
             list_free(json->data);
             break;
-        case JSONG_TRUE:
-        case JSONG_FALSE:
-        case JSONG_NULL:
+        case JSON_TYPE_TRUE:
+        case JSON_TYPE_FALSE:
+        case JSON_TYPE_NULL:
             assert(NULL == json->data);
             break;
         default:
@@ -108,44 +101,44 @@ void jsong_free_data(jsong* json)
     json->data = NULL;
 }
 
-int jsong_free(void* json)
+int json_free(void *json)
 {
     assert(json);
-    jsong_free_data(json);
-    xfree(json);
+    json_free_data(json);
+    json_xfree(json);
     return 0;
 }
 
-int jsong_reassign(void* dst, const void* src)
+int json_reassign(void *dst, const void *src)
 {
-    jsong *d;
-    const jsong *s;
+    JSON *d;
+    const JSON *s;
     d = dst;
     s = src;
 
     assert(d);
-    jsong_free_data(d);
+    json_free_data(d);
 
     assert(d && s);
     assert(d->type == s->type);
-    jsong_copy(d, s);
+    json_copy(d, s);
 
     return 0;
 }
 
 static void
-jsong_stringify_number(const jsong* json, char** pstr, int* plen)
+json_stringify_number(const JSON *json, char **pstr, int *plen)
 {
     int num;
 
     num = *(int*)json->data;
     *plen = snprintf(NULL, 0, "%d", num) + 1;
-    *pstr = xmallocz(*plen);
+    *pstr = json_xmallocz(*plen);
     snprintf(*pstr, *plen, "%d", num);
 }
 
 static void
-jsong_stringify_string(const jsong *json, char **str, int *len)
+json_stringify_string(const JSON *json, char **str, int *len)
 {
     int i, n, l, u, hu;
     const char *s = json->data;
@@ -158,7 +151,7 @@ jsong_stringify_string(const jsong *json, char **str, int *len)
     /* TODO: support '\0' */
     l = strlen(s);
     n = 0;
-    for(i = 0; i < l; i++) {
+    for (i = 0; i < l; i++) {
         switch(s[i]) {
         case '\"':
         case '\\':
@@ -172,7 +165,7 @@ jsong_stringify_string(const jsong *json, char **str, int *len)
             break;
         default:
             /* utf-8: 2~4 bytes */
-            if((0xc0 & s[i]) == 0x0c0) {
+            if ((0xc0 & s[i]) == 0x0c0) {
                 switch(s[i] & 0xf0) {
                 case 0xc0:
                 case 0xd0:
@@ -197,10 +190,10 @@ jsong_stringify_string(const jsong *json, char **str, int *len)
         }
     }
 
-    d = xmallocz(n + 3);
+    d = json_xmallocz(n + 3);
     n = 0;
     d[n++] = '\"';
-    for(i = 0; i < l; i++) {
+    for (i = 0; i < l; i++) {
         switch(s[i]) {
         case '\"':
         case '\\':
@@ -230,7 +223,7 @@ jsong_stringify_string(const jsong *json, char **str, int *len)
             break;
         default:
             /* utf-8: 2~4 bytes */
-            if((0xc0 & s[i]) == 0x0c0) {
+            if ((0xc0 & s[i]) == 0x0c0) {
                 d[n++] = '\\';
                 d[n++] = 'u';
                 u = 0;
@@ -289,138 +282,133 @@ jsong_stringify_string(const jsong *json, char **str, int *len)
 }
 
 static void
-jsong_stringify_object(const jsong* json, char** pstr, int* plen)
+json_stringify_object(const JSON *json, char **pstr, int *plen)
 {
     int vl;
-    char* v;
-    const jsong_htab* htab;
-    jsong_stack(char*) kstk, vstk;
-    jsong_htab_iter iter, end;
+    char *v;
+    const JSONHashTable *htab;
+    json_stack(char *) kstk, vstk;
+    JSONHashTableIter iter, end;
 
     htab = json->data;
-    jsong_stack_init(kstk, htab->size);
-    jsong_stack_init(vstk, htab->size);
+    json_stack_init(kstk, htab->size);
+    json_stack_init(vstk, htab->size);
 
     *plen = 2;
 
     assert(htab);
     iter = htab_begin(htab);
     end = htab_end(htab);
-    jsong_htab_foreach(iter, end)
-    {
+    json_htab_foreach(iter, end) {
         vl = 0;
         v = NULL;
-        switch(iter.value.type)
-        {
-            case JSONG_OBJECT:
-                jsong_stringify_object(&iter.value, &v, &vl);
-                jsong_stack_push(g_chars_stk, v);
+        switch(iter.value.type) {
+            case JSON_TYPE_OBJECT:
+                json_stringify_object(&iter.value, &v, &vl);
+                json_stack_push(g_chars_stk, v);
                 break;
-            case JSONG_STRING:
-                jsong_stringify_string(&iter.value, &v, &vl);
-                jsong_stack_push(g_chars_stk, v);
+            case JSON_TYPE_STRING:
+                json_stringify_string(&iter.value, &v, &vl);
+                json_stack_push(g_chars_stk, v);
                 break;
-            case JSONG_NUMBER:
-                jsong_stringify_number(&iter.value, &v, &vl);
-                jsong_stack_push(g_chars_stk, v);
+            case JSON_TYPE_NUMBER:
+                json_stringify_number(&iter.value, &v, &vl);
+                json_stack_push(g_chars_stk, v);
                 break;
-            case JSONG_ARRAY:
-                jsong_stringify_array(&iter.value, &v, &vl);
-                jsong_stack_push(g_chars_stk, v);
+            case JSON_TYPE_ARRAY:
+                json_stringify_array(&iter.value, &v, &vl);
+                json_stack_push(g_chars_stk, v);
                 break;
-            case JSONG_TRUE:
+            case JSON_TYPE_TRUE:
                 v = "true";
                 vl = 5;
                 break;
-            case JSONG_FALSE:
+            case JSON_TYPE_FALSE:
                 v = "false";
                 vl = 6;
                 break;
-            case JSONG_NULL:
+            case JSON_TYPE_NULL:
                 v = "null";
                 vl = 5;
                 break;
             default:
                 assert(0);
         }
-        jsong_stack_push(kstk, iter.key);
-        jsong_stack_push(vstk, v);
+        json_stack_push(kstk, iter.key);
+        json_stack_push(vstk, v);
         *plen += (vl + strlen(iter.key) + 3);
     }
-    if(htab->size == 0) {
+    if (htab->size == 0) {
         *plen += 1;
     }
     /* concatenate every element and json string */
-    *pstr = xmallocz(*plen);
+    *pstr = json_xmallocz(*plen);
     (*pstr)[0] = '{';
-    while(!jsong_stack_empty(kstk))
-    {
+    while (!json_stack_empty(kstk)) {
         strcat(*pstr, "\"");
-        strcat(*pstr, jsong_stack_top(kstk));
-        xmstrcat(*pstr,
+        strcat(*pstr, json_stack_top(kstk));
+        json_xmstrcat(*pstr,
             "\":",
-            jsong_stack_top(vstk),
+            json_stack_top(vstk),
             ",",
             NULL);
-        jsong_stack_pop(kstk);
-        jsong_stack_pop(vstk);
+        json_stack_pop(kstk);
+        json_stack_pop(vstk);
     }
     (*pstr)[*plen-2] = '}';
     /* stack clear */
-    jsong_stack_clear(kstk);
-    jsong_stack_clear(vstk);
+    json_stack_clear(kstk);
+    json_stack_clear(vstk);
     return ;
 }
 
 static void
-jsong_stringify_array(const jsong* json, char** pstr, int* plen)
+json_stringify_array(const JSON *json, char **pstr, int *plen)
 {
     int vl;
-    char* v;
-    jsong_list *list;
-    jsong_node *node, *enode;
+    char *v;
+    JSONLinkedList *list;
+    JSONNode *node, *enode;
 
     list = json->data;
     /* create two stacks and their size are equal to size of list */
-    jsong_stack(char*) stk;
-    jsong_stack_init(stk, list->size);
+    json_stack(char *) stk;
+    json_stack_init(stk, list->size);
 
     *plen = 2;
 
     assert(list);
     node = list->tail;
     enode = list->nil;
-    for(; node != enode; node = node->prev)
-    {
+    for (; node != enode; node = node->prev) {
         vl = 0;
         v = NULL;
-        switch(node->value.type)
-        {
-            case JSONG_OBJECT:
-                jsong_stringify_object(&node->value, &v, &vl);
-                jsong_stack_push(g_chars_stk, v);
+        switch(node->value.type) {
+            case JSON_TYPE_OBJECT:
+                json_stringify_object(&node->value, &v, &vl);
+                json_stack_push(g_chars_stk, v);
                 break;
-            case JSONG_STRING:
-                jsong_stringify_string(&node->value, &v, &vl);
-                jsong_stack_push(g_chars_stk, v);
+            case JSON_TYPE_STRING:
+                json_stringify_string(&node->value, &v, &vl);
+                json_stack_push(g_chars_stk, v);
                 break;
-            case JSONG_NUMBER:
-                jsong_stringify_number(&node->value, &v, &vl);
-                jsong_stack_push(g_chars_stk, v);
+            case JSON_TYPE_NUMBER:
+                json_stringify_number(&node->value, &v, &vl);
+                json_stack_push(g_chars_stk, v);
                 break;
-            case JSONG_ARRAY:
-                jsong_stringify_array(&node->value, &v, &vl);
-                jsong_stack_push(g_chars_stk, v);
+            case JSON_TYPE_ARRAY:
+                json_stringify_array(&node->value, &v, &vl);
+                json_stack_push(g_chars_stk, v);
                 break;
-            case JSONG_TRUE:
+            case JSON_TYPE_TRUE:
                 v = "true";
                 vl = 5;
                 break;
-            case JSONG_FALSE:
+            case JSON_TYPE_FALSE:
                 v = "false";
                 vl = 6;
                 break;
-            case JSONG_NULL:
+            case JSON_TYPE_NULL:
                 v = "null";
                 vl = 5;
                 break;
@@ -428,173 +416,166 @@ jsong_stringify_array(const jsong* json, char** pstr, int* plen)
                 assert(0);
                 return ;
         }
-        jsong_stack_push(stk, v);
+        json_stack_push(stk, v);
         *plen += vl;
     }
-    if(jsong_stack_empty(stk)) {
+    if (json_stack_empty(stk)) {
         *plen += 1;
     }
     /* concatenate every element and json string */
-    *pstr = xmallocz(*plen);
+    *pstr = json_xmallocz(*plen);
     (*pstr)[0] = '[';
-    while(!jsong_stack_empty(stk))
-    {
-        xmstrcat(*pstr, jsong_stack_top(stk), ",", NULL);
-        jsong_stack_pop(stk);
+    while (!json_stack_empty(stk)) {
+        json_xmstrcat(*pstr, json_stack_top(stk), ",", NULL);
+        json_stack_pop(stk);
     }
     (*pstr)[*plen-2] = ']';
     /* stack clear */
-    jsong_stack_clear(stk);
+    json_stack_clear(stk);
 
     return ;
 }
 
-int jsong_stringify(const void* json, char** pstr, int* plen)
+int json_stringify(const void *json, char **pstr, int *plen)
 {
     int l;
 
-    if(!plen) {
+    if (!plen) {
         plen = &l;
     }
-    jsong_stack_init(g_chars_stk, 256);
-    switch(((jsong*)json)->type)
-    {
-        case JSONG_OBJECT:
-            jsong_stringify_object(json, pstr, plen);
+    json_stack_init(g_chars_stk, 256);
+    switch (((JSON *)json)->type) {
+        case JSON_TYPE_OBJECT:
+            json_stringify_object(json, pstr, plen);
             break;
-        case JSONG_STRING:
-            jsong_stringify_string(json, pstr, plen);
+        case JSON_TYPE_STRING:
+            json_stringify_string(json, pstr, plen);
             break;
-        case JSONG_NUMBER:
-            jsong_stringify_number(json, pstr, plen);
+        case JSON_TYPE_NUMBER:
+            json_stringify_number(json, pstr, plen);
             break;
-        case JSONG_ARRAY:
-            jsong_stringify_array(json, pstr, plen);
+        case JSON_TYPE_ARRAY:
+            json_stringify_array(json, pstr, plen);
             break;
-        case JSONG_TRUE:
+        case JSON_TYPE_TRUE:
             *plen = 5;
-            *pstr = xmallocz(*plen);
+            *pstr = json_xmallocz(*plen);
             strcat(*pstr, "true");
             break;
-        case JSONG_FALSE:
+        case JSON_TYPE_FALSE:
             *plen = 6;
-            *pstr = xmallocz(*plen);
+            *pstr = json_xmallocz(*plen);
             strcat(*pstr, "false");
             break;
-        case JSONG_NULL:
+        case JSON_TYPE_NULL:
             *plen = 5;
-            *pstr = xmallocz(*plen);
+            *pstr = json_xmallocz(*plen);
             strcat(*pstr, "null");
             break;
         default:
             assert(0);
     }
     /* free stack element */
-    while(!jsong_stack_empty(g_chars_stk))
-    {
-        xfree(jsong_stack_top(g_chars_stk));
-        jsong_stack_pop(g_chars_stk);
+    while (!json_stack_empty(g_chars_stk)) {
+        json_xfree(json_stack_top(g_chars_stk));
+        json_stack_pop(g_chars_stk);
     }
     /* clear stack */
-    jsong_stack_clear(g_chars_stk);
+    json_stack_clear(g_chars_stk);
     return l;
 }
 
-static void bypass_white_space(const char** const pstr)
+static void bypass_white_space(const char **const pstr)
 {
-    const char* str = *pstr;
-    while(*str == '\t' || *str == ' ' || *str == '\n' || *str == '\r')
-    {
+    const char *str = *pstr;
+    while (*str == '\t' || *str == ' ' || *str == '\n' || *str == '\r') {
         str++;
     }
     *pstr = str;
 }
 
 static int
-jsong_parse_object(const char** const pstr, jsong* json)
+json_parse_object(const char **const pstr, JSON *json)
 {
-    const char* str = *pstr;
+    const char *str = *pstr;
     int64_t old_stk_top, tmp_stk_top;
-    jsong sub;
+    JSON sub;
 
     old_stk_top = g_char_stk.top;
 
     EXPECT_IF_NOT(str, '{', assert(0));
     bypass_white_space(&str);
     MAYBE_AND_THEN(str, '}', *pstr = str; return 0);
-    for( ; ; )
-    {
+    for ( ; ; ) {
         memset(&sub, 0, sizeof(sub));
         /* parse key */
         tmp_stk_top = g_char_stk.top;
         EXPECT_IF_NOT(str, '\"', goto parse_obj_err);
         /* support zero-length key string */
         // MAYBE_AND_THEN(str, '\"', goto parse_obj_err);
-        for(; ; str++)
-        {
-            if(*str == '\"') {
+        for (; ; str++) {
+            if (*str == '\"') {
                 break;
             }
-            else if(*str == '\0') {
+            else if (*str == '\0') {
                 goto parse_obj_err;
             }
-            jsong_stack_push(g_char_stk, *str);
+            json_stack_push(g_char_stk, *str);
         }
         EXPECT_IF_NOT(str, '\"', goto parse_obj_err);
         bypass_white_space(&str);
         EXPECT_IF_NOT(str, ':', goto parse_obj_err);
         bypass_white_space(&str);
         /* parse value */
-        switch(*str)
-        {
+        switch (*str) {
             case '{':
-                sub.type = JSONG_OBJECT;
+                sub.type = JSON_TYPE_OBJECT;
                 assert(NULL == sub.data); /* for test */
                 sub.data = htab_create(1);
-                if(jsong_parse_object(&str, &sub)) {
+                if (json_parse_object(&str, &sub)) {
                     htab_free(sub.data);
                     goto parse_obj_err;
                 }
                 break;
 
             case '\"':
-                sub.type = JSONG_STRING;
-                if(jsong_parse_string(&str, &sub)) {
+                sub.type = JSON_TYPE_STRING;
+                if (json_parse_string(&str, &sub)) {
                     goto parse_obj_err;
                 }
                 break;
             case '0': case '1': case '2': case '3': case '4':
             case '5': case '6': case '7': case '8': case '9':
             case '-':
-                sub.type = JSONG_NUMBER;
-                if(jsong_parse_number(&str, &sub)) {
+                sub.type = JSON_TYPE_NUMBER;
+                if (json_parse_number(&str, &sub)) {
                     goto parse_obj_err;
                 }
                 break;
             case '[':
-                sub.type = JSONG_ARRAY;
+                sub.type = JSON_TYPE_ARRAY;
                 assert(NULL == sub.data); /* for test */
                 sub.data = list_create();
-                if(jsong_parse_array(&str, &sub)) {
+                if (json_parse_array(&str, &sub)) {
                     list_free(sub.data);
                     goto parse_obj_err;
                 }
                 break;
             case 't':
-                sub.type = JSONG_TRUE;
-                if(jsong_parse_literal(&str, &sub)) {
+                sub.type = JSON_TYPE_TRUE;
+                if (json_parse_literal(&str, &sub)) {
                     goto parse_obj_err;
                 }
                 break;
             case 'f':
-                sub.type = JSONG_FALSE;
-                if(jsong_parse_literal(&str, &sub)) {
+                sub.type = JSON_TYPE_FALSE;
+                if (json_parse_literal(&str, &sub)) {
                     goto parse_obj_err;
                 }
                 break;
             case 'n':
-                sub.type = JSONG_NULL;
-                if(jsong_parse_literal(&str, &sub)) {
+                sub.type = JSON_TYPE_NULL;
+                if (json_parse_literal(&str, &sub)) {
                     goto parse_obj_err;
                 }
                 break;
@@ -603,13 +584,12 @@ jsong_parse_object(const char** const pstr, jsong* json)
         }
         htab_insert_ref(json->data, &g_char_stk.data[tmp_stk_top + 1], &sub);
         bypass_white_space(&str);
-        switch(*str)
-        {
+        switch (*str) {
             case ',':
                 break;
             case '}':
                 MAYBE_AND_THEN(str, '}',
-                    jsong_stack_pop2_old_top(g_char_stk, old_stk_top);
+                    json_stack_pop2_old_top(g_char_stk, old_stk_top);
                     *pstr = str;
                     return 0;
                 );
@@ -625,67 +605,65 @@ parse_obj_err:
 }
 
 static int
-jsong_parse_array(const char** const pstr, jsong* json)
+json_parse_array(const char **const pstr, JSON *json)
 {
-    const char* str = *pstr;
-    jsong sub;
+    const char *str = *pstr;
+    JSON sub;
 
     EXPECT_IF_NOT(str, '[', assert(0));
     bypass_white_space(&str);
     MAYBE_AND_THEN(str, ']', *pstr = str; return 0);
-    for( ; ; )
-    {
+    for ( ; ; ) {
         memset(&sub, 0, sizeof(sub));
         /* parse value */
-        switch(*str)
-        {
+        switch (*str) {
             case '{':
-                sub.type = JSONG_OBJECT;
+                sub.type = JSON_TYPE_OBJECT;
                 assert(NULL == sub.data); /* for test */
                 sub.data = htab_create(1);
-                if(jsong_parse_object(&str, &sub)) {
+                if (json_parse_object(&str, &sub)) {
                     htab_free(sub.data);
                     goto parse_arr_err;
                 }
                 break;
             case '\"':
-                sub.type = JSONG_STRING;
-                if(jsong_parse_string(&str, &sub)) {
+                sub.type = JSON_TYPE_STRING;
+                if (json_parse_string(&str, &sub)) {
                     goto parse_arr_err;
                 }
                 break;
             case '0': case '1': case '2': case '3': case '4':
             case '5': case '6': case '7': case '8': case '9':
             case '-':
-                sub.type = JSONG_NUMBER;
-                if(jsong_parse_number(&str, &sub)) {
+                sub.type = JSON_TYPE_NUMBER;
+                if (json_parse_number(&str, &sub)) {
                     goto parse_arr_err;
                 }
                 break;
             case '[':
-                sub.type = JSONG_ARRAY;
+                sub.type = JSON_TYPE_ARRAY;
                 assert(NULL == sub.data); /* for test */
                 sub.data = list_create();
-                if(jsong_parse_array(&str, &sub)) {
+                if (json_parse_array(&str, &sub)) {
                     list_free(sub.data);
                     goto parse_arr_err;
                 }
                 break;
             case 't':
-                sub.type = JSONG_TRUE;
-                if(jsong_parse_literal(&str, &sub)) {
+                sub.type = JSON_TYPE_TRUE;
+                if (json_parse_literal(&str, &sub)) {
                     goto parse_arr_err;
                 }
                 break;
             case 'f':
-                sub.type = JSONG_FALSE;
-                if(jsong_parse_literal(&str, &sub)) {
+                sub.type = JSON_TYPE_FALSE;
+                if (json_parse_literal(&str, &sub)) {
                     goto parse_arr_err;
                 }
                 break;
             case 'n':
-                sub.type = JSONG_NULL;
-                if(jsong_parse_literal(&str, &sub)) {
+                sub.type = JSON_TYPE_NULL;
+                if (json_parse_literal(&str, &sub)) {
                     goto parse_arr_err;
                 }
                 break;
@@ -694,8 +672,7 @@ jsong_parse_array(const char** const pstr, jsong* json)
         }
         list_insert_tail(json->data, &sub);
         bypass_white_space(&str);
-        switch(*str)
-        {
+        switch (*str) {
             case ',':
                 break;
             case ']':
@@ -712,7 +689,7 @@ parse_arr_err:
 }
 
 static int
-jsong_parse_string(const char ** const text, jsong *json)
+json_parse_string(const char ** const text, JSON *json)
 {
     int n, u, hu;
     char c;
@@ -723,40 +700,38 @@ jsong_parse_string(const char ** const text, jsong *json)
     EXPECT_IF_NOT(s, '\"', assert(0));
     /* support zero-length string */
     // MAYBE_AND_THEN(str, '\"', goto parse_str_err);
-    for(; ; s++)
-    {
-        switch(*s)
-        {
+    for (; ; s++) {
+        switch (*s) {
             case '\\':
                 s++;
-                switch(*s) {
+                switch (*s) {
                 case '\"':
                 case '\\':
                 case '/':
-                    jsong_stack_push(g_char_stk, *s);
+                    json_stack_push(g_char_stk, *s);
                     break;
                 case 'b':
-                    jsong_stack_push(g_char_stk, '\b');
+                    json_stack_push(g_char_stk, '\b');
                     break;
                 case 'f':
-                    jsong_stack_push(g_char_stk, '\f');
+                    json_stack_push(g_char_stk, '\f');
                     break;
                 case 'n':
-                    jsong_stack_push(g_char_stk, '\n');
+                    json_stack_push(g_char_stk, '\n');
                     break;
                 case 'r':
-                    jsong_stack_push(g_char_stk, '\r');
+                    json_stack_push(g_char_stk, '\r');
                     break;
                 case 't':
-                    jsong_stack_push(g_char_stk, '\t');
+                    json_stack_push(g_char_stk, '\t');
                     break;
                 case 'u':
                     n = 0;
                     u = 0;
-                    for(; n < 4; n++) {
+                    for (; n < 4; n++) {
                         s++;
                         u <<= 4;
-                        switch(*s) {
+                        switch (*s) {
                         case '0': case '1': case '2': case '3': case '4':
                         case '5': case '6': case '7': case '8': case '9':
                             u |= (*s - '0');
@@ -774,33 +749,33 @@ jsong_parse_string(const char ** const text, jsong *json)
                         }
                     }
                     /* utf-8: 1 byte */
-                    if(!hu && u < 0x80) { /* U+0000 ~ U+007F*/
+                    if (!hu && u < 0x80) { /* U+0000 ~ U+007F*/
                         /* TODO: support '\u0000' */
                         c = u;
-                        if(c == '\0') {
+                        if (c == '\0') {
                             goto parse_str_err;
                         }
-                        jsong_stack_push(g_char_stk, c);
+                        json_stack_push(g_char_stk, c);
                     /* utf-8: 2~4 bytes */
-                    } else if(!hu && u < 0x800) { /* U+0080 ~ U+07FF*/
+                    } else if (!hu && u < 0x800) { /* U+0080 ~ U+07FF*/
                         c = 0xc0 | extract32(u, 6, 5);
-                        jsong_stack_push(g_char_stk, c);
+                        json_stack_push(g_char_stk, c);
                         c = 0x80 | extract32(u, 0, 6);
-                        jsong_stack_push(g_char_stk, c);
-                    } else if(u < 0x10000) { /* U+0800 ~ U+FFFF */
+                        json_stack_push(g_char_stk, c);
+                    } else if (u < 0x10000) { /* U+0800 ~ U+FFFF */
                         /* case: had high surrogate */
-                        if(hu) {
+                        if (hu) {
                             /* case: has low surrogate */
-                            if(u >= 0xdc00 && u <= 0xdfff) {
+                            if (u >= 0xdc00 && u <= 0xdfff) {
                                 u = 0x10000 + ((hu - 0xd800) << 10) + (u - 0xdc00);
                                 c = 0xf0 | extract32(u, 18, 3);
-                                jsong_stack_push(g_char_stk, c);
+                                json_stack_push(g_char_stk, c);
                                 c = 0x80 | extract32(u, 12, 6);
-                                jsong_stack_push(g_char_stk, c);
+                                json_stack_push(g_char_stk, c);
                                 c = 0x80 | extract32(u, 6, 6);
-                                jsong_stack_push(g_char_stk, c);
+                                json_stack_push(g_char_stk, c);
                                 c = 0x80 | extract32(u, 0, 6);
-                                jsong_stack_push(g_char_stk, c);
+                                json_stack_push(g_char_stk, c);
                                 hu = 0;
                             /* default: has no low surrogate */
                             } else {
@@ -809,19 +784,19 @@ jsong_parse_string(const char ** const text, jsong *json)
                         /* default: had no high surrogate */
                         } else {
                             /* case: has high surrogate */
-                            if(u >= 0xd800 && u <= 0xdbff) {
+                            if (u >= 0xd800 && u <= 0xdbff) {
                                 hu = u;
                             /* case: has low surrogate */
-                            } else if(u >= 0xdc00 && u <= 0xdfff) {
+                            } else if (u >= 0xdc00 && u <= 0xdfff) {
                                 goto parse_str_err;
                             /* default: not surrogate pair */
                             } else {
                                 c = 0xe0 | extract32(u, 12, 4);
-                                jsong_stack_push(g_char_stk, c);
+                                json_stack_push(g_char_stk, c);
                                 c = 0x80 | extract32(u, 6, 6);
-                                jsong_stack_push(g_char_stk, c);
+                                json_stack_push(g_char_stk, c);
                                 c = 0x80 | extract32(u, 0, 6);
-                                jsong_stack_push(g_char_stk, c);
+                                json_stack_push(g_char_stk, c);
                             }
                         }
                     } else {
@@ -834,16 +809,16 @@ jsong_parse_string(const char ** const text, jsong *json)
                 break;
             case '\"':
                 EXPECT_IF_NOT(s, '\"', assert(0)); /* s++ */
-                json->data = xmallocz(g_char_stk.top - old_stk_top + 1);
+                json->data = json_xmallocz(g_char_stk.top - old_stk_top + 1);
                 strcat(json->data, &g_char_stk.data[old_stk_top + 1]);
                 /* restore old stack top */
-                jsong_stack_pop2_old_top(g_char_stk, old_stk_top);
+                json_stack_pop2_old_top(g_char_stk, old_stk_top);
                 *text = s;
                 return 0;
             case '\0':
                 goto parse_str_err;
             default:
-                jsong_stack_push(g_char_stk, *s);
+                json_stack_push(g_char_stk, *s);
         }
     }
 parse_str_err:
@@ -853,20 +828,18 @@ parse_str_err:
 
 /* only support signed 32-bit integer */
 static int
-jsong_parse_number(const char** const pstr, jsong* json)
+json_parse_number(const char **const pstr, JSON *json)
 {
-    const char* str = *pstr;
+    const char *str = *pstr;
     int res = 0;
     int sign = *str == '-'? -1 : 1;
 
     MAYBE_AND_THEN(str, '-',);
-    for(; ; str++)
-    {
-        switch(*str)
-        {
+    for (; ; str++) {
+        switch (*str) {
             case '0': case '1': case '2': case '3': case '4':
             case '5': case '6': case '7': case '8': case '9':
-                if((res == INT_MAX/10 && (*str - '0') > 7) ||
+                if ((res == INT_MAX/10 && (*str - '0') > 7) ||
                     res > INT_MAX/10 ||
                    (res == INT_MIN/10 && (*str - '0') > 8) ||
                     res < INT_MIN/10) {
@@ -876,7 +849,7 @@ jsong_parse_number(const char** const pstr, jsong* json)
                 res = 10 * res + sign * (int)(*str - '0');
                 break;
             default:
-                json->data = xmallocz(sizeof(int));
+                json->data = json_xmallocz(sizeof(int));
                 *(int*)json->data = res;
                 *pstr = str;
                 return 0;
@@ -888,14 +861,13 @@ parse_num_err:
 }
 
 static int
-jsong_parse_literal(const char** const pstr, jsong* json)
+json_parse_literal(const char **const pstr, JSON *json)
 {
-    char* literal;
-    const char* str = *pstr;
+    char *literal;
+    const char *str = *pstr;
 
     assert(*str == 't' || *str == 'f' || *str == 'n');
-    switch(*str)
-    {
+    switch (*str) {
         case 't':
             literal = "true";
             break;
@@ -906,10 +878,8 @@ jsong_parse_literal(const char** const pstr, jsong* json)
             literal = "null";
             break;
     }
-    for(; *literal; literal++, str++)
-    {
-        if(*literal != *str)
-        {
+    for (; *literal; literal++, str++) {
+        if (*literal != *str) {
             *pstr = str;
             return -1;
         }
@@ -918,59 +888,58 @@ jsong_parse_literal(const char** const pstr, jsong* json)
     return 0;
 }
 
-static const char*
-jsong_parse_entry(const char* str, jsong* json)
+static const char *
+json_parse_entry(const char *str, JSON *json)
 {
     bypass_white_space(&str);
-    switch(*str)
-    {
+    switch (*str) {
         case '{':
-            assert(json->type == JSONG_OBJECT);
+            assert(json->type == JSON_TYPE_OBJECT);
             assert(NULL == json->data); /* for test */
             json->data = htab_create(1);
-            if(jsong_parse_object(&str, json)) {
+            if (json_parse_object(&str, json)) {
                 htab_free(json->data);
                 return str;
             }
             break;
         case '\"':
-            assert(json->type == JSONG_STRING);
-            if(jsong_parse_string(&str, json)) {
+            assert(json->type == JSON_TYPE_STRING);
+            if (json_parse_string(&str, json)) {
                 return str;
             }
             break;
         case '0': case '1': case '2': case '3': case '4':
         case '5': case '6': case '7': case '8': case '9':
         case '-':
-            assert(json->type == JSONG_NUMBER);
-            if(jsong_parse_number(&str, json)) {
+            assert(json->type == JSON_TYPE_NUMBER);
+            if (json_parse_number(&str, json)) {
                 return str;
             }
             break;
         case '[':
-            assert(json->type == JSONG_ARRAY);
+            assert(json->type == JSON_TYPE_ARRAY);
             assert(NULL == json->data); /* for test */
             json->data = list_create();
-            if(jsong_parse_array(&str, json)) {
+            if (json_parse_array(&str, json)) {
                 list_free(json->data);
                 return str;
             }
             break;
         case 't':
-            assert(json->type == JSONG_TRUE);
-            if(jsong_parse_literal(&str, json)) {
+            assert(json->type == JSON_TYPE_TRUE);
+            if (json_parse_literal(&str, json)) {
                 return str;
             }
             break;
         case 'f':
-            assert(json->type == JSONG_FALSE);
-            if(jsong_parse_literal(&str, json)) {
+            assert(json->type == JSON_TYPE_FALSE);
+            if (json_parse_literal(&str, json)) {
                 return str;
             }
             break;
         case 'n':
-            assert(json->type == JSONG_NULL);
-            if(jsong_parse_literal(&str, json)) {
+            assert(json->type == JSON_TYPE_NULL);
+            if (json_parse_literal(&str, json)) {
                 return str;
             }
             break;
@@ -978,27 +947,27 @@ jsong_parse_entry(const char* str, jsong* json)
             return str;
     }
     bypass_white_space(&str);
-    EXPECT_IF_NOT(str, '\0', jsong_free_data(json); return str);
+    EXPECT_IF_NOT(str, '\0', json_free_data(json); return str);
     return NULL;
 }
 
-static void parse_fail_print(const char* str, const char* err)
+static void parse_fail_print(const char *str, const char *err)
 {
-    if(*err == '\0') {
+    if (*err == '\0') {
         /* explicitly print '\0' */
-        log_printf("PARSE FAIL: %.*s\\0<<<< illegal NULL-Terminator\n",
+        json_log_printf("PARSE FAIL: %.*s\\0<<<< illegal NULL-Terminator\n",
             (int)(err - str + 1), str);
     } else {
-        log_printf("PARSE FAIL: %.*s<<<< illegal characters\n",
+        json_log_printf("PARSE FAIL: %.*s<<<< illegal characters\n",
             (int)(err - str + 1), str);
     }
 }
 
-int jsong_parse(const char* str, void* val)
+int json_parse(const char *str, void *val)
 {
-    const char* err;
-    jsong *json = val;
-    jsong old = *json;
+    const char *err;
+    JSON *json = val;
+    JSON old = *json;
     /*
      * User behavior errors are not allowed, e.g. passing a null
      * pointer of an object into a function. Parsing is a sequential
@@ -1018,20 +987,20 @@ int jsong_parse(const char* str, void* val)
      */
     assert(json);
     /*
-     * Here we get a empty jsong with legal type, we think it's
+     * Here we get a empty JSON with legal type, we think it's
      * valid while parsing a json string.
      */
     json->data = NULL;
 
-    jsong_stack_init(g_char_stk, 256);
-    if(!!(err = jsong_parse_entry(str, json))) {
+    json_stack_init(g_char_stk, 256);
+    if (!!(err = json_parse_entry(str, json))) {
         parse_fail_print(str, err);
         /* parse failed and restore it */
         json->data = old.data;
-        jsong_stack_clear(g_char_stk);
+        json_stack_clear(g_char_stk);
         return -1;
     }
-    jsong_free_data(&old);
-    jsong_stack_clear(g_char_stk);
+    json_free_data(&old);
+    json_stack_clear(g_char_stk);
     return 0;
 }

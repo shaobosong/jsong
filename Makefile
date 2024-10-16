@@ -1,7 +1,7 @@
 #
-# jsong
+# json-c
 #
-# Copyright (c) 2022 ShaoBo Song
+# Copyright (c) 2022-2024 ShaoBo Song
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -21,26 +21,14 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-# riscv32 build
-CONFIG_RISCV32=
-# riscv64 build
-CONFIG_RISCV64=
-
-ifdef CONFIG_RISCV32
-CROSS_PREFIX=riscv32-unknown-linux-gnu-
-endif
-ifdef CONFIG_RISCV64
-CROSS_PREFIX=riscv64-unknown-linux-gnu-
-endif
-
 CC=$(CROSS_PREFIX)gcc
 AR=$(CROSS_PREFIX)ar
 RANLIB=$(CROSS_PREFIX)ranlib
 
-CFLAGS=-I$(CURDIR)/include -O0 -g -D_REENTRANT -DCONFIG_LOG_FILE=\"jsong.log\" -Wall -MMD -std=c99
+CFLAGS=-I$(CURDIR)/include -O0 -g -D_REENTRANT -DCONFIG_LOG_FILE=\"json.log\" -Wall -MMD -std=c99
 LDFLAGS=
 
-OBJS:=$(addprefix lib/, jsong_htab.o jsong_impl.o jsong_list.o jsong.o utils.o)
+OBJS:=$(addprefix lib/, json_htab.o json_impl.o json_list.o json.o json_utils.o)
 LIB:=libjson.a
 USAGE:=usage
 TESTS:=test_json_array \

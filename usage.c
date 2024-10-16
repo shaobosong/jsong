@@ -4,14 +4,14 @@
 int main()
 {
     /* create a empty json OBJECT */
-    JSONObject* json_obj = JSON_OBJECT_PTR();
+    JSONObject *json_obj = JSON_OBJECT_PTR();
     /* create a empty json ARRAY */
-    JSONArray* json_arr = JSON_ARRAY_PTR();
+    JSONArray *json_arr = JSON_ARRAY_PTR();
     /* create a json NUMBER */
-    JSONNumber* json_num =  JSON_NUMBER_PTR(2022);
-    JSONNumber* json_max = JSON_NUMBER_PTR(2147483647);
+    JSONNumber *json_num =  JSON_NUMBER_PTR(2022);
+    JSONNumber *json_max = JSON_NUMBER_PTR(2147483647);
     /* create a json STRING */
-    JSONString* json_str = JSON_STRING_PTR("");
+    JSONString *json_str = JSON_STRING_PTR("");
 
     /* add a key-value in json OBJECT */
     json_obj->add(json_obj, "key0", json_num);
@@ -31,7 +31,7 @@ int main()
     json_obj->get(json_obj, "key2", json_str);
     int num = json_obj->get_num(json_obj, "key1");
     printf("key1: %d\n", num);
-    char* chars = json_obj->get_str(json_obj, "key2");
+    char *chars = json_obj->get_str(json_obj, "key2");
     printf("key2: %s\n", chars);
     free(chars);
     /* delete a key-value in json OBJECT */
@@ -60,7 +60,7 @@ int main()
     json_arr->del(json_arr, -1);
 
     /* stringify a json */
-    char* str;
+    char *str;
     int len;
     JSON_STRINGIFY(json_obj, &str, &len);
     printf("%s\n", str);
@@ -82,8 +82,7 @@ int main()
         "\"number\":2022"
     "}";
     printf("%s\n", str);
-    if(JSON_PARSE(str, json_obj))
-    {
+    if (JSON_PARSE(str, json_obj)) {
         printf("json parse failed\n");
     }
     JSON_STRINGIFY(json_obj, &str, &len);

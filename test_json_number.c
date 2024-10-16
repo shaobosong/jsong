@@ -12,13 +12,13 @@ do \
 } while (0)
 
 /* only for test */
-int get_json_data(jsong_number* json)
+int get_json_data(JSONNumber* json)
 {
     return *(int*)json->data;
 }
 
 /* only for test */
-jsong_type get_json_type(jsong* json)
+int get_json_type(JSON *json)
 {
     return json->type;
 }
@@ -28,7 +28,7 @@ void test_json_number_create_and_remove(void)
     /* create a json number */
     JSONNumber* json = JSON_NUMBER_PTR(2022);
     TEST_EXPECT(get_json_data(json), 2022);
-    TEST_EXPECT(get_json_type((jsong*)json), JSONG_NUMBER);
+    TEST_EXPECT(get_json_type((JSON *)json), JSON_TYPE_NUMBER);
     /* remove a json number */
     FREE_JSON(json);
 }
@@ -61,13 +61,13 @@ void test_json_number_stringify()
     JSONNumber* json = JSON_NUMBER_PTR(2022);
 
     /* stringify a json number */
-    jsong_stringify(json, &str, &len);
+    json_stringify(json, &str, &len);
     TEST_EXPECT(strcmp(str, "2022"), 0);
     free(str);
 
     /* stringify a json number */
     json->set(json, -2147483648);
-    jsong_stringify(json, &str, &len);
+    json_stringify(json, &str, &len);
     TEST_EXPECT(strcmp(str, "-2147483648"), 0);
     free(str);
 
@@ -82,31 +82,31 @@ void test_parse_json_number()
 
     /* parse a json number */
     str = "2022";
-    res = jsong_parse(str, json);
+    res = json_parse(str, json);
     TEST_EXPECT(res, 0);
     TEST_EXPECT(json->get(json), 2022);
-    TEST_EXPECT(get_json_type((jsong*)json), JSONG_NUMBER);
+    TEST_EXPECT(get_json_type((JSON *)json), JSON_TYPE_NUMBER);
 
     str = " \t\n\r-2147483648 \t\n\r";
-    res = jsong_parse(str, json);
+    res = json_parse(str, json);
     TEST_EXPECT(res, 0);
     TEST_EXPECT(json->get(json), -2147483648);
-    TEST_EXPECT(get_json_type((jsong*)json), JSONG_NUMBER);
+    TEST_EXPECT(get_json_type((JSON *)json), JSON_TYPE_NUMBER);
 
     str = " 2 022";
-    res = jsong_parse(str, json);
+    res = json_parse(str, json);
     TEST_EXPECT(res, -1);
 
     str = "butdraw 2022";
-    res = jsong_parse(str, json);
+    res = json_parse(str, json);
     TEST_EXPECT(res, -1);
 
     str = "20butdraw22";
-    res = jsong_parse(str, json);
+    res = json_parse(str, json);
     TEST_EXPECT(res, -1);
 
     str = "2022 butdraw";
-    res = jsong_parse(str, json);
+    res = json_parse(str, json);
     TEST_EXPECT(res, -1);
 }
 

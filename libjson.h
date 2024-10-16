@@ -1,7 +1,7 @@
 /*
- *  jsong
+ *  json
  *
- *  Copyright (c) 2022 ShaoBo Song
+ *  Copyright (c) 2022-2024 ShaoBo Song
 
  *  Permission is hereby granted, free of charge, to any person obtaining a copy
  *  of this software and associated documentation files (the "Software"), to deal
@@ -23,69 +23,55 @@
  */
 
 /* JSON Type */
-typedef enum jsong_type jsong_type;
-enum jsong_type
-{
-    JSONG_OBJECT = 1,
-    JSONG_STRING,
-    JSONG_NUMBER,
-    JSONG_ARRAY,
-    JSONG_TRUE,
-    JSONG_FALSE,
-    JSONG_NULL
-
+enum {
+    JSON_TYPE_OBJECT = 1,
+    JSON_TYPE_STRING,
+    JSON_TYPE_NUMBER,
+    JSON_TYPE_ARRAY,
+    JSON_TYPE_TRUE,
+    JSON_TYPE_FALSE,
+    JSON_TYPE_NULL
 };
 
 /* JSON */
-typedef struct jsong jsong;
+typedef struct JSON JSON;
 
 /* JSON Impl */
-typedef struct jsong_object jsong_object;
-typedef struct jsong_string jsong_string;
-typedef struct jsong_number jsong_number;
-typedef struct jsong_array jsong_array;
-typedef struct jsong jsong_true;
-typedef struct jsong jsong_false;
-typedef struct jsong jsong_null;
+typedef struct JSONObject JSONObject;
+typedef struct JSONString JSONString;
+typedef struct JSONNumber JSONNumber;
+typedef struct JSONArray JSONArray;
+typedef struct JSON JSONTrue;
+typedef struct JSON JSONFalse;
+typedef struct JSON JSONNull;
 
 /* JSON Object Iter */
-typedef struct jsong_object_iter jsong_object_iter;
+typedef struct JSONObjectIter JSONObjectIter;
 
 /* JSON Array Iter */
-typedef struct jsong_array_iter jsong_array_iter;
+typedef struct JSONArrayIter JSONArrayIter;
 
 /*
- *  jsong class
- *      All classes in jsong_impl.h are based on it.
+ *  JSON class
+ *  All classes in json_impl.h are based on it.
  *
  *  @data: data of json
- *      object:    jsong_htab*
- *      string:    char*
- *      number:    int*
- *      array:     jsong_list*
- *      true:      void*(0)
- *      false:     void*(0)
- *      null:      void*(0)
+ *    object:  JSONHashTable *
+ *    string:  char *
+ *    number:  int *
+ *    array:   JSONList *
  *  @type: type of json
- *      object:    JSONG_OBJECT
- *      string:    JSONG_STRING
- *      number:    JSONG_NUMBER
- *      array:     JSONG_ARRAY
- *      true:      JSONG_TRUE
- *      false:     JSONG_FALSE
- *      null:      JSONG_NULL
  */
-#define jsong(klass)                                                              \
-struct klass                                                                      \
-{                                                                                 \
-    void* data;                                                                   \
-    jsong_type type;                                                              \
+#define JSONClass(klass) \
+struct klass { \
+    void* data; \
+    int type; \
 }
-jsong(jsong);
+JSONClass(JSON);
 
 
 /*
- *  jsong_object class
+ *  JSONObject class
  *
  *  @add: add a <key-val> pair
  *  @set: set a <key-val> pair
@@ -93,75 +79,71 @@ jsong(jsong);
  *  @get: get a <val>
  *  @begin: return a iterator to the 1st element
  *  @end: return a past-the-end iterator that points to the element
- *        following the last element of the jsong_object
+ *        following the last element of the JSONObject
  */
-#define jsong_object(klass)                                                       \
-struct klass                                                                      \
-{                                                                                 \
-    /* parent class */                                                            \
-    jsong();                                                                      \
-    /* member functions */                                                        \
-    void (*add)(jsong_object* this, const char* key, const void* val);            \
-    void (*add_ref)(jsong_object* this, const char* key, const void* val);        \
-    void (*add_str)(jsong_object* this, const char* key, const char* val);        \
-    void (*add_num)(jsong_object* this, const char* key, int val);                \
-    void (*add_true)(jsong_object* this, const char* key);                        \
-    void (*add_false)(jsong_object* this, const char* key);                       \
-    void (*add_null)(jsong_object* this, const char* key);                        \
-    void (*del)(jsong_object* this, const char* key);                             \
-    void (*set)(jsong_object* this, const char* key, const void* val);            \
-    void (*set_ref)(jsong_object* this, const char* key, const void* val);        \
-    void (*set_str)(jsong_object* this, const char* key, const char* val);        \
-    void (*set_num)(jsong_object* this, const char* key, int val);                \
-    void (*set_true)(jsong_object* this, const char* key);                        \
-    void (*set_false)(jsong_object* this, const char* key);                       \
-    void (*set_null)(jsong_object* this, const char* key);                        \
-    void* (*get)(const jsong_object* this, const char* key, void* val);           \
-    void* (*get_ref)(const jsong_object* this, const char* key, void* val);       \
-    char* (*get_str)(const jsong_object* this, const char* key);                  \
-    char* (*get_str_ref)(const jsong_object* this, const char* key);              \
-    int (*get_num)(const jsong_object* this, const char* key);                    \
-    jsong_object_iter (*begin)(const jsong_object* this);                         \
-    jsong_object_iter (*end)(const jsong_object* this);                           \
+#define JSONObjectClass(klass) \
+struct klass { \
+/* parent class */ \
+    JSONClass(); \
+/* public */ \
+    /* member functions */ \
+    void (*add)(JSONObject *this, const char *key, const void *val); \
+    void (*add_ref)(JSONObject *this, const char *key, const void *val); \
+    void (*add_str)(JSONObject *this, const char *key, const char *val); \
+    void (*add_num)(JSONObject *this, const char *key, int val); \
+    void (*add_true)(JSONObject *this, const char *key); \
+    void (*add_false)(JSONObject *this, const char *key); \
+    void (*add_null)(JSONObject *this, const char *key); \
+    void (*del)(JSONObject *this, const char *key); \
+    void (*set)(JSONObject *this, const char *key, const void *val); \
+    void (*set_ref)(JSONObject *this, const char *key, const void *val); \
+    void (*set_str)(JSONObject *this, const char *key, const char *val); \
+    void (*set_num)(JSONObject *this, const char *key, int val); \
+    void (*set_true)(JSONObject *this, const char *key); \
+    void (*set_false)(JSONObject *this, const char *key); \
+    void (*set_null)(JSONObject *this, const char *key); \
+    void *(*get)(const JSONObject *this, const char *key, void *val); \
+    void *(*get_ref)(const JSONObject *this, const char *key, void *val); \
+    char *(*get_str)(const JSONObject *this, const char *key); \
+    char *(*get_str_ref)(const JSONObject *this, const char *key); \
+    int (*get_num)(const JSONObject *this, const char *key); \
+    JSONObjectIter (*begin)(const JSONObject *this); \
+    JSONObjectIter (*end)(const JSONObject *this); \
 }
-jsong_object(jsong_object);
+JSONObjectClass(JSONObject);
 
 /*
- *  jsong_string class
+ *  JSONString class
  *
  *  @set: set
  *  @get: get
  */
-#define jsong_string(klass)                                                       \
-struct klass                                                                      \
-{                                                                                 \
-    /* parent class */                                                            \
-    jsong();                                                                      \
-    /* member functions */                                                        \
-    void (*set)(jsong_string* this, const char* val);                             \
-    char* (*get)(const jsong_string* this);                                       \
+#define JSONStringClass(klass) \
+struct klass { \
+/* parent class */ \
+    JSONClass(); \
+    void (*set)(JSONString *this, const char *val); \
+    char *(*get)(const JSONString *this); \
 }
-jsong_string(jsong_string);
+JSONStringClass(JSONString);
 
 /*
- *  jsong_number class
+ *  JSONNumber class
  *
  *  @set: set
  *  @get: get
  */
-#define jsong_number(klass)                                                       \
-struct klass                                                                      \
-{                                                                                 \
-    /* parent class */                                                            \
-    jsong();                                                                      \
-    /* member functions */                                                        \
-    void (*set)(jsong_number* this, int val);                                     \
-    int (*get)(const jsong_number* this);                                         \
+#define JSONNumberClass(klass) \
+struct klass { \
+/* parent class */ \
+    JSONClass(); \
+    void (*set)(JSONNumber *this, int val); \
+    int (*get)(const JSONNumber *this); \
 }
-jsong_number(jsong_number);
+JSONNumberClass(JSONNumber);
 
 /*
- *  jsong_array class
+ *  JSONArray class
  *
  *  @add: add a <val>
  *  @set: set a <val>
@@ -173,111 +155,98 @@ jsong_number(jsong_number);
  *        the last element of the jsong_array
  *  @rbegin: return a iterator to the first element
  *  @rend: return a past-the-end reverse iterator that points to the element
- *         following the last element of the reversed jsong_array
+ *         following the last element of the reversed JSONArray
  */
-#define jsong_array(klass)                                                        \
-struct klass                                                                      \
-{                                                                                 \
-    /* parent class */                                                            \
-    jsong();                                                                      \
-    /* member functions */                                                        \
-    void (*add)(jsong_array* this, int pos, const void* val);                     \
-    void (*add_str)(jsong_array* this, int pos, const char* val);                 \
-    void (*add_num)(jsong_array* this, int pos, int val);                         \
-    void (*add_true)(jsong_array* this, int pos);                                 \
-    void (*add_false)(jsong_array* this, int pos);                                \
-    void (*add_null)(jsong_array* this, int pos);                                 \
-    void (*del)(jsong_array* this, int pos);                                      \
-    void (*set)(jsong_array* this, int pos, const void* val);                     \
-    void (*set_str)(jsong_array* this, int pos, const char* val);                 \
-    void (*set_num)(jsong_array* this, int pos, int val);                         \
-    void (*set_true)(jsong_array* this, int pos);                                 \
-    void (*set_false)(jsong_array* this, int pos);                                \
-    void (*set_null)(jsong_array* this, int pos);                                 \
-    void* (*get)(const jsong_array* this, int pos, void* val);                    \
-    char* (*get_str)(const jsong_array* this, int pos);                           \
-    int (*get_num)(const jsong_array* this, int pos);                             \
-    void (*sort)(jsong_array* this, int (*compare_fn)(const void*, const void*)); \
-    jsong_array_iter (*begin)(const jsong_array* this);                           \
-    jsong_array_iter (*end)(const jsong_array* this);                             \
-    jsong_array_iter (*rbegin)(const jsong_array* this);                          \
-    jsong_array_iter (*rend)(const jsong_array* this);                            \
+#define JSONArrayClass(klass) \
+struct klass { \
+/* parent class */ \
+    JSONClass(); /* a linked list */ \
+/* public */ \
+    /* member functions */ \
+    void (*add)(JSONArray *this, int pos, const void *val); \
+    void (*add_str)(JSONArray *this, int pos, const char *val); \
+    void (*add_num)(JSONArray *this, int pos, int val); \
+    void (*add_true)(JSONArray *this, int pos); \
+    void (*add_false)(JSONArray *this, int pos); \
+    void (*add_null)(JSONArray *this, int pos); \
+    void (*del)(JSONArray *this, int pos); \
+    void (*set)(JSONArray *this, int pos, const void *val); \
+    void (*set_str)(JSONArray *this, int pos, const char *val); \
+    void (*set_num)(JSONArray *this, int pos, int val); \
+    void (*set_true)(JSONArray *this, int pos); \
+    void (*set_false)(JSONArray *this, int pos); \
+    void (*set_null)(JSONArray *this, int pos); \
+    void *(*get)(const JSONArray *this, int pos, void *val); \
+    char *(*get_str)(const JSONArray *this, int pos); \
+    int (*get_num)(const JSONArray *this, int pos); \
+    void (*sort)(JSONArray *this, int (*compare_fn)(const void*, const void*)); \
+    JSONArrayIter (*begin)(const JSONArray *this); \
+    JSONArrayIter (*end)(const JSONArray *this); \
+    JSONArrayIter (*rbegin)(const JSONArray *this); \
+    JSONArrayIter (*rend)(const JSONArray *this); \
 }
-jsong_array(jsong_array);
+JSONArrayClass(JSONArray);
 
 
-struct jsong_object_iter
-{
+struct JSONObjectIter {
     void* index;
     char* key;
-    jsong value;
+    JSON value;
     void* __entries;
 };
 
-struct jsong_array_iter
-{
+struct JSONArrayIter {
     void* index;
-    jsong value;
+    JSON value;
 };
 
 
 /* the following functions are not called directly, only for MACRO */
-jsong_object* obj_default_cstr();
-jsong_object obj_default();
-jsong_object* obj_data_cstr(void* data);
-jsong_object obj_data(void* data);
-jsong_object* obj_copy_cstr(const void* src);
-jsong_object obj_copy(const void* src);
-jsong_string* str_assign_cstr(char* val);
-jsong_string str_assign(char* val);
-jsong_string* str_data_cstr(void* data);
-jsong_string str_data(void* data);
-jsong_string* str_copy_cstr(const void* src);
-jsong_string str_copy(const void* src);
-jsong_number* num_assign_cstr(int val);
-jsong_number num_assign(int val);
-jsong_number* num_data_cstr(void *data);
-jsong_number num_data(void *data);
-jsong_number* num_copy_cstr(const void* src);
-jsong_number num_copy(const void* src);
-jsong_array* arr_default_cstr();
-jsong_array arr_default();
-jsong_array* arr_data_cstr(void *data);
-jsong_array arr_data(void *data);
-jsong_array* arr_copy_cstr(const void* src);
-jsong_array arr_copy(const void* src);
-jsong_true* true_default_cstr();
-jsong_true true_default();
-jsong_false* false_default_cstr();
-jsong_false false_default();
-jsong_null* null_default_cstr();
-jsong_null null_default();
-int jsong_reassign(void* dst, const void* src);
-int jsong_free(void* val);
-void jsong_free_data(jsong* json);
+JSONObject *obj_default_cstr();
+JSONObject obj_default();
+JSONObject *obj_data_cstr(void* data);
+JSONObject obj_data(void* data);
+JSONObject *obj_copy_cstr(const void* src);
+JSONObject obj_copy(const void* src);
+JSONString *str_assign_cstr(char* val);
+JSONString str_assign(char* val);
+JSONString *str_data_cstr(void* data);
+JSONString str_data(void* data);
+JSONString *str_copy_cstr(const void* src);
+JSONString str_copy(const void* src);
+JSONNumber *num_assign_cstr(int val);
+JSONNumber num_assign(int val);
+JSONNumber *num_data_cstr(void *data);
+JSONNumber num_data(void *data);
+JSONNumber *num_copy_cstr(const void* src);
+JSONNumber num_copy(const void* src);
+JSONArray *arr_default_cstr();
+JSONArray arr_default();
+JSONArray *arr_data_cstr(void *data);
+JSONArray arr_data(void *data);
+JSONArray *arr_copy_cstr(const void* src);
+JSONArray arr_copy(const void* src);
+JSONTrue* true_default_cstr();
+JSONTrue true_default();
+JSONFalse* false_default_cstr();
+JSONFalse false_default();
+JSONNull* null_default_cstr();
+JSONNull null_default();
+int json_reassign(void* dst, const void* src);
+int json_free(void* val);
+void json_free_data(JSON* json);
 
-void jsong_stringify(const void* json, char** pstr, int* plen);
-int jsong_parse(const char* str, void* json);
+void json_stringify(const void* json, char** pstr, int* plen);
+int json_parse(const char* str, void* json);
 
-jsong_object_iter obj_iterate(jsong_object_iter iter);
-jsong_array_iter arr_iterate(jsong_array_iter iter);
-jsong_array_iter arr_riterate(jsong_array_iter iter);
+JSONObjectIter obj_iterate(JSONObjectIter iter);
+JSONArrayIter arr_iterate(JSONArrayIter iter);
+JSONArrayIter arr_riterate(JSONArrayIter iter);
 
 
 /*
  *  User Interface
  */
-typedef jsong JSON;
-typedef jsong_object JSONObject;
-typedef jsong_object_iter JSONObjectIter;
-typedef jsong_string JSONString;
-typedef jsong_number JSONNumber;
-typedef jsong_array JSONArray;
-typedef jsong_array_iter JSONArrayIter;
-typedef jsong_true JSONTrue;
-typedef jsong_false JSONFalse;
-typedef jsong_null JSONNull;
-
 #define JSON_OBJECT_PTR()                     obj_default_cstr()
 #define JSON_OBJECT()                         obj_default()
 #define JSON_OBJECT_DATA_PTR(data)            obj_data_cstr(data)
@@ -311,9 +280,9 @@ typedef jsong_null JSONNull;
 #define JSON_FALSE()                          false_default()
 #define JSON_NULL_PTR()                       null_default_cstr()
 #define JSON_NULL()                           null_default()
-#define JSON_REASSIGN(json, val)              jsong_reassign(json, val)
-#define FREE_JSON(json)                       jsong_free(json)
-#define FREE_JSON_DATA(json)                  jsong_free_data(json)
+#define JSON_REASSIGN(json, val)              json_reassign(json, val)
+#define FREE_JSON(json)                       json_free(json)
+#define FREE_JSON_DATA(json)                  json_free_data(json)
 
-#define JSON_STRINGIFY(json, pstr, plen)      jsong_stringify(json, pstr, plen)
-#define JSON_PARSE(str, json)                 jsong_parse(str, json)
+#define JSON_STRINGIFY(json, pstr, plen)      json_stringify(json, pstr, plen)
+#define JSON_PARSE(str, json)                 json_parse(str, json)

@@ -35,37 +35,37 @@ typedef struct jsong_htab
 } jsong_htab;
 
 /* only for test */
-jsong_node* get_json_array_list_head(jsong_array* arr)
+jsong_node* get_json_array_list_head(JSONArray* arr)
 {
     return ((jsong_list*)(arr->data))->head;
 }
 
 /* only for test */
-jsong_node* get_json_array_list_tail(jsong_array* arr)
+jsong_node* get_json_array_list_tail(JSONArray* arr)
 {
     return ((jsong_list*)(arr->data))->tail;
 }
 
 /* only for test */
-jsong_node* get_json_array_list_nil(jsong_array* arr)
+jsong_node* get_json_array_list_nil(JSONArray* arr)
 {
     return ((jsong_list*)(arr->data))->nil;
 }
 
 /* only for test */
-int get_json_array_list_size(jsong_array* arr)
+int get_json_array_list_size(JSONArray* arr)
 {
     return ((jsong_list*)(arr->data))->size;
 }
 
 /* only for test */
-int get_json_object_htab_size(jsong_object* obj)
+int get_json_object_htab_size(JSONObject* obj)
 {
     return ((jsong_htab*)(obj->data))->size;
 }
 
 /* only for test */
-jsong_type get_json_type(jsong* json)
+int get_json_type(JSON* json)
 {
     return json->type;
 }
@@ -77,7 +77,7 @@ void test_json_array_create_and_remove(void)
     TEST_EXPECT(get_json_array_list_head(json), get_json_array_list_nil(json));
     TEST_EXPECT(get_json_array_list_tail(json), get_json_array_list_nil(json));
     TEST_EXPECT(get_json_array_list_size(json), 0);
-    TEST_EXPECT(get_json_type((jsong*)json), JSONG_ARRAY);
+    TEST_EXPECT(get_json_type((JSON *)json), JSON_TYPE_ARRAY);
     /* remove a array */
     FREE_JSON(json);
 }
@@ -102,7 +102,7 @@ void test_json_array_set_and_get_json_string(void)
     str = json_str->get(json_str);
     str_get = json_str_get->get(json_str_get);
     TEST_EXPECT(strcmp(str, str_get), 0);
-    TEST_EXPECT(json_str_get->type, JSONG_STRING);
+    TEST_EXPECT(json_str_get->type, JSON_TYPE_STRING);
     free(str);
     free(str_get);
 
@@ -121,7 +121,7 @@ void test_json_array_set_and_get_json_string(void)
     json_str_get = json_arr->get(json_arr, 0, json_str_get);
     str_get = json_str_get->get(json_str_get);
     TEST_EXPECT(strcmp("this is second test", str_get), 0);
-    TEST_EXPECT(json_str_get->type, JSONG_STRING);
+    TEST_EXPECT(json_str_get->type, JSON_TYPE_STRING);
     free(str_get);
 
     FREE_JSON(json_str);
@@ -149,7 +149,7 @@ void test_json_array_set_and_get_json_number(void)
     num = json_num->get(json_num);
     num_get = json_num_get->get(json_num_get);
     TEST_EXPECT(num, num_get);
-    TEST_EXPECT(json_num_get->type, JSONG_NUMBER);
+    TEST_EXPECT(json_num_get->type, JSON_TYPE_NUMBER);
 
     /* get a number directly in this position */
     num = json_num->get(json_num);
@@ -164,7 +164,7 @@ void test_json_array_set_and_get_json_number(void)
     json_num_get = json_arr->get(json_arr, 0, json_num_get);
     num_get = json_num_get->get(json_num_get);
     TEST_EXPECT(2099, num_get);
-    TEST_EXPECT(json_num_get->type, JSONG_NUMBER);
+    TEST_EXPECT(json_num_get->type, JSON_TYPE_NUMBER);
 
     FREE_JSON(json_num);
     FREE_JSON(json_num_get);
@@ -187,7 +187,7 @@ void test_json_array_set_and_get_json_true(void)
     /* get a json true in this position */
     json_true_get = json_arr->get(json_arr, 0, json_true_get);
     TEST_EXPECT(json_true_get->data, 0);
-    TEST_EXPECT(json_true_get->type, JSONG_TRUE);
+    TEST_EXPECT(json_true_get->type, JSON_TYPE_TRUE);
 
     FREE_JSON(json_true);
     FREE_JSON(json_true_get);
@@ -210,7 +210,7 @@ void test_json_array_set_and_get_json_false(void)
     /* get a json false in this position */
     json_false_get = json_arr->get(json_arr, 0, json_false_get);
     TEST_EXPECT(json_false_get->data, 0);
-    TEST_EXPECT(json_false_get->type, JSONG_FALSE);
+    TEST_EXPECT(json_false_get->type, JSON_TYPE_FALSE);
 
     FREE_JSON(json_false);
     FREE_JSON(json_false_get);
@@ -233,7 +233,7 @@ void test_json_array_set_and_get_json_null(void)
     /* get a json null in this position */
     json_null_get = json_arr->get(json_arr, 0, json_null_get);
     TEST_EXPECT(json_null_get->data, 0);
-    TEST_EXPECT(json_null_get->type, JSONG_NULL);
+    TEST_EXPECT(json_null_get->type, JSON_TYPE_NULL);
 
     FREE_JSON(json_null);
     FREE_JSON(json_null_get);
@@ -296,7 +296,7 @@ void test_json_array_set_and_get_json_object(void)
         free(get);
     }
     TEST_EXPECT(strcmp(stack, compr), 0);
-    TEST_EXPECT(json_obj_get->type, JSONG_OBJECT);
+    TEST_EXPECT(json_obj_get->type, JSON_TYPE_OBJECT);
     printf("-------------------\n");
 
     FREE_JSON(json_obj);
@@ -343,7 +343,7 @@ void test_json_array_set_and_get_json_array(void)
         TEST_EXPECT(strcmp(get, values[i]), 0);
         i++;
     }
-    TEST_EXPECT(json_arr_get->type, JSONG_ARRAY);
+    TEST_EXPECT(json_arr_get->type, JSON_TYPE_ARRAY);
 
     FREE_JSON(json_arr);
     FREE_JSON(sub_json_arr);
@@ -439,12 +439,12 @@ void test_json_array_add_json_true(void)
     /* get a json true in [0] */
     json_true_get = json_arr->get(json_arr, 0, json_true_get);
     TEST_EXPECT(json_true_get->data, 0);
-    TEST_EXPECT(json_true_get->type, JSONG_TRUE);
+    TEST_EXPECT(json_true_get->type, JSON_TYPE_TRUE);
 
     /* get a json true in [1] */
     json_true_get = json_arr->get(json_arr, 1, json_true_get);
     TEST_EXPECT(json_true_get->data, 0);
-    TEST_EXPECT(json_true_get->type, JSONG_TRUE);
+    TEST_EXPECT(json_true_get->type, JSON_TYPE_TRUE);
 
     FREE_JSON(json_true);
     FREE_JSON(json_true_get);
@@ -471,12 +471,12 @@ void test_json_array_add_json_false(void)
     /* get a json false in [0] */
     json_false_get = json_arr->get(json_arr, 0, json_false_get);
     TEST_EXPECT(json_false_get->data, 0);
-    TEST_EXPECT(json_false_get->type, JSONG_TRUE);
+    TEST_EXPECT(json_false_get->type, JSON_TYPE_TRUE);
 
     /* get a json false in [1] */
     json_false_get = json_arr->get(json_arr, 1, json_false_get);
     TEST_EXPECT(json_false_get->data, 0);
-    TEST_EXPECT(json_false_get->type, JSONG_TRUE);
+    TEST_EXPECT(json_false_get->type, JSON_TYPE_TRUE);
 
     FREE_JSON(json_false);
     FREE_JSON(json_false_get);
@@ -503,12 +503,12 @@ void test_json_array_add_json_null(void)
     /* get a json null in [0] */
     json_null_get = json_arr->get(json_arr, 0, json_null_get);
     TEST_EXPECT(json_null_get->data, 0);
-    TEST_EXPECT(json_null_get->type, JSONG_NULL);
+    TEST_EXPECT(json_null_get->type, JSON_TYPE_NULL);
 
     /* get a json null in [1] */
     json_null_get = json_arr->get(json_arr, 1, json_null_get);
     TEST_EXPECT(json_null_get->data, 0);
-    TEST_EXPECT(json_null_get->type, JSONG_NULL);
+    TEST_EXPECT(json_null_get->type, JSON_TYPE_NULL);
 
     FREE_JSON(json_null);
     FREE_JSON(json_null_get);
@@ -578,7 +578,7 @@ void test_json_array_add_json_object(void)
     TEST_EXPECT(strcmp(stack, compr), 0);
     memset(stack, 0, 256);
     memset(compr, 0, 256);
-    TEST_EXPECT(json_obj_get->type, JSONG_OBJECT);
+    TEST_EXPECT(json_obj_get->type, JSON_TYPE_OBJECT);
     printf("-------------------\n");
 
     /* get a json object in [1] */
@@ -616,7 +616,7 @@ void test_json_array_add_json_object(void)
     TEST_EXPECT(strcmp(stack, compr), 0);
     memset(stack, 0, 256);
     memset(compr, 0, 256);
-    TEST_EXPECT(json_obj_get->type, JSONG_OBJECT);
+    TEST_EXPECT(json_obj_get->type, JSON_TYPE_OBJECT);
     printf("-------------------\n");
 
     FREE_JSON(json_obj);
@@ -671,7 +671,7 @@ void test_json_array_add_json_array(void)
         TEST_EXPECT(strcmp(get, values[i]), 0);
         i++;
     }
-    TEST_EXPECT(json_arr_get->type, JSONG_ARRAY);
+    TEST_EXPECT(json_arr_get->type, JSON_TYPE_ARRAY);
 
     /* get a json array in [1] */
     json_arr_get = json_arr->get(json_arr, 1, json_arr_get);
@@ -687,7 +687,7 @@ void test_json_array_add_json_array(void)
         TEST_EXPECT(strcmp(get, values[i]), 0);
         i++;
     }
-    TEST_EXPECT(json_arr_get->type, JSONG_ARRAY);
+    TEST_EXPECT(json_arr_get->type, JSON_TYPE_ARRAY);
 
     FREE_JSON(json_arr);
     FREE_JSON(sub_json_arr);
@@ -807,7 +807,7 @@ void test_json_array_delete_json(void)
     TEST_EXPECT(strcmp(stack, compr), 0);
     memset(stack, 0, 256);
     memset(compr, 0, 256);
-    TEST_EXPECT(json_obj_get->type, JSONG_OBJECT);
+    TEST_EXPECT(json_obj_get->type, JSON_TYPE_OBJECT);
     printf("-------------------\n");
 
     /* delete a element in [-1] */
@@ -828,7 +828,7 @@ void test_json_array_delete_json(void)
         TEST_EXPECT(strcmp(get, values[i]), 0);
         i++;
     }
-    TEST_EXPECT(sub_json_arr_get->type, JSONG_ARRAY);
+    TEST_EXPECT(sub_json_arr_get->type, JSON_TYPE_ARRAY);
 
     /* delete a array in [-1] */
     json_arr->del(json_arr, -1);
@@ -942,7 +942,7 @@ void test_json_array_stringify(void)
     JSONArray *json_arr_copy = JSON_ARRAY_COPY_PTR(json_arr);
 
     /* stringify a json array */
-    jsong_stringify(json_arr_copy, &str_json, &len);
+    json_stringify(json_arr_copy, &str_json, &len);
     printf("%s\n", str_json);
     TEST_EXPECT(strcmp(str_json, str), 0 );
     free(str_json);
@@ -955,15 +955,14 @@ void test_json_array_stringify(void)
 void test_parse_json_array(void )
 {
     int i;
-    jsong_type types[7] =
-    {
-        JSONG_STRING,
-        JSONG_NUMBER,
-        JSONG_TRUE,
-        JSONG_FALSE,
-        JSONG_NULL,
-        JSONG_OBJECT,
-        JSONG_ARRAY
+    int types[7] = {
+        JSON_TYPE_STRING,
+        JSON_TYPE_NUMBER,
+        JSON_TYPE_TRUE,
+        JSON_TYPE_FALSE,
+        JSON_TYPE_NULL,
+        JSON_TYPE_OBJECT,
+        JSON_TYPE_ARRAY
     };
     char* str = "[\"this is a test\",2022,true,false,null,{\"key\":\"value\"},"
         "[\"this is a test\",2022,true,false,null,{\"key\":\"value\"}]]";
@@ -977,7 +976,7 @@ void test_parse_json_array(void )
     /* create a json array */
     JSONArray* json_arr = JSON_ARRAY_PTR();
 
-    jsong_parse(str, json_arr);
+    json_parse(str, json_arr);
     /* check types */
     aiter = json_arr->begin(json_arr);
     aend = json_arr->end(json_arr);

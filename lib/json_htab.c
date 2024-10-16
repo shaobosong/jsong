@@ -4,8 +4,8 @@
 #include <stdlib.h>
 #include <assert.h>
 
-#include "lib/jsong_htab.h"
-#include "lib/utils.h"
+#include "lib/json_htab.h"
+#include "lib/json_utils.h"
 
 
 #define FNV_OFFSET_BASIS 14695981039346656037UL
@@ -13,49 +13,48 @@
 
 /* Return 64-bit FNV-1a hash for key (NULL-terminated). See description: */
 /* https://en.wikipedia.org/wiki/Fowler–Noll–Vo_hash_function */
-static uint64_t hash_key(const char* key)
+static uint64_t hash_key(const char *key)
 {
     uint64_t hash = FNV_OFFSET_BASIS;
-    for (const char* p = key; *p; p++)
-    {
+    for (const char *p = key; *p; p++) {
         hash ^= (uint64_t)*(unsigned char*)p;
         hash *= FNV_PRIME;
     }
     return hash;
 }
 
-static void entry_clear(jsong_entry* e)
+static void entry_clear(JSONEntry *e)
 {
     assert(e);
-    xfree(e->key);
-    jsong_free_data(&e->value);
+    json_xfree(e->key);
+    json_free_data(&e->value);
     memset(e, 0, sizeof(*e));
 }
 
-static void entry_copy(jsong_entry* d, const jsong_entry* s)
+static void entry_copy(JSONEntry *d, const JSONEntry *s)
 {
     /* copy key */
-    d->key = xmallocz(strlen(s->key) + 1);
+    d->key = json_xmallocz(strlen(s->key) + 1);
     strcat(d->key, s->key);
     /* copy value */
-    jsong_copy(&(d->value), &(s->value));
+    json_copy(&(d->value), &(s->value));
     /* copy index */
     d->prev = s->prev;
     d->next = s->next;
 }
 
-static void entry_placed_in(jsong_htab* h, uint64_t p)
+static void entry_placed_in(JSONHashTable *h, uint64_t p)
 {
     uint64_t i;
 
-    if(h->first == h->capacity) {
+    if (h->first == h->capacity) {
         h->entries[p].prev = h->capacity;
         h->entries[p].next = h->capacity;
         h->first = p;
         h->last = p;
         return ;
     }
-    if(p < h->first) {
+    if (p < h->first) {
         /* new p of begin in hash table */
         h->entries[h->first].prev = p;
         h->entries[p].prev = h->capacity;
@@ -63,7 +62,7 @@ static void entry_placed_in(jsong_htab* h, uint64_t p)
         h->first = p;
         return ;
     }
-    if(h->last < p) {
+    if (h->last < p) {
         /* new p of end in hash table */
         h->entries[h->last].next = p;
         h->entries[p].prev = h->last;
@@ -73,9 +72,9 @@ static void entry_placed_in(jsong_htab* h, uint64_t p)
     }
     /* h->begin < p < h->end */
     i = h->first;
-    for(; i < p; i = h->entries[i].next);
-    jsong_entry* prev = &h->entries[h->entries[i].prev];
-    jsong_entry* next = &h->entries[i];
+    for (; i < p; i = h->entries[i].next);
+    JSONEntry *prev = &h->entries[h->entries[i].prev];
+    JSONEntry *next = &h->entries[i];
     h->entries[p].prev = next->prev;
     h->entries[p].next = prev->next;
     prev->next = p;
@@ -83,22 +82,22 @@ static void entry_placed_in(jsong_htab* h, uint64_t p)
     return ;
 }
 
-static void entry_removed_in(jsong_htab* h, uint64_t p)
+static void entry_removed_in(JSONHashTable *h, uint64_t p)
 {
     /* removed the last in entries */
-    if(h->entries[p].prev == h->entries[p].next) {
+    if (h->entries[p].prev == h->entries[p].next) {
         h->first = h->capacity;
         h->last = h->capacity;
         return ;
     }
     /* removed in start */
-    if(p == h->first) {
+    if (p == h->first) {
         h->first = h->entries[p].next;
         h->entries[h->first].prev = h->capacity;
         return ;
     }
     /* removed in end */
-    if(p == h->last) {
+    if (p == h->last) {
         h->last = h->entries[p].prev;
         h->entries[h->last].next = h->capacity;
         return ;
@@ -109,11 +108,11 @@ static void entry_removed_in(jsong_htab* h, uint64_t p)
     return ;
 }
 
-jsong_htab* htab_create(uint64_t c)
+JSONHashTable *htab_create(uint64_t c)
 {
-    jsong_htab* h;
-    h = xmallocz(sizeof *h);
-    h->entries = xmallocz((c + 1)*sizeof(jsong_entry));
+    JSONHashTable *h;
+    h = json_xmallocz(sizeof *h);
+    h->entries = json_xmallocz((c + 1)*sizeof(JSONEntry));
     h->size = 0;
     h->capacity = c;
     h->first = c;
@@ -122,21 +121,20 @@ jsong_htab* htab_create(uint64_t c)
     return h;
 }
 
-jsong_htab* htab_create_copy(const jsong_htab* s)
+JSONHashTable *htab_create_copy(const JSONHashTable *s)
 {
-    jsong_htab* d;
+    JSONHashTable *d;
     uint64_t i;
-    jsong_htab_iter iter, end;
+    JSONHashTableIter iter, end;
 
     assert(s->capacity != 0);
     d = htab_create(s->capacity);
 
     iter = htab_begin(s);
     end = htab_end(s);
-    jsong_htab_foreach(iter, end)
-    {
+    json_htab_foreach(iter, end) {
         i = (iter.index - iter.__entries) /
-            sizeof(jsong_entry);
+            sizeof(JSONEntry);
         entry_copy(&d->entries[i], &s->entries[i]);
     }
 
@@ -148,42 +146,41 @@ jsong_htab* htab_create_copy(const jsong_htab* s)
     return d;
 }
 
-void htab_free(jsong_htab* h)
+void htab_free(JSONHashTable *h)
 {
-    jsong_entry *curr, *end, *next;
+    JSONEntry *curr, *end, *next;
 
     assert(h);
     /* entries clear */
     curr = &h->entries[h->first];
     end = &h->entries[h->capacity];
     next = NULL;
-    for(; curr != end; curr = next)
-    {
+    for (; curr != end; curr = next) {
         next = &h->entries[curr->next];
         entry_clear(curr);
     }
 
     /* entries free */
-    xfree(h->entries);
+    json_xfree(h->entries);
 
     /* hash table free */
-    xfree(h);
+    json_xfree(h);
 }
 
-static void htab_grow(jsong_htab* h, uint64_t c)
+static void htab_grow(JSONHashTable *h, uint64_t c)
 {
     uint64_t i;
-    jsong_htab old = *h;
-    jsong_htab_iter iter, end;
+    JSONHashTable old = *h;
+    JSONHashTableIter iter, end;
 
     /* if capacity is up to max valid value, stop growing */
-    if(c < h->capacity) {
+    if (c < h->capacity) {
         c = h->capacity;
         return ;
     }
 
     /* set new htab properities */
-    h->entries = xmallocz((c + 1)*sizeof(jsong_entry));
+    h->entries = json_xmallocz((c + 1)*sizeof(JSONEntry));
     h->capacity = c;
     h->first = c;
     h->last = c;
@@ -191,32 +188,30 @@ static void htab_grow(jsong_htab* h, uint64_t c)
     /* shallow copy to improve performance */
     iter = htab_begin(&old);
     end = htab_end(&old);
-    jsong_htab_foreach(iter, end)
-    {
+    json_htab_foreach(iter, end) {
         i = (uint64_t)(hash_key(iter.key) & (c - 1));
         /* unsafe */
         while(h->entries[i].key)
         {
             i = (i + 1) & (c - 1);
         }
-        h->entries[i] = *(jsong_entry*)iter.index;
+        h->entries[i] = *(JSONEntry*)iter.index;
         entry_placed_in(h, i);
     }
 
     /* free old entries */
-    xfree(old.entries);
+    json_xfree(old.entries);
 }
 
-static uint64_t htab_find_id(const jsong_htab* h, const char* k)
+static uint64_t htab_find_id(const JSONHashTable *h, const char *k)
 {
     uint64_t i = hash_key(k) & (h->capacity - 1);
     uint64_t n = 0;
-    for(;;)
-    {
-        if(n >= h->capacity) { /* capacity is equal to 1 */
+    for (;;) {
+        if (n >= h->capacity) { /* capacity is equal to 1 */
             return h->capacity;
         }
-        if(NULL == h->entries[i].key ||
+        if (NULL == h->entries[i].key ||
             0 == strcmp(h->entries[i].key, k)) {
             break;
         }
@@ -226,20 +221,20 @@ static uint64_t htab_find_id(const jsong_htab* h, const char* k)
     return i;
 }
 
-int htab_insert_ref(jsong_htab* h, const char* k, const jsong* v)
+int htab_insert_ref(JSONHashTable *h, const char *k, const JSON *v)
 {
     /* if size of hash table will exceed half of capacity, grow it */
-    if(h->size > (h->capacity >> 1)) {
+    if (h->size > (h->capacity >> 1)) {
         htab_grow(h, h->capacity << 1);
     }
 
     uint64_t i = htab_find_id(h, k);
-    if(h->entries[i].key) {
+    if (h->entries[i].key) {
         THROW_WARNING("hash table try to insert <value> by existed <key>");
         return -1;
     }
     /* insert a key */
-    h->entries[i].key = xmallocz(strlen(k) + 1);
+    h->entries[i].key = json_xmallocz(strlen(k) + 1);
     strcat(h->entries[i].key, k);
     /* insert a value */
     h->entries[i].value = *v;
@@ -251,29 +246,29 @@ int htab_insert_ref(jsong_htab* h, const char* k, const jsong* v)
     return 0;
 }
 
-int htab_insert(jsong_htab* h, const char* k, const jsong* v)
+int htab_insert(JSONHashTable *h, const char *k, const JSON *v)
 {
     uint64_t i;
 
-    if(NULL == v) {
+    if (NULL == v) {
         THROW_WARNING("VAL is not initialized");
         return -1;
     }
     /* if size of hash table will exceed half of capacity, grow it */
-    if(h->size > (h->capacity >> 1)) {
+    if (h->size > (h->capacity >> 1)) {
         htab_grow(h, h->capacity << 1);
     }
 
     i = htab_find_id(h, k);
-    if(h->entries[i].key) {
+    if (h->entries[i].key) {
         THROW_WARNING("hash table try to insert <value> by existed <key>");
         return -1;
     }
     /* insert a key */
-    h->entries[i].key = xmallocz(strlen(k) + 1);
+    h->entries[i].key = json_xmallocz(strlen(k) + 1);
     strcat(h->entries[i].key, k);
     /* insert a value */
-    jsong_copy(&(h->entries[i].value), v);
+    json_copy(&(h->entries[i].value), v);
     /* plus 1 in size */
     h->size += 1;
     /* alter index of begin and end iterator */
@@ -282,20 +277,18 @@ int htab_insert(jsong_htab* h, const char* k, const jsong* v)
     return 0;
 }
 
-static void entries_reorder(jsong_htab* htab, uint64_t start, uint64_t middle, uint64_t end)
+static void entries_reorder(JSONHashTable *htab, uint64_t start, uint64_t middle, uint64_t end)
 {
     uint64_t e2m, e2m_id, k;
 
     /* the last element had been moved 'forward' */
-    if(middle == end)
+    if (middle == end)
         return ;
 
-    for(e2m = end; e2m != middle; e2m = (e2m - 1) & (htab->capacity - 1))
-    {
+    for (e2m = end; e2m != middle; e2m = (e2m - 1) & (htab->capacity - 1)) {
         e2m_id = hash_key(htab->entries[e2m].key) & (htab->capacity - 1);
-        for(k = e2m_id; k != e2m;k = (k + 1) & (htab->capacity - 1))
-        {
-            if(k == middle) {
+        for (k = e2m_id; k != e2m;k = (k + 1) & (htab->capacity - 1)) {
+            if (k == middle) {
                 entry_removed_in(htab, e2m);
                 htab->entries[middle] = htab->entries[e2m];
                 entry_placed_in(htab, middle);
@@ -311,13 +304,13 @@ static void entries_reorder(jsong_htab* htab, uint64_t start, uint64_t middle, u
     return ;
 }
 
-int htab_erase(jsong_htab* htab, const char* key)
+int htab_erase(JSONHashTable *htab, const char *key)
 {
     uint64_t i, s, e;
 
     /* remove a element */
     i = htab_find_id(htab, key);
-    if(i == htab->capacity || NULL == htab->entries[i].key) {
+    if (i == htab->capacity || NULL == htab->entries[i].key) {
         THROW_WARNING("hash table try to find index by non-existent key");
         return -1;
     }
@@ -328,9 +321,8 @@ int htab_erase(jsong_htab* htab, const char* key)
     /* reorder */
     s = hash_key(key) & (htab->capacity - 1);
     e = (i + 1) & (htab->capacity - 1);
-    for(;;)
-    {
-        if(NULL == htab->entries[e].key) {
+    for (;;) {
+        if (NULL == htab->entries[e].key) {
             e = (e - 1) & (htab->capacity - 1);
             break;
         }
@@ -342,93 +334,93 @@ int htab_erase(jsong_htab* htab, const char* key)
 }
 
 /* check if type of val matches type of found element */
-int htab_find(const jsong_htab* htab, const char* key, jsong* val)
+int htab_find(const JSONHashTable *htab, const char *key, JSON *val)
 {
     uint64_t i = htab_find_id(htab, key);
-    if(i == htab->capacity || NULL == htab->entries[i].key) {
+    if (i == htab->capacity || NULL == htab->entries[i].key) {
         THROW_WARNING("hash table try to find index by non-existent key");
         return -1;
     }
 
-    if(val->type != htab->entries[i].value.type) {
+    if (val->type != htab->entries[i].value.type) {
         THROW_WARNING("type of VAL can't match type of found element");
         return -1;
     }
     /* free exist data */
-    if(val->data) {
-        jsong_free_data(val);
+    if (val->data) {
+        json_free_data(val);
     }
-    jsong_copy(val, &(htab->entries[i].value));
+    json_copy(val, &(htab->entries[i].value));
 
     return 0;
 }
 
-int htab_find_ref(const jsong_htab* htab, const char* key, jsong* val)
+int htab_find_ref(const JSONHashTable *htab, const char *key, JSON *val)
 {
     uint64_t i = htab_find_id(htab, key);
-    if(i == htab->capacity || NULL == htab->entries[i].key) {
+    if (i == htab->capacity || NULL == htab->entries[i].key) {
         THROW_WARNING("hash table try to find index by non-existent key");
         return -1;
     }
 
-    if(val->type != htab->entries[i].value.type) {
+    if (val->type != htab->entries[i].value.type) {
         THROW_WARNING("type of VAL can't match type of found element");
         return -1;
     }
     /* free exist data */
-    if(val->data) {
-        jsong_free_data(val);
+    if (val->data) {
+        json_free_data(val);
     }
     *val = htab->entries[i].value;
 
     return 0;
 }
 
-int htab_update(jsong_htab* htab, const char* key, const jsong* val)
+int htab_update(JSONHashTable *htab, const char *key, const JSON *val)
 {
     uint64_t i = htab_find_id(htab, key);
-    if(i == htab->capacity || NULL == htab->entries[i].key) {
+    if (i == htab->capacity || NULL == htab->entries[i].key) {
         THROW_WARNING("hash table try to find index by non-existent key");
         return -1;
     }
 
     /* free old entry data */
-    jsong_free_data(&(htab->entries[i].value));
+    json_free_data(&(htab->entries[i].value));
     /* update type and value */
-    jsong_copy(&(htab->entries[i].value), val);
+    json_copy(&(htab->entries[i].value), val);
 
     return 0;
 }
 
-int htab_update_ref(jsong_htab* htab, const char* key, const jsong* val)
+int htab_update_ref(JSONHashTable *htab, const char *key, const JSON *val)
 {
     uint64_t i = htab_find_id(htab, key);
-    if(i == htab->capacity || NULL == htab->entries[i].key) {
+    if (i == htab->capacity || NULL == htab->entries[i].key) {
         THROW_WARNING("hash table try to find index by non-existent key");
         return -1;
     }
 
     /* free old entry data */
-    jsong_free_data(&(htab->entries[i].value));
+    json_free_data(&(htab->entries[i].value));
     /* update type and value */
     htab->entries[i].value = *val;
 
     return 0;
 }
 
-int htab_set(jsong_htab* htab, const char* key, const jsong* val)
+int htab_set(JSONHashTable *htab, const char *key, const JSON *val)
 {
     uint64_t i = htab_find_id(htab, key);
 
     /* free old entry data if exist */
-    if(htab->entries[i].key) {
-        if(htab_update(htab, key, val)) {
+    if (htab->entries[i].key) {
+        if (htab_update(htab, key, val)) {
             THROW_WARNING("HTAB set using update method error");
             return -1;
         }
     }
     else {
-        if(htab_insert(htab, key, val)) {
+        if (htab_insert(htab, key, val)) {
             THROW_WARNING("HTAB set using insert method error");
             return -1;
         }
@@ -437,19 +429,19 @@ int htab_set(jsong_htab* htab, const char* key, const jsong* val)
     return 0;
 }
 
-int htab_set_ref(jsong_htab* htab, const char* key, const jsong* val)
+int htab_set_ref(JSONHashTable *htab, const char *key, const JSON *val)
 {
     uint64_t i = htab_find_id(htab, key);
 
     /* free old entry data if exist */
-    if(htab->entries[i].key) {
-        if(htab_update_ref(htab, key, val)) {
+    if (htab->entries[i].key) {
+        if (htab_update_ref(htab, key, val)) {
             THROW_WARNING("HTAB set using update method error");
             return -1;
         }
     }
     else {
-        if(htab_insert_ref(htab, key, val)) {
+        if (htab_insert_ref(htab, key, val)) {
             THROW_WARNING("HTAB set using insert method error");
             return -1;
         }
@@ -458,9 +450,9 @@ int htab_set_ref(jsong_htab* htab, const char* key, const jsong* val)
     return 0;
 }
 
-jsong_htab_iter htab_begin(const jsong_htab* h)
+JSONHashTableIter htab_begin(const JSONHashTable *h)
 {
-    jsong_htab_iter iter = {
+    JSONHashTableIter iter = {
         .index = &h->entries[h->first],
         .key = h->entries[h->first].key,
         .value = h->entries[h->first].value,
@@ -469,18 +461,18 @@ jsong_htab_iter htab_begin(const jsong_htab* h)
     return iter;
 }
 
-jsong_htab_iter htab_end(const jsong_htab* h)
+JSONHashTableIter htab_end(const JSONHashTable *h)
 {
-    jsong_htab_iter iter = {
+    JSONHashTableIter iter = {
         .index = &h->entries[h->capacity]
     };
     return iter;
 }
 
-jsong_htab_iter htab_iterate(jsong_htab_iter iter)
+JSONHashTableIter htab_iterate(JSONHashTableIter iter)
 {
-    jsong_entry* index = iter.index;
-    jsong_entry* entries = iter.__entries;
+    JSONEntry *index = iter.index;
+    JSONEntry *entries = iter.__entries;
 
     iter.index = &entries[index->next];
     iter.key = entries[index->next].key;
@@ -489,17 +481,17 @@ jsong_htab_iter htab_iterate(jsong_htab_iter iter)
     return iter;
 }
 
-int htab_iter_get(jsong_htab_iter iter, jsong* val)
+int htab_iter_get(JSONHashTableIter iter, JSON *val)
 {
-    if(val->type != iter.value.type) {
+    if (val->type != iter.value.type) {
         THROW_WARNING("unmatched JSON type to get value in iterator");
         return -1;
     }
     /* free old val data if exist */
-    if(val->data) {
-        jsong_free_data(val);
+    if (val->data) {
+        json_free_data(val);
     }
     /* copy from iter data */
-    jsong_copy(val, &(iter.value));
+    json_copy(val, &(iter.value));
     return 0;
 }

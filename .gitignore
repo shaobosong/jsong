@@ -1,0 +1,12 @@
+*.d
+*.o
+*.a
+test_json_array
+test_json_false
+test_json_null
+test_json_number
+test_json_object
+test_json_string
+test_json_true
+usage
+tags

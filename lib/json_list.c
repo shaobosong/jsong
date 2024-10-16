@@ -3,28 +3,28 @@
 #include <string.h>
 #include <assert.h>
 
-#include "lib/jsong_list.h"
-#include "lib/utils.h"
+#include "lib/json_list.h"
+#include "lib/json_utils.h"
 
 
-static jsong_node* node_create()
+static JSONNode *node_create()
 {
-    return xmallocz(sizeof(jsong_node));
+    return json_xmallocz(sizeof(JSONNode));
 }
 
-static void node_free(jsong_node* n)
+static void node_free(JSONNode *n)
 {
     assert(n);
-    jsong_free_data(&(n->value));
-    xfree(n);
+    json_free_data(&(n->value));
+    json_xfree(n);
 }
 
-jsong_list* list_create()
+JSONLinkedList *list_create()
 {
-    jsong_list *l = xmallocz(sizeof *l);
+    JSONLinkedList *l = json_xmallocz(sizeof *l);
 
     /* create a dummy node */
-    jsong_node* n = node_create();
+    JSONNode *n = node_create();
     n->next =
     n->prev =
     l->nil =
@@ -35,20 +35,19 @@ jsong_list* list_create()
     return l;
 }
 
-jsong_list* list_create_copy(const jsong_list* s)
+JSONLinkedList *list_create_copy(const JSONLinkedList *s)
 {
-    jsong_list *d;
-    const jsong_node *in, *en;
-    jsong_node *nn;
+    JSONLinkedList *d;
+    const JSONNode *in, *en;
+    JSONNode *nn;
 
     d = list_create();
 
     in = s->head; /* start in head */
     en = s->nil; /* end */
-    for(; in != en; in = in->next)
-    {
+    for (; in != en; in = in->next) {
         nn = node_create();
-        jsong_copy(&nn->value, &in->value);
+        json_copy(&nn->value, &in->value);
         /* insert */
         nn->next = d->nil;
         nn->prev = d->nil->prev;
@@ -64,27 +63,26 @@ jsong_list* list_create_copy(const jsong_list* s)
     return d;
 }
 
-void list_free(jsong_list* l)
+void list_free(JSONLinkedList *l)
 {
-    jsong_node *curr, *end, *next;
+    JSONNode *curr, *end, *next;
 
     assert(l);
     /* nodes free */
     curr = l->head; /* start in head */
     end = l->nil; /* end */
     next = NULL;
-    for(; curr != end; curr = next)
-    {
+    for (; curr != end; curr = next) {
         next = curr->next;
         node_free(curr);
     }
-    xfree(l->nil);
-    xfree(l);
+    json_xfree(l->nil);
+    json_xfree(l);
 }
 
-int list_insert_tail(jsong_list* l, const jsong* v)
+int list_insert_tail(JSONLinkedList *l, const JSON *v)
 {
-    jsong_node* n = node_create();
+    JSONNode *n = node_create();
     n->value = *v;
 
     /* insert into tail */
@@ -100,26 +98,25 @@ int list_insert_tail(jsong_list* l, const jsong* v)
     return 0;
 }
 
-int list_insert(jsong_list* l, int pos, const jsong* v)
+int list_insert(JSONLinkedList *l, int pos, const JSON *v)
 {
     int i;
-    jsong_node* n;
-    jsong_node* in;
+    JSONNode *n;
+    JSONNode *in;
 
-    if(pos > l->size || pos < -l->size-1) {
+    if (pos > l->size || pos < -l->size-1) {
         THROW_WARNING("try to insert in illegal POS");
         return -1;
     }
 
     n = node_create();
-    jsong_copy(&n->value, v);
+    json_copy(&n->value, v);
 
-    if(pos >= 0) {
+    if (pos >= 0) {
         /* head */
         in = l->nil->next;
         /* find node */
-        for(i = 0; i < pos; i++)
-        {
+        for (i = 0; i < pos; i++) {
             in = in->next;
         }
         /* insert */
@@ -132,8 +129,7 @@ int list_insert(jsong_list* l, int pos, const jsong* v)
         /* tail */
         in = l->nil->prev;
         /* find node */
-        for(i = -1; i > pos; i--)
-        {
+        for (i = -1; i > pos; i--) {
             in = in->prev;
         }
         /* insert */
@@ -149,27 +145,26 @@ int list_insert(jsong_list* l, int pos, const jsong* v)
     return 0;
 }
 
-int list_erase(jsong_list* l, int pos)
+int list_erase(JSONLinkedList *l, int pos)
 {
     int i;
-    jsong_node* in;
+    JSONNode *in;
 
-    if( 0 == l->size) {
+    if ( 0 == l->size) {
         THROW_WARNING("emptry LIST try to erase");
         return -1;
     }
-    if(pos >= l->size || pos < -l->size) {
+    if (pos >= l->size || pos < -l->size) {
         THROW_WARNING("try to erase in illegal POS");
         return -1;
     }
 
     /* remove from head by position */
-    if(pos >= 0) {
+    if (pos >= 0) {
         /* head */
         in = l->nil->next;
         /* find node */
-        for(i = 0; i < pos; i++)
-        {
+        for (i = 0; i < pos; i++) {
             in = in->next;
         }
         /* erase node */
@@ -178,12 +173,11 @@ int list_erase(jsong_list* l, int pos)
         node_free(in);
     }
     /* remove from tail by position */
-    else if(pos <= -1) {
+    else if (pos <= -1) {
         /* tail */
         in = l->nil->prev;
         /* find node */
-        for(i = -1; i > pos; i--)
-        {
+        for (i = -1; i > pos; i--) {
             in = in->prev;
         }
         /* erase node */
@@ -201,103 +195,97 @@ int list_erase(jsong_list* l, int pos)
 
 /* val: deep copy */
 /* you must initialize 'val->data' in your code */
-int list_find(const jsong_list* l, int pos, jsong* val)
+int list_find(const JSONLinkedList *l, int pos, JSON *val)
 {
     int i;
-    jsong_node* n;
+    JSONNode *n;
 
-    if( 0 == l->size) {
+    if ( 0 == l->size) {
         THROW_WARNING("empty l try to find");
         return -1;
     }
-    if( pos >= l->size || pos < -l->size) {
+    if ( pos >= l->size || pos < -l->size) {
         THROW_WARNING("try to find in illegal position");
         return -1;
     }
 
     /* find from head by position */
-    if(pos >= 0) {
+    if (pos >= 0) {
         n = l->head;
-        for(i = 0; i < pos; i++)
-        {
+        for (i = 0; i < pos; i++) {
             n = n->next;
         }
     }
     /* find from tail by position */
-    else if(pos <= -1) {
+    else if (pos <= -1) {
         n = l->tail;
-        for(i = -1; i > pos; i--)
-        {
+        for (i = -1; i > pos; i--) {
             n = n->prev;
         }
     }
-    if(val->type != n->value.type) {
+    if (val->type != n->value.type) {
         THROW_WARNING("type of VAL can't match type of found element");
         return -1;
     }
     /* free exist data */
-    if(val->data) {
-        jsong_free_data(val);
+    if (val->data) {
+        json_free_data(val);
     }
-    jsong_copy(val, &n->value);
+    json_copy(val, &n->value);
     return 0;
 }
 
-int list_update(jsong_list* l, int pos, const jsong* v)
+int list_update(JSONLinkedList *l, int pos, const JSON *v)
 {
     int i;
-    jsong_node* n;
+    JSONNode *n;
 
-    if( 0 == l->size) {
+    if (0 == l->size) {
         THROW_WARNING("empty l try to update");
         return -1;
     }
-    if( pos >= l->size || pos <= -l->size - 1) {
+    if ( pos >= l->size || pos <= -l->size - 1) {
         THROW_WARNING("try to update in illegal position");
         return -1;
     }
     /* find from head by position */
-    if(pos >= 0)
-    {
+    if (pos >= 0) {
         n = l->head;
-        for(i = 0; i < pos; i++)
-        {
+        for (i = 0; i < pos; i++) {
             n = n->next;
         }
     }
     /* find from tail by position */
-    else if(pos <= -1)
-    {
+    else if (pos <= -1) {
         n = l->tail;
-        for(i = -1; i > pos; i--)
-        {
+        for (i = -1; i > pos; i--) {
             n = n->prev;
         }
     }
 
     /* free old node data */
-    jsong_free_data(&n->value);
+    json_free_data(&n->value);
     /* update type and value */
-    jsong_copy(&n->value, v);
+    json_copy(&n->value, v);
     return 0;
 }
 
-int list_set(jsong_list* l, int pos, const jsong* v)
+int list_set(JSONLinkedList *l, int pos, const JSON *v)
 {
 
-    if(pos > l->size || pos < -l->size - 1) {
+    if (pos > l->size || pos < -l->size - 1) {
         THROW_WARNING("try to set in illegal POS");
         return -1;
     }
 
-    if(pos == l->size || pos == -l->size - 1) {
-        if(list_insert(l, pos, v)) {
+    if (pos == l->size || pos == -l->size - 1) {
+        if (list_insert(l, pos, v)) {
             THROW_WARNING("LIST set using insert method error");
             return -1;
         }
     }
     else {
-        if(list_update(l, pos, v)) {
+        if (list_update(l, pos, v)) {
             THROW_WARNING("LIST set using update method error");
             return -1;
         }
@@ -306,11 +294,11 @@ int list_set(jsong_list* l, int pos, const jsong* v)
     return 0;
 }
 
-static void node_swap(jsong_node* n1, jsong_node* n2)
+static void node_swap(JSONNode *n1, JSONNode *n2)
 {
     void* tmp;
 
-    if(n1 == n2) {
+    if (n1 == n2) {
         return ;
     }
 
@@ -322,26 +310,23 @@ static void node_swap(jsong_node* n1, jsong_node* n2)
 
 static void list_qsort_recur(
     int (*compare_fn)(const void*, const void*),
-    jsong_node* head,
-    jsong_node* pivot,
-    jsong_node* tail)
+    JSONNode *head,
+    JSONNode *pivot,
+    JSONNode *tail)
 {
-    jsong_node *ln, *rn;
+    JSONNode *ln, *rn;
 
-    if(head == tail || tail->next == head) {
+    if (head == tail || tail->next == head) {
         return ;
     }
 
     ln = head;
     rn = tail;
-    while(ln != rn)
-    {
-        while(ln != rn && compare_fn(pivot->value.data, rn->value.data) <= 0)
-        {
+    while (ln != rn) {
+        while (ln != rn && compare_fn(pivot->value.data, rn->value.data) <= 0) {
             rn = rn->prev;
         }
-        while(ln != rn && compare_fn(ln->value.data, pivot->value.data) <= 0)
-        {
+        while (ln != rn && compare_fn(ln->value.data, pivot->value.data) <= 0) {
             ln = ln->next;
         }
         node_swap(ln, rn);
@@ -351,69 +336,68 @@ static void list_qsort_recur(
     list_qsort_recur(compare_fn, rn->next, rn->next, tail);
 }
 
-void list_qsort(jsong_list* list, int (*compare_fn)(const void*, const void*))
+void list_qsort(JSONLinkedList *list, int (*compare_fn)(const void*, const void*))
 {
     list_qsort_recur(compare_fn, list->head, list->head, list->tail);
 }
 
-jsong_list_iter list_begin(const jsong_list* l)
+JSONLinkedListIter list_begin(const JSONLinkedList *l)
 {
-    jsong_list_iter iter =
+    JSONLinkedListIter iter =
     {
         .index = l->head,
         .value = l->head->value
     };
     return iter;
 }
-jsong_list_iter list_end(const jsong_list* l)
+JSONLinkedListIter list_end(const JSONLinkedList *l)
 {
-    jsong_list_iter iter =
+    JSONLinkedListIter iter =
     {
         .index = l->nil
     };
     return iter;
 }
-jsong_list_iter list_iterate(jsong_list_iter iter)
+JSONLinkedListIter list_iterate(JSONLinkedListIter iter)
 {
-    iter.index = ((jsong_node*)iter.index)->next;
-    iter.value = ((jsong_node*)iter.index)->value;
+    iter.index = ((JSONNode *)iter.index)->next;
+    iter.value = ((JSONNode *)iter.index)->value;
     return iter;
 }
-jsong_list_iter list_rbegin(const jsong_list* l)
+JSONLinkedListIter list_rbegin(const JSONLinkedList *l)
 {
-    jsong_list_iter iter =
+    JSONLinkedListIter iter =
     {
         .index = l->tail,
         .value = l->tail->value
     };
     return iter;
 }
-jsong_list_iter list_rend(const jsong_list* l)
+JSONLinkedListIter list_rend(const JSONLinkedList *l)
 {
-    jsong_list_iter iter =
+    JSONLinkedListIter iter =
     {
         .index = l->nil
     };
     return iter;
 }
-jsong_list_iter list_riterate(jsong_list_iter iter)
+JSONLinkedListIter list_riterate(JSONLinkedListIter iter)
 {
-    iter.index = ((jsong_node*)iter.index)->prev;
-    iter.value = ((jsong_node*)iter.index)->value;
+    iter.index = ((JSONNode *)iter.index)->prev;
+    iter.value = ((JSONNode *)iter.index)->value;
     return iter;
 }
-int list_iter_get(jsong_list_iter iter, jsong* val)
+int list_iter_get(JSONLinkedListIter iter, JSON *val)
 {
-    if(val->type != iter.value.type)
-    {
+    if (val->type != iter.value.type) {
         THROW_WARNING("unmatched JSON type to get value in iterator");
         return -1;
     }
     /* free old val data if exist */
-    if(val->data) {
-        jsong_free_data(val);
+    if (val->data) {
+        json_free_data(val);
     }
     /* copy from iter data */
-    jsong_copy(val, &iter.value);
+    json_copy(val, &iter.value);
     return 0;
 }
